@@ -1,0 +1,416 @@
+<!-- task-manager-gpt5.html — OpenAI GPT-5 Professional Task Manager (Test Criteria App) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>OpenAI GPT-5 — Professional Task Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap CSS (CSS CDN only) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --brand: #4f46e5;
+      --brand-2: #06b6d4;
+      --bg: #f7f8fb;
+    }
+    body { background: var(--bg); }
+    .shell {
+      background: #fff; border: 1px solid rgba(0,0,0,.06);
+      border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.06);
+    }
+    .soft {
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+      color: #fff; border-radius: 14px; padding: 1.25rem 1.1rem;
+    }
+    .btn-gradient { background: linear-gradient(135deg, var(--brand), var(--brand-2)); border: none; color: #fff; }
+    .btn-gradient:hover { filter: brightness(.95); }
+    .task-card { border: 1px solid rgba(0,0,0,.06); border-radius: 12px; background: #ffffff; }
+    .task-card.done { opacity: .8; background: #f0f9ff; }
+    .priority-high { color: #b42318; background: #fee4e2; }
+    .priority-medium { color: #93370d; background: #fedf89; }
+    .priority-low { color: #065f46; background: #d1fae5; }
+    .toast-lite {
+      position: fixed; top: 12px; right: 12px; z-index: 1000;
+      background: #111827; color: #fff; border-radius: 10px; padding: .6rem .9rem;
+      box-shadow: 0 12px 24px rgba(0,0,0,.18);
+    }
+    .badge-pill { border-radius: 999px; }
+    .top-switch { position: sticky; top: 0; z-index: 5; background: linear-gradient(180deg, rgba(247,248,251,1) 70%, rgba(247,248,251,0) 100%); padding: .75rem 0 .25rem; }
+    .hint { color: #6b7280; font-size: .95rem; }
+    .form-error { color: #b42318; font-size: .9rem; }
+    .filter-bar .form-select, .filter-bar .form-control { min-width: 140px; }
+    .stat-pill { background: #eef2ff; color: #3730a3; font-weight: 700; }
+    .brand-note {
+      font-size: .85rem; color: #0ea5e9; background: #e0f2fe;
+      padding: 4px 10px; border-radius: 999px; border: 1px solid #bae6fd;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-3 top-switch">
+    <div class="d-flex justify-content-between align-items-center">
+      <span class="brand-note">GPT‑5 Edition by OpenAI</span>
+      <a href="criteria-gpt5.html" class="btn btn-sm btn-outline-primary rounded-pill">
+        Open Report
+      </a>
+    </div>
+  </div>
+
+  <main class="container pb-5" aria-labelledby="appTitle">
+    <header class="soft mb-4">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+          <div class="small opacity-75">OpenAI GPT‑5</div>
+          <h1 id="appTitle" class="h3 mb-1">Professional Task Manager</h1>
+          <p class="mb-0">In-memory tasks with sorting, filters, inline editing, and persistence via localStorage.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge stat-pill px-3 py-2" id="statTotal">Total: 0</span>
+          <span class="badge stat-pill px-3 py-2" id="statDone">Completed: 0</span>
+          <span class="badge stat-pill px-3 py-2" id="statPct">0% Done</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="shell p-4 mb-4" aria-labelledby="howTo">
+      <h2 id="howTo" class="h5">How to use</h2>
+      <ul class="hint mb-0">
+        <li>Press <kbd>/</kbd> to focus Search; press <kbd>n</kbd> to focus Title.</li>
+        <li>Sort: High → Medium → Low priority, then nearest due date (default).</li>
+        <li>Inline edit, toggle complete, and delete with confirmation.</li>
+        <li>Data lives in your browser (localStorage), no servers required.</li>
+        <li class="mt-1"><strong>Edition:</strong> Branded GPT‑5 for fair model comparison.</li>
+      </ul>
+    </section>
+
+    <section class="shell p-4 mb-4" aria-labelledby="addTask">
+      <h2 id="addTask" class="h5 mb-3">Add Task</h2>
+      <form id="taskForm" novalidate class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="title">Title *</label>
+          <input id="title" class="form-control" required aria-required="true" />
+          <div class="form-error d-none" id="titleErr">Title is required.</div>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="priority">Priority</label>
+          <select id="priority" class="form-select">
+            <option value="high">High</option>
+            <option value="medium" selected>Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="due">Due date *</label>
+          <input id="due" type="date" class="form-control" required aria-required="true"/>
+          <div class="form-error d-none" id="dueErr">Due date is required.</div>
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="desc">Description (optional)</label>
+          <textarea id="desc" class="form-control" rows="2" placeholder="Short task details..."></textarea>
+        </div>
+        <div class="col-12 d-flex align-items-center gap-2">
+          <button class="btn btn-gradient rounded-pill" type="submit">Add Task</button>
+          <span class="hint">All fields are editable later.</span>
+        </div>
+      </form>
+    </section>
+
+    <section class="shell p-4 mb-4">
+      <div class="d-flex flex-wrap gap-2 align-items-end justify-content-between filter-bar">
+        <div class="d-flex flex-wrap gap-2">
+          <div>
+            <label class="form-label" for="search">Search</label>
+            <input id="search" class="form-control" placeholder="Search title/description (/)">
+          </div>
+          <div>
+            <label class="form-label" for="filterPriority">Priority</label>
+            <select id="filterPriority" class="form-select">
+              <option value="all" selected>All</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" for="filterComplete">Status</label>
+            <select id="filterComplete" class="form-select">
+              <option value="all" selected>All</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" for="sortMode">Sort</label>
+            <select id="sortMode" class="form-select">
+              <option value="priority-date" selected>Priority → Due date</option>
+              <option value="due-date">Due date</option>
+              <option value="title">Title (A→Z)</option>
+              <option value="created-desc">Recently added</option>
+            </select>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button id="clearCompleted" class="btn btn-outline-danger btn-sm rounded-pill">Clear completed</button>
+        </div>
+      </div>
+    </section>
+
+    <section aria-live="polite">
+      <div id="list" class="row g-3"></div>
+      <div id="empty" class="text-center text-muted py-5 d-none">No tasks match your filters.</div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast-lite d-none" role="status" aria-live="polite"></div>
+
+  <script>
+    // ===== Helpers
+    const $ = s => document.querySelector(s);
+    const $$ = s => Array.from(document.querySelectorAll(s));
+    const uid = () => (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+
+    function showToast(msg) {
+      const t = $("#toast");
+      t.textContent = msg;
+      t.classList.remove("d-none");
+      setTimeout(() => t.classList.add("d-none"), 1800);
+    }
+
+    // ===== Storage
+    const STORAGE_KEY = "tm_tasks_gpt5_v1";
+    function loadTasks() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch { return []; }
+    }
+    function saveTasks() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+
+    // ===== State
+    let tasks = loadTasks();
+    let filters = { q: "", prio: "all", status: "all", sort: "priority-date" };
+
+    // ===== DOM: Add form
+    $("#taskForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const title = $("#title").value.trim();
+      const priority = $("#priority").value;
+      const due = $("#due").value;
+      const description = $("#desc").value.trim();
+
+      // Validation
+      let ok = true;
+      if (!title) { $("#titleErr").classList.remove("d-none"); ok = false; } else $("#titleErr").classList.add("d-none");
+      if (!due) { $("#dueErr").classList.remove("d-none"); ok = false; } else $("#dueErr").classList.add("d-none");
+      if (!ok) return;
+
+      tasks.push({
+        id: uid(),
+        title, description,
+        priority,
+        due_date: due,
+        completed: false,
+        created_at: Date.now()
+      });
+      saveTasks();
+      $("#taskForm").reset();
+      render();
+      showToast("Task added");
+      $("#title").focus();
+    });
+
+    // Keyboard hints
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "/") { e.preventDefault(); $("#search").focus(); }
+      if (e.key.toLowerCase() === "n") { e.preventDefault(); $("#title").focus(); }
+    });
+
+    // Filters
+    $("#search").addEventListener("input", () => { filters.q = $("#search").value.toLowerCase(); render(); });
+    $("#filterPriority").addEventListener("change", () => { filters.prio = $("#filterPriority").value; render(); });
+    $("#filterComplete").addEventListener("change", () => { filters.status = $("#filterComplete").value; render(); });
+    $("#sortMode").addEventListener("change", () => { filters.sort = $("#sortMode").value; render(); });
+
+    $("#clearCompleted").addEventListener("click", () => {
+      if (!tasks.some(t => t.completed)) { showToast("No completed tasks"); return; }
+      if (confirm("Clear all completed tasks?")) {
+        tasks = tasks.filter(t => !t.completed);
+        saveTasks(); render();
+        showToast("Cleared completed");
+      }
+    });
+
+    // ===== Rendering
+    function priorityRank(p) { return p === "high" ? 0 : p === "medium" ? 1 : 2; }
+
+    function sortTasks(arr) {
+      const copy = arr.slice();
+      switch (filters.sort) {
+        case "priority-date":
+          copy.sort((a,b) => {
+            const pr = priorityRank(a.priority) - priorityRank(b.priority);
+            if (pr !== 0) return pr;
+            return new Date(a.due_date) - new Date(b.due_date);
+          });
+          break;
+        case "due-date":
+          copy.sort((a,b) => new Date(a.due_date) - new Date(b.due_date));
+          break;
+        case "title":
+          copy.sort((a,b) => a.title.localeCompare(b.title));
+          break;
+        case "created-desc":
+          copy.sort((a,b) => b.created_at - a.created_at);
+          break;
+      }
+      return copy;
+    }
+
+    function applyFilters(arr) {
+      return arr.filter(t => {
+        if (filters.q) {
+          const hay = (t.title + " " + (t.description||"")).toLowerCase();
+          if (!hay.includes(filters.q)) return false;
+        }
+        if (filters.prio !== "all" && t.priority !== filters.prio) return false;
+        if (filters.status === "active" && t.completed) return false;
+        if (filters.status === "completed" && !t.completed) return false;
+        return true;
+      });
+    }
+
+    function statUpdate() {
+      const total = tasks.length;
+      const done = tasks.filter(t => t.completed).length;
+      const pct = total ? Math.round((done/total)*100) : 0;
+      $("#statTotal").textContent = `Total: ${total}`;
+      $("#statDone").textContent = `Completed: ${done}`;
+      $("#statPct").textContent = `${pct}% Done`;
+    }
+
+    function taskBadge(p) {
+      const label = p === "high" ? "High" : p === "medium" ? "Medium" : "Low";
+      const cls = p === "high" ? "priority-high" : p === "medium" ? "priority-medium" : "priority-low";
+      return `<span class="badge ${cls} badge-pill px-3 py-2">${label}</span>`;
+    }
+
+    function taskCard(t) {
+      const doneCls = t.completed ? "done" : "";
+      return `
+        <div class="col-12 col-md-6 col-xl-4" id="wrap-${t.id}">
+          <div class="task-card p-3 ${doneCls}" aria-live="polite">
+            <div class="d-flex align-items-start justify-content-between gap-3">
+              <div class="form-check mt-1">
+                <input class="form-check-input" type="checkbox" id="chk-${t.id}" ${t.completed ? "checked" : ""} aria-label="Complete task">
+              </div>
+              <div class="flex-grow-1">
+                <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                  <h3 class="h6 mb-1 ${t.completed ? 'text-decoration-line-through' : ''}">${escapeHtml(t.title)}</h3>
+                  <div class="d-flex align-items-center gap-2">
+                    ${taskBadge(t.priority)}
+                    <span class="badge text-bg-light">${new Date(t.due_date).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                <p class="mb-2 ${t.completed ? 'text-decoration-line-through' : ''}">${escapeHtml(t.description || "") || "<span class='text-muted'>No description</span>"}</p>
+
+                <form class="d-none" id="edit-${t.id}" novalidate>
+                  <div class="row g-2">
+                    <div class="col-12">
+                      <label class="form-label" for="et-${t.id}">Title *</label>
+                      <input id="et-${t.id}" class="form-control" value="${escapeAttr(t.title)}" required>
+                    </div>
+                    <div class="col-12">
+                      <label class="form-label" for="ed-${t.id}">Description</label>
+                      <textarea id="ed-${t.id}" class="form-control" rows="2">${escapeHtml(t.description || "")}</textarea>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label" for="ep-${t.id}">Priority</label>
+                      <select id="ep-${t.id}" class="form-select">
+                        <option value="high" ${t.priority==="high"?"selected":""}>High</option>
+                        <option value="medium" ${t.priority==="medium"?"selected":""}>Medium</option>
+                        <option value="low" ${t.priority==="low"?"selected":""}>Low</option>
+                      </select>
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label" for="eu-${t.id}">Due date *</label>
+                      <input id="eu-${t.id}" type="date" class="form-control" value="${t.due_date}" required>
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                      <button class="btn btn-sm btn-gradient rounded-pill" type="submit">Save</button>
+                      <button class="btn btn-sm btn-outline-secondary rounded-pill" type="button" data-cancel>Cancel</button>
+                    </div>
+                  </div>
+                </form>
+
+                <div class="d-flex align-items-center gap-2 mt-2">
+                  <button class="btn btn-sm btn-outline-primary rounded-pill" data-edit>Edit</button>
+                  <button class="btn btn-sm btn-outline-danger rounded-pill" data-del>Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function render() {
+      statUpdate();
+      const filtered = applyFilters(tasks);
+      const sorted = sortTasks(filtered);
+      const list = $("#list");
+      list.innerHTML = sorted.map(taskCard).join("");
+
+      $("#empty").classList.toggle("d-none", sorted.length > 0);
+
+      // Wire up new controls
+      sorted.forEach(t => {
+        $("#chk-" + t.id)?.addEventListener("change", (e) => {
+          t.completed = e.target.checked;
+          saveTasks(); render();
+          showToast(t.completed ? "Task completed" : "Marked active");
+        });
+        const wrap = $("#wrap-" + t.id);
+        const editForm = wrap.querySelector("#edit-" + t.id);
+        const editBtn = wrap.querySelector("[data-edit]");
+        const delBtn = wrap.querySelector("[data-del]");
+        const cancelBtn = wrap.querySelector("[data-cancel]");
+
+        editBtn.addEventListener("click", () => {
+          editForm.classList.toggle("d-none");
+        });
+        cancelBtn.addEventListener("click", () => {
+          editForm.classList.add("d-none");
+        });
+        editForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const nt = $("#et-" + t.id).value.trim();
+          const nd = $("#ed-" + t.id).value.trim();
+          const np = $("#ep-" + t.id).value;
+          const nu = $("#eu-" + t.id).value;
+          if (!nt || !nu) { showToast("Title and Due date are required"); return; }
+          Object.assign(t, { title: nt, description: nd, priority: np, due_date: nu });
+          saveTasks(); render();
+          showToast("Task updated");
+        });
+        delBtn.addEventListener("click", () => {
+          if (!confirm("Delete this task?")) return;
+          tasks = tasks.filter(x => x.id !== t.id);
+          saveTasks(); render();
+          showToast("Task deleted");
+        });
+      });
+    }
+
+    // Escaping helpers
+    function escapeHtml(s) {
+      return (s || "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[m]));
+    }
+    function escapeAttr(s) { return escapeHtml(s).replace(/"/g, "&quot;"); }
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
+

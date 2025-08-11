@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude 4 Sonnet - Model Self-Evaluation & Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .top-nav {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .hero-header {
+            background: var(--bg-gradient);
+            color: white;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .card-custom {
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .range-container {
+            position: relative;
+        }
+
+        .range-value {
+            position: absolute;
+            top: -30px;
+            right: 0;
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .range-input {
+            background: linear-gradient(to right, var(--primary) 0%, var(--secondary) 100%);
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+            appearance: none;
+        }
+
+        .range-input::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        .average-badge {
+            background: linear-gradient(135deg, var(--warning), #ff6b6b);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 25px;
+            transition: all 0.3s;
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+            color: white;
+        }
+
+        .report-section {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .copy-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin: 0 5px;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #059669;
+            transform: scale(1.05);
+        }
+
+        .criteria-row {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+
+        .criteria-row:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+        }
+
+        .how-to-use {
+            background: linear-gradient(135deg, #e0f2fe, #b3e5fc);
+            border: 1px solid #81d4fa;
+            border-radius: 12px;
+            padding: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="top-nav py-3">
+        <div class="container">
+            <div class="d-flex justify-content-end">
+                <a href="task-manager-claude4.html" class="btn btn-outline-primary rounded-pill">
+                    📋 Open Claude4 Task Manager
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <!-- Hero Header -->
+        <header class="hero-header p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h1 class="h3 mb-2">🤖 Claude 4 Sonnet - Model Self-Evaluation & Report</h1>
+                    <p class="mb-0 opacity-90">Assess my coding capabilities across seven key criteria - Created by Claude 4 Sonnet</p>
+                </div>
+                <div class="average-badge" id="averageBadge">
+                    Average: 0%
+                </div>
+            </div>
+        </header>
+
+        <!-- How to Use -->
+        <div class="how-to-use mb-4">
+            <h5 class="mb-2">📖 How to Use</h5>
+            <ul class="mb-0 small">
+                <li>Fill in your model identity information below</li>
+                <li>Rate yourself on each criterion using the sliders (0-100%)</li>
+                <li>Provide brief justifications for your scores</li>
+                <li>Watch the average update automatically</li>
+                <li>Click "Save Report" to generate a formatted summary</li>
+                <li>Export your report as Markdown or HTML</li>
+                <li><strong>Created by:</strong> Claude 4 Sonnet (Anthropic AI Assistant)</li>
+            </ul>
+        </div>
+
+        <!-- Model Identity -->
+        <div class="card-custom mb-4">
+            <div class="card-body">
+                <h4 class="card-title mb-3">🔍 Model Identity</h4>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="modelName" class="form-label fw-semibold">Model Name</label>
+                        <input type="text" class="form-control" id="modelName" value="Claude 4 Sonnet">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="modelVariant" class="form-label fw-semibold">Version/Variant</label>
+                        <input type="text" class="form-control" id="modelVariant" value="Latest">
+                    </div>
+                    <div class="col-12">
+                        <label for="capabilities" class="form-label fw-semibold">Capabilities Statement</label>
+                        <textarea class="form-control" id="capabilities" rows="3">Claude 4 Sonnet - Advanced AI assistant by Anthropic, specialized in code generation, analysis, and problem-solving. Excels at producing clean, maintainable code with comprehensive explanations. Strong focus on best practices, security, and user experience design.</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Criteria Evaluation -->
+        <div class="card-custom mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="card-title mb-0">📊 Seven Evaluation Criteria</h4>
+                    <button class="btn-gradient" id="saveReportBtn">
+                        💾 Save Report
+                    </button>
+                </div>
+
+                <!-- Criteria 1: Code Correctness -->
+                <div class="criteria-row">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold mb-2">1) Code Correctness</label>
+                            <div class="range-container">
+                                <input type="range" class="form-range range-input" min="0" max="100" value="92" 
+                                       id="correctness" data-criteria="correctness">
+                                <div class="range-value" id="correctnessValue">92%</div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="2" id="correctnessExplanation" 
+                                      placeholder="Explain your rating...">Consistently produces syntactically correct and logically sound code with proper error handling and edge case consideration.</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Criteria 2: Reasoning Ability -->
+                <div class="criteria-row">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold mb-2">2) Reasoning Ability</label>
+                            <div class="range-container">
+                                <input type="range" class="form-range range-input" min="0" max="100" value="89" 
+                                       id="reasoning" data-criteria="reasoning">
+                                <div class="range-value" id="reasoningValue">89%</div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="2" id="reasoningExplanation" 
+                                      placeholder="Explain your rating...">Strong analytical skills for breaking down complex problems into manageable components and identifying optimal solution approaches.</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Criteria 3: Creativity -->
+                <div class="criteria-row">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold mb-2">3) Creativity in Problem Solving</label>
+                            <div class="range-container">
+                                <input type="range" class="form-range range-input" min="0" max="100" value="85" 
+                                       id="creativity" data-criteria="creativity">
+                                <div class="range-value" id="creativityValue">85%</div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="2" id="creativityExplanation" 
+                                      placeholder="Explain your rating...">Demonstrates innovative approaches to challenges and can suggest multiple solution paths with unique architectural patterns.</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Criteria 4: Optimization -->
+                <div class="criteria-row">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold mb-2">4) Code Optimization & Efficiency</label>
+                            <div class="range-container">
+                                <input type="range" class="form-range range-input" min="0" max="100" value="87" 
+                                       id="optimization" data-criteria="optimization">
+                                <div class="range-value" id="optimizationValue">87%</div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="2" id="optimizationExplanation" 
+                                      placeholder="Explain your rating...">Produces efficient algorithms with good time/space complexity awareness and performance optimization techniques.</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Criteria 5: Clarity -->
+                <div class="criteria-row">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold mb-2">5) Clarity of Explanation</label>
+                            <div class="range-container">
+                                <input type="range" class="form-range range-input" min="0" max="100" value="94" 
+                                       id="clarity" data-criteria="clarity">
+                                <div class="range-value" id="clarityValue">94%</div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="2" id="clarityExplanation" 
+                                      placeholder="Explain your rating...">Provides clear, step-by-step explanations with comprehensive comments and documentation that aid understanding.</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Criteria 6: Design Beauty -->
+                <div class="criteria-row">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold mb-2">6) Design Beauty</label>
+                            <div class="range-container">
+                                <input type="range" class="form-range range-input" min="0" max="100" value="88" 
+                                       id="design" data-criteria="design">
+                                <div class="range-value" id="designValue">88%</div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="2" id="designExplanation" 
+                                      placeholder="Explain your rating...">Creates visually appealing interfaces with attention to typography, spacing, color theory, and modern design principles.</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Criteria 7: User-Friendly -->
+                <div class="criteria-row">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold mb-2">7) User-Friendly</label>
+                            <div class="range-container">
+                                <input type="range" class="form-range range-input" min="0" max="100" value="91" 
+                                       id="userfriendly" data-criteria="userfriendly">
+                                <div class="range-value" id="userfriendlyValue">91%</div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <textarea class="form-control" rows="2" id="userfriendlyExplanation" 
+                                      placeholder="Explain your rating...">Prioritizes accessibility, intuitive navigation, responsive design, and seamless user experiences across all platforms.</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generated Report Section -->
+        <div id="reportSection" class="d-none">
+            <div class="card-custom">
+                <div class="card-body">
+                    <h4 class="card-title mb-3">📋 Generated Report</h4>
+                    <div class="d-flex gap-2 mb-3">
+                        <button class="copy-btn" id="copyMarkdown">📄 Copy as Markdown</button>
+                        <button class="copy-btn" id="copyHTML">🌐 Copy as HTML</button>
+                    </div>
+                    <div class="report-section" id="reportContent">
+                        <!-- Report content will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            const criteriaSliders = document.querySelectorAll('input[type="range"]');
+            const averageBadge = document.getElementById('averageBadge');
+            const saveReportBtn = document.getElementById('saveReportBtn');
+            const reportSection = document.getElementById('reportSection');
+            const reportContent = document.getElementById('reportContent');
+            const copyMarkdownBtn = document.getElementById('copyMarkdown');
+            const copyHTMLBtn = document.getElementById('copyHTML');
+
+            // Update range values and calculate average
+            function updateValues() {
+                let total = 0;
+                let count = 0;
+
+                criteriaSliders.forEach(slider => {
+                    const value = parseInt(slider.value);
+                    const valueDisplay = document.getElementById(slider.id + 'Value');
+                    if (valueDisplay) {
+                        valueDisplay.textContent = value + '%';
+                    }
+                    total += value;
+                    count++;
+                });
+
+                const average = Math.round(total / count);
+                averageBadge.textContent = `Average: ${average}%`;
+            }
+
+            // Add event listeners to all sliders
+            criteriaSliders.forEach(slider => {
+                slider.addEventListener('input', updateValues);
+            });
+
+            // Save report functionality
+            saveReportBtn.addEventListener('click', function() {
+                generateReport();
+                reportSection.classList.remove('d-none');
+                reportSection.scrollIntoView({ behavior: 'smooth' });
+            });
+
+            // Generate report content
+            function generateReport() {
+                const modelName = document.getElementById('modelName').value;
+                const modelVariant = document.getElementById('modelVariant').value;
+                const capabilities = document.getElementById('capabilities').value;
+                const timestamp = new Date().toLocaleString();
+
+                let total = 0;
+                const criteria = [
+                    { name: 'Code Correctness', id: 'correctness' },
+                    { name: 'Reasoning Ability', id: 'reasoning' },
+                    { name: 'Creativity in Problem Solving', id: 'creativity' },
+                    { name: 'Code Optimization & Efficiency', id: 'optimization' },
+                    { name: 'Clarity of Explanation', id: 'clarity' },
+                    { name: 'Design Beauty', id: 'design' },
+                    { name: 'User-Friendly', id: 'userfriendly' }
+                ];
+
+                let reportHTML = `
+                    <h5>🤖 Claude 4 Sonnet - Model Self-Evaluation Report</h5>
+                    <p><strong>Generated:</strong> ${timestamp}</p>
+                    
+                    <h6>Model Information</h6>
+                    <ul>
+                        <li><strong>Name:</strong> ${modelName}</li>
+                        <li><strong>Version:</strong> ${modelVariant}</li>
+                        <li><strong>Capabilities:</strong> ${capabilities}</li>
+                    </ul>
+                    
+                    <h6>Evaluation Results</h6>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Criterion</th>
+                                <th>Score</th>
+                                <th>Justification</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                criteria.forEach(criterion => {
+                    const score = document.getElementById(criterion.id).value;
+                    const explanation = document.getElementById(criterion.id + 'Explanation').value;
+                    total += parseInt(score);
+
+                    reportHTML += `
+                        <tr>
+                            <td>${criterion.name}</td>
+                            <td><strong>${score}%</strong></td>
+                            <td>${explanation}</td>
+                        </tr>
+                    `;
+                });
+
+                const average = Math.round(total / criteria.length);
+
+                reportHTML += `
+                        </tbody>
+                    </table>
+                    
+                    <div class="alert alert-primary">
+                        <strong>Overall Average: ${average}%</strong>
+                    </div>
+                `;
+
+                reportContent.innerHTML = reportHTML;
+            }
+
+            // Copy as Markdown
+            copyMarkdownBtn.addEventListener('click', function() {
+                const markdown = generateMarkdownReport();
+                copyToClipboard(markdown, 'Markdown report copied to clipboard!');
+            });
+
+            // Copy as HTML
+            copyHTMLBtn.addEventListener('click', function() {
+                const html = reportContent.innerHTML;
+                copyToClipboard(html, 'HTML report copied to clipboard!');
+            });
+
+            function generateMarkdownReport() {
+                const modelName = document.getElementById('modelName').value;
+                const modelVariant = document.getElementById('modelVariant').value;
+                const capabilities = document.getElementById('capabilities').value;
+                const timestamp = new Date().toLocaleString();
+
+                const criteria = [
+                    { name: 'Code Correctness', id: 'correctness' },
+                    { name: 'Reasoning Ability', id: 'reasoning' },
+                    { name: 'Creativity in Problem Solving', id: 'creativity' },
+                    { name: 'Code Optimization & Efficiency', id: 'optimization' },
+                    { name: 'Clarity of Explanation', id: 'clarity' },
+                    { name: 'Design Beauty', id: 'design' },
+                    { name: 'User-Friendly', id: 'userfriendly' }
+                ];
+
+                let markdown = `# 🤖 Claude 4 Sonnet - Model Self-Evaluation Report
+
+**Generated:** ${timestamp}
+
+## Model Information
+- **Name:** ${modelName}
+- **Version:** ${modelVariant}
+- **Capabilities:** ${capabilities}
+
+## Evaluation Results
+
+| Criterion | Score | Justification |
+|-----------|-------|---------------|
+`;
+
+                let total = 0;
+                criteria.forEach(criterion => {
+                    const score = document.getElementById(criterion.id).value;
+                    const explanation = document.getElementById(criterion.id + 'Explanation').value;
+                    total += parseInt(score);
+                    markdown += `| ${criterion.name} | **${score}%** | ${explanation} |\n`;
+                });
+
+                const average = Math.round(total / criteria.length);
+                markdown += `\n**Overall Average: ${average}%**\n`;
+
+                return markdown;
+            }
+
+            function copyToClipboard(text, message) {
+                navigator.clipboard.writeText(text).then(function() {
+                    showToast(message);
+                });
+            }
+
+            function showToast(message) {
+                // Simple toast notification
+                const toast = document.createElement('div');
+                toast.className = 'position-fixed top-0 end-0 p-3';
+                toast.style.zIndex = '9999';
+                toast.innerHTML = `
+                    <div class="toast show" role="alert">
+                        <div class="toast-body bg-success text-white rounded">
+                            ${message}
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            }
+
+            // Initialize values on load
+            updateValues();
+        });
+    </script>
+</body>
+</html>

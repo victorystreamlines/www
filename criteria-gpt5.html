@@ -1,0 +1,365 @@
+<!-- criteria-gpt5.html — OpenAI GPT-5 Model Self-Evaluation & Report -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>OpenAI GPT-5 — Model Self-Evaluation & Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap CSS (CSS CDN only) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --brand: #4f46e5;
+      --brand-2: #06b6d4;
+      --bg: #f6f8fb;
+    }
+    body { background: var(--bg); }
+    .app-card {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.06);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.06);
+    }
+    .soft {
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+      color: #fff;
+      border-radius: 14px;
+      padding: 1.25rem 1.1rem;
+    }
+    .top-switch {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: linear-gradient(180deg, rgba(246,248,251,1) 70%, rgba(246,248,251,0) 100%);
+      padding: .75rem 0 .25rem;
+    }
+    .range-wrap { position: relative; }
+    .range-value {
+      position: absolute; right: 0; top: -28px;
+      font-size: .85rem; font-weight: 700; color: #374151;
+      background: #eef2ff; border-radius: 12px; padding: 2px 8px;
+      border: 1px solid #c7d2fe;
+    }
+    .avg-pill {
+      font-weight: 800; letter-spacing: .2px;
+      background: linear-gradient(135deg, #ffe29f 0%, #ffa99f 100%);
+      border: none; color: #222;
+    }
+    .btn-gradient {
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      border: none; color: #fff;
+    }
+    .btn-gradient:hover { filter: brightness(0.95); }
+    .copy-badge { cursor: pointer; }
+    .report-block {
+      border-left: 4px solid var(--brand);
+      padding-left: 1rem;
+      background: #fcfcff;
+    }
+    .muted-hint { color: #6b7280; font-size: .95rem; }
+    .hdr-mini {
+      font-size: .85rem; opacity: .9;
+    }
+    .brand-note {
+      font-size: .85rem; color: #0ea5e9; background: #e0f2fe;
+      padding: 4px 10px; border-radius: 999px; border: 1px solid #bae6fd;
+    }
+  </style>
+  </head>
+<body>
+  <div class="container py-3 top-switch">
+    <div class="d-flex justify-content-between align-items-center">
+      <span class="brand-note">GPT‑5 Edition by OpenAI</span>
+      <a href="task-manager-gpt5.html" class="btn btn-sm btn-outline-primary rounded-pill">
+        Open Task Manager
+      </a>
+    </div>
+  </div>
+
+  <main class="container pb-5" aria-labelledby="pageTitle">
+    <header class="soft mb-4">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+          <div class="hdr-mini">OpenAI GPT‑5</div>
+          <h1 id="pageTitle" class="h3 mb-1">Model Self-Evaluation & Report</h1>
+          <p class="mb-0">Assess seven criteria, see live average, then save and export your report.</p>
+        </div>
+        <span class="badge avg-pill px-3 py-2 fs-6" id="avgBadge" aria-live="polite">Average: 0%</span>
+      </div>
+    </header>
+
+    <section class="app-card p-4 mb-4" aria-labelledby="howTo">
+      <h2 id="howTo" class="h5 mb-2">How to use</h2>
+      <ul class="mb-0 muted-hint">
+        <li>Fill “Model Identity”.</li>
+        <li>Give each criterion a score (0–100) and a short justification.</li>
+        <li>Average updates live. Click “Save Report” to generate a summary below.</li>
+        <li>Use “Copy as Markdown/HTML” to export.</li>
+        <li class="mt-1"><strong>Edition:</strong> This page is branded for GPT‑5 for fair model comparison.</li>
+      </ul>
+    </section>
+
+    <section class="app-card p-4 mb-4" aria-labelledby="modelIdentity">
+      <h2 id="modelIdentity" class="h5 mb-3">Model Identity</h2>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="modelName">Model Name</label>
+          <input id="modelName" class="form-control" value="OpenAI GPT‑5" />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="modelVariant">Version/Variant</label>
+          <input id="modelVariant" class="form-control" value="standard" />
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="modelCaps">Capabilities (2–4 sentences)</label>
+          <textarea id="modelCaps" class="form-control" rows="3">OpenAI GPT‑5 — a coding-focused large language model built to generate, refactor, and reason about software. Strong emphasis on clarity, maintainability, and testability with accessible explanations. Prioritizes performance, a11y, and pragmatic developer experience. Excellent for rapid prototyping and production‑grade guidance.</textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="app-card p-4" aria-labelledby="criteria">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 id="criteria" class="h5 mb-0">Seven Criteria</h2>
+        <button id="saveBtn" class="btn btn-gradient rounded-pill">Save Report</button>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-12">
+          <div class="row gy-2 align-items-center">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">1) Code correctness</label>
+              <div class="range-wrap">
+                <input type="range" min="0" max="100" value="90" class="form-range crit-input" data-name="Code correctness" id="crit-correct" aria-label="Code correctness (%)" />
+                <div class="range-value" data-for="crit-correct">90%</div>
+              </div>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label visually-hidden">Explanation</label>
+              <textarea class="form-control crit-expl" rows="2" placeholder="Brief justification...">Adheres to specs, covers edge cases, and structures errors defensively.</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="row gy-2 align-items-center">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">2) Reasoning ability</label>
+              <div class="range-wrap">
+                <input type="range" min="0" max="100" value="88" class="form-range crit-input" data-name="Reasoning ability" id="crit-reason" aria-label="Reasoning ability (%)" />
+                <div class="range-value" data-for="crit-reason">88%</div>
+              </div>
+            </div>
+            <div class="col-md-8">
+              <textarea class="form-control crit-expl" rows="2" placeholder="Brief justification...">Breaks down complexity, validates assumptions, and checks invariants.</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="row gy-2 align-items-center">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">3) Creativity in problem solving</label>
+              <div class="range-wrap">
+                <input type="range" min="0" max="100" value="85" class="form-range crit-input" data-name="Creativity in problem solving" id="crit-creative" aria-label="Creativity in problem solving (%)" />
+                <div class="range-value" data-for="crit-creative">85%</div>
+              </div>
+            </div>
+            <div class="col-md-8">
+              <textarea class="form-control crit-expl" rows="2" placeholder="Brief justification...">Proposes alternative approaches and pragmatic trade‑offs.</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="row gy-2 align-items-center">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">4) Code optimization and efficiency</label>
+              <div class="range-wrap">
+                <input type="range" min="0" max="100" value="84" class="form-range crit-input" data-name="Code optimization and efficiency" id="crit-opt" aria-label="Code optimization and efficiency (%)" />
+                <div class="range-value" data-for="crit-opt">84%</div>
+              </div>
+            </div>
+            <div class="col-md-8">
+              <textarea class="form-control crit-expl" rows="2" placeholder="Brief justification...">Chooses efficient data structures and reduces unnecessary work.</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="row gy-2 align-items-center">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">5) Clarity of explanation</label>
+              <div class="range-wrap">
+                <input type="range" min="0" max="100" value="93" class="form-range crit-input" data-name="Clarity of explanation" id="crit-clarity" aria-label="Clarity of explanation (%)" />
+                <div class="range-value" data-for="crit-clarity">93%</div>
+              </div>
+            </div>
+            <div class="col-md-8">
+              <textarea class="form-control crit-expl" rows="2" placeholder="Brief justification...">Explains decisions, risks, and alternatives succinctly.</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="row gy-2 align-items-center">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">6) Design beauty</label>
+              <div class="range-wrap">
+                <input type="range" min="0" max="100" value="89" class="form-range crit-input" data-name="Design beauty" id="crit-design" aria-label="Design beauty (%)" />
+                <div class="range-value" data-for="crit-design">89%</div>
+              </div>
+            </div>
+            <div class="col-md-8">
+              <textarea class="form-control crit-expl" rows="2" placeholder="Brief justification...">Focus on hierarchy, spacing, contrast, and accessibility.</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="row gy-2 align-items-center">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">7) User-friendly</label>
+              <div class="range-wrap">
+                <input type="range" min="0" max="100" value="91" class="form-range crit-input" data-name="User-friendly" id="crit-ux" aria-label="User-friendly (%)" />
+                <div class="range-value" data-for="crit-ux">91%</div>
+              </div>
+            </div>
+            <div class="col-md-8">
+              <textarea class="form-control crit-expl" rows="2" placeholder="Brief justification...">Keyboard support, predictable focus, and clear affordances.</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="reportWrap" class="app-card p-4 mt-4 d-none" aria-live="polite">
+      <h2 class="h5 mb-3">Generated Report</h2>
+      <div class="d-flex gap-2 mb-3">
+        <button class="btn btn-sm btn-success rounded-pill" id="copyMarkdown">Copy as Markdown</button>
+        <button class="btn btn-sm btn-outline-primary rounded-pill" id="copyHTML">Copy as HTML</button>
+      </div>
+      <div id="reportContent" class="report-block"></div>
+    </section>
+  </main>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const $$ = s => Array.from(document.querySelectorAll(s));
+
+    function updateRangeBadges() {
+      $$(".crit-input").forEach(inp => {
+        const tag = document.querySelector(`.range-value[data-for='${inp.id}']`);
+        if (tag) tag.textContent = `${inp.value}%`;
+      });
+      updateAverage();
+    }
+
+    function updateAverage() {
+      const vals = $$(".crit-input").map(i => Number(i.value));
+      const avg = vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : 0;
+      $("#avgBadge").textContent = `Average: ${avg}%`;
+    }
+
+    function generateReportHTML() {
+      const modelName = $("#modelName").value.trim();
+      const modelVariant = $("#modelVariant").value.trim();
+      const capabilities = $("#modelCaps").value.trim();
+      const timestamp = new Date().toLocaleString();
+
+      const rows = $$(".crit-input").map((inp, idx) => {
+        const name = inp.dataset.name;
+        const score = inp.value;
+        const explanation = $$(".crit-expl")[idx].value.trim();
+        return { name, score, explanation };
+      });
+
+      const overall = Math.round(rows.reduce((s,r)=>s+Number(r.score),0) / rows.length);
+
+      return `
+        <h6 class="mb-2">🤖 OpenAI GPT‑5 — Model Self‑Evaluation Report</h6>
+        <p class="mb-2"><strong>Generated:</strong> ${timestamp}</p>
+
+        <h6>Model Information</h6>
+        <ul>
+          <li><strong>Name:</strong> ${modelName || "OpenAI GPT‑5"}</li>
+          <li><strong>Version:</strong> ${modelVariant || "standard"}</li>
+          <li><strong>Capabilities:</strong> ${capabilities || "N/A"}</li>
+        </ul>
+
+        <h6>Evaluation Results</h6>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead><tr><th>Criterion</th><th>Score</th><th>Justification</th></tr></thead>
+            <tbody>
+              ${rows.map(r => `
+                <tr>
+                  <td>${r.name}</td>
+                  <td><strong>${r.score}%</strong></td>
+                  <td>${r.explanation || "—"}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="alert alert-primary my-2"><strong>Overall Average: ${overall}%</strong></div>
+        <div class="text-muted small">Edition: GPT‑5 (OpenAI) — Built for model comparison showcases.</div>
+      `;
+    }
+
+    function generateMarkdownReport() {
+      const modelName = $("#modelName").value.trim() || "OpenAI GPT‑5";
+      const modelVariant = $("#modelVariant").value.trim() || "standard";
+      const capabilities = $("#modelCaps").value.trim() || "N/A";
+      const timestamp = new Date().toLocaleString();
+      const rows = $$(".crit-input").map((inp, idx) => {
+        const name = inp.dataset.name;
+        const score = inp.value;
+        const explanation = $$(".crit-expl")[idx].value.trim();
+        return { name, score, explanation };
+      });
+      const overall = Math.round(rows.reduce((s,r)=>s+Number(r.score),0) / rows.length);
+
+      let md = `# 🤖 OpenAI GPT‑5 — Model Self‑Evaluation Report
+
+**Generated:** ${timestamp}
+
+## Model Information
+- **Name:** ${modelName}
+- **Version:** ${modelVariant}
+- **Capabilities:** ${capabilities}
+
+## Evaluation Results
+
+| Criterion | Score | Justification |
+|-----------|-------|---------------|
+`;
+      rows.forEach(r => {
+        md += `| ${r.name} | **${r.score}%** | ${r.explanation || "-"} |\n`;
+      });
+      md += `
+**Overall Average: ${overall}%**
+
+> Edition: GPT‑5 (OpenAI) — Built for model comparison showcases.
+`;
+      return md;
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).catch(()=>{});
+    }
+
+    // Wire events
+    $$(".crit-input").forEach(inp => inp.addEventListener("input", updateRangeBadges));
+    updateRangeBadges();
+
+    $("#saveBtn").addEventListener("click", () => {
+      $("#reportContent").innerHTML = generateReportHTML();
+      $("#reportWrap").classList.remove("d-none");
+      $("#reportWrap").scrollIntoView({ behavior: "smooth" });
+    });
+
+    $("#copyMarkdown").addEventListener("click", () => {
+      copyToClipboard(generateMarkdownReport());
+    });
+    $("#copyHTML").addEventListener("click", () => {
+      copyToClipboard($("#reportContent").innerHTML);
+    });
+  </script>
+</body>
+</html>
+
