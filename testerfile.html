@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Learning Course - HTML & CSS Basics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .progress-container {
+            background: rgba(255, 255, 255, 0.2);
+            height: 6px;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff87, #60efff);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 3px;
+        }
+
+        .progress-text {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .step {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            border-left: 6px solid #ff6b6b;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.3s ease, transform 0.3s ease;
+        }
+
+        .step.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .step:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .step-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .step-number {
+            background: rgba(255, 255, 255, 0.2);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .step-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .step-body {
+            padding: 30px;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .info-box::before {
+            content: "ℹ️";
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fdcb6e, #e17055);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .warning-box::before {
+            content: "⚠️";
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, #00b894, #55a3ff);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .success-box::before {
+            content: "✅";
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #e74c3c;
+            font-family: 'Courier New', monospace;
+            position: relative;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .copy-btn.copied {
+            background: #27ae60;
+        }
+
+        .practice-area {
+            border: 2px dashed #bdc3c7;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .practice-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .practice-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .validation-feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+
+        .validation-feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .validation-feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .character-feedback {
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-top: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+
+        .char-correct {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .char-incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .char-remaining {
+            background-color: #e9ecef;
+            color: #6c757d;
+        }
+
+        .completion-badge {
+            display: inline-block;
+            background: linear-gradient(45deg, #00ff87, #60efff);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 15px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s ease;
+        }
+
+        .completion-badge.show {
+            opacity: 1;
+            transform: scale(1);
+            animation: pulse 2s infinite;
+        }
+
+        .accuracy-display {
+            margin-top: 10px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .accuracy-high {
+            color: #28a745;
+        }
+
+        .accuracy-medium {
+            color: #ffc107;
+        }
+
+        .accuracy-low {
+            color: #dc3545;
+        }
+
+        .footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .footer h3 {
+            margin-bottom: 10px;
+            color: #3498db;
+        }
+
+        .footer p {
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+
+            .step-body {
+                padding: 20px;
+            }
+
+            .step-header {
+                padding: 15px 20px;
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+            .step-title {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎓 Interactive HTML & CSS Learning Course</h1>
+            <p>Master the fundamentals of web development step by step</p>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="progress-text" id="progressText">Progress: 0 of 4 steps completed</div>
+        </header>
+
+        <main class="main-content">
+            <!-- Step 1: HTML Document Structure -->
+            <div class="step" data-step="1">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div class="step-title">HTML Document Structure</div>
+                </div>
+                <div class="step-body">
+                    <div class="info-box">
+                        🎯 <strong>Goal:</strong> Learn the basic structure of an HTML document.
+                    </div>
+
+                    <p>Every HTML document starts with this structure:</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyToClipboard(this, '&lt;!DOCTYPE html&gt;\n&lt;html&gt;\n&lt;head&gt;\n    &lt;title&gt;My Page&lt;/title&gt;\n&lt;/head&gt;\n&lt;body&gt;\n    &lt;h1&gt;Hello World!&lt;/h1&gt;\n&lt;/body&gt;\n&lt;/html&gt;')">Copy</button>
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;My Page&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;Hello World!&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+                    </div>
+
+                    <div class="practice-area">
+                        <h4>🏃‍♂️ Practice Time!</h4>
+                        <p>Type the HTML structure above:</p>
+                        <textarea class="practice-input" 
+                                  placeholder="Type the HTML code here..." 
+                                  data-target="<!DOCTYPE html>
+<html>
+<head>
+    <title>My Page</title>
+</head>
+<body>
+    <h1>Hello World!</h1>
+</body>
+</html>"
+                                  oninput="validateInput(this, 1)"></textarea>
+                        <div class="character-feedback" id="feedback-1"></div>
+                        <div class="accuracy-display" id="accuracy-1"></div>
+                        <div class="completion-badge" id="badge-1">Step 1 Complete! 🎉</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: CSS Basics -->
+            <div class="step" data-step="2">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-title">CSS Fundamentals</div>
+                </div>
+                <div class="step-body">
+                    <div class="info-box">
+                        🎯 <strong>Goal:</strong> Learn basic CSS syntax and styling.
+                    </div>
+
+                    <p>CSS is used to style HTML elements:</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyToClipboard(this, 'body {\n    font-family: Arial;\n    background: #f0f0f0;\n    margin: 0;\n}')">Copy</button>
+body {
+    font-family: Arial;
+    background: #f0f0f0;
+    margin: 0;
+}
+                    </div>
+
+                    <div class="practice-area">
+                        <h4>🎨 Style Practice!</h4>
+                        <p>Create the CSS rule above:</p>
+                        <textarea class="practice-input" 
+                                  placeholder="Type the CSS rule here..." 
+                                  data-target="body {
+    font-family: Arial;
+    background: #f0f0f0;
+    margin: 0;
+}"
+                                  oninput="validateInput(this, 2)"></textarea>
+                        <div class="character-feedback" id="feedback-2"></div>
+                        <div class="accuracy-display" id="accuracy-2"></div>
+                        <div class="completion-badge" id="badge-2">Step 2 Complete! 🎨</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: CSS Selectors -->
+            <div class="step" data-step="3">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div class="step-title">CSS Selectors</div>
+                </div>
+                <div class="step-body">
+                    <div class="info-box">
+                        🎯 <strong>Goal:</strong> Learn different CSS selector types.
+                    </div>
+
+                    <p>CSS selectors target different elements:</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyToClipboard(this, 'h1 {\n    color: blue;\n}\n\n.container {\n    width: 100%;\n}')">Copy</button>
+h1 {
+    color: blue;
+}
+
+.container {
+    width: 100%;
+}
+                    </div>
+
+                    <div class="practice-area">
+                        <h4>🎯 Selector Practice!</h4>
+                        <p>Write the CSS selectors above:</p>
+                        <textarea class="practice-input" 
+                                  placeholder="Type the CSS selectors here..." 
+                                  data-target="h1 {
+    color: blue;
+}
+
+.container {
+    width: 100%;
+}"
+                                  oninput="validateInput(this, 3)"></textarea>
+                        <div class="character-feedback" id="feedback-3"></div>
+                        <div class="accuracy-display" id="accuracy-3"></div>
+                        <div class="completion-badge" id="badge-3">Step 3 Complete! 🎯</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Box Model -->
+            <div class="step" data-step="4">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <div class="step-title">CSS Box Model</div>
+                </div>
+                <div class="step-body">
+                    <div class="info-box">
+                        🎯 <strong>Goal:</strong> Understand margin, padding, and border.
+                    </div>
+
+                    <p>The box model controls spacing:</p>
+
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyToClipboard(this, '.box {\n    margin: 20px;\n    padding: 15px;\n    border: 2px solid black;\n}')">Copy</button>
+.box {
+    margin: 20px;
+    padding: 15px;
+    border: 2px solid black;
+}
+                    </div>
+
+                    <div class="practice-area">
+                        <h4>📦 Box Model Practice!</h4>
+                        <p>Create the box model CSS:</p>
+                        <textarea class="practice-input" 
+                                  placeholder="Type the box model CSS here..." 
+                                  data-target=".box {
+    margin: 20px;
+    padding: 15px;
+    border: 2px solid black;
+}"
+                                  oninput="validateInput(this, 4)"></textarea>
+                        <div class="character-feedback" id="feedback-4"></div>
+                        <div class="accuracy-display" id="accuracy-4"></div>
+                        <div class="completion-badge" id="badge-4">Step 4 Complete! 📦</div>
+                    </div>
+
+                    <div class="success-box">
+                        🎉 <strong>Congratulations!</strong> You've completed the HTML & CSS fundamentals!
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <h3>🏆 Course Complete!</h3>
+            <p>You've successfully learned HTML and CSS fundamentals. Keep practicing!</p>
+        </footer>
+    </div>
+
+    <script>
+        const completedSteps = new Set();
+        const totalSteps = 4;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            animateStepsOnLoad();
+            updateProgress();
+        });
+
+        function animateStepsOnLoad() {
+            const steps = document.querySelectorAll('.step');
+            steps.forEach((step, index) => {
+                setTimeout(() => {
+                    step.classList.add('visible');
+                }, index * 200);
+            });
+        }
+
+        function validateInput(input, stepNumber) {
+            const target = input.getAttribute('data-target').trim();
+            const userInput = input.value;
+            const feedbackElement = document.getElementById(`feedback-${stepNumber}`);
+            const accuracyElement = document.getElementById(`accuracy-${stepNumber}`);
+            
+            let feedbackHTML = '';
+            let correctChars = 0;
+            
+            for (let i = 0; i < Math.max(target.length, userInput.length); i++) {
+                const targetChar = target[i] || '';
+                const userChar = userInput[i] || '';
+                
+                if (i < userInput.length) {
+                    if (userChar === targetChar) {
+                        feedbackHTML += `<span class="char-correct">${escapeHtml(userChar)}</span>`;
+                        correctChars++;
+                    } else {
+                        feedbackHTML += `<span class="char-incorrect">${escapeHtml(userChar)}</span>`;
+                    }
+                } else if (i < target.length) {
+                    feedbackHTML += `<span class="char-remaining">${escapeHtml(targetChar)}</span>`;
+                }
+            }
+            
+            feedbackElement.innerHTML = feedbackHTML;
+            
+            const accuracy = target.length > 0 ? Math.round((correctChars / target.length) * 100) : 0;
+            accuracyElement.textContent = `Accuracy: ${accuracy}%`;
+            
+            accuracyElement.className = 'accuracy-display';
+            if (accuracy >= 90) {
+                accuracyElement.classList.add('accuracy-high');
+            } else if (accuracy >= 70) {
+                accuracyElement.classList.add('accuracy-medium');
+            } else {
+                accuracyElement.classList.add('accuracy-low');
+            }
+            
+            if (userInput.trim() === target) {
+                markStepComplete(stepNumber);
+            }
+        }
+
+        function markStepComplete(stepNumber) {
+            if (!completedSteps.has(stepNumber)) {
+                completedSteps.add(stepNumber);
+                
+                const badge = document.getElementById(`badge-${stepNumber}`);
+                badge.classList.add('show');
+                
+                updateProgress();
+                
+                if (completedSteps.size === totalSteps) {
+                    setTimeout(() => {
+                        alert('🎉 Congratulations! You completed the HTML & CSS course!');
+                    }, 500);
+                }
+            }
+        }
+
+        function updateProgress() {
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const progress = (completedSteps.size / totalSteps) * 100;
+            
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `Progress: ${completedSteps.size} of ${totalSteps} steps completed`;
+        }
+
+        function copyToClipboard(button, text) {
+            const decodedText = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+            
+            navigator.clipboard.writeText(decodedText).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(() => {
+                const textArea = document.createElement('textarea');
+                textArea.value = decodedText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
