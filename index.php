@@ -1,33 +1,30 @@
-<<<<<<< HEAD
+
 <?php
 $host = 'localhost';
 $dbname = 'naif10';
 $user = 'root';
 $pass = '';
 
-// Fix: Proper PDO connection with error handling and charset
 try {
-    // Establish PDO connection with UTF-8 charset for proper Arabic text support
+    // Connect to the database using PDO
     $db = new PDO("mysql:host=$host;dbname=$dbname", $user, $pass);
-    // تمت الإزالة حسب طلبك يا ابو عليوي
 
-    // Display successful connection message
-    echo "Connection successful And the database name is : " . $dbname . "<br>";
-    
-    // Query to get all databases from MySQL server
+    // Success message
+    echo "<center><h1>Connection successful. The database name is: " . $dbname . "<br></h1></center>";
+
+    // Fetch all databases from the server
     $databases = $db->query('SHOW DATABASES');
     $dblists = $databases->fetchAll(PDO::FETCH_COLUMN);
-    
-    echo "List of Databases Using PDO :<br>";
-    
-    // Fix: Add line break after each database name for proper display
+
+    // تم تصحيح السطر التالي بوضع علامات اقتباس مزدوجة حول قيمة style
+    echo "<b style='color:blue'>List of databases using PDO:<br></b>";
+    echo "<ol>";
     foreach($dblists as $dblist) {
-        echo $dblist . "<br>"; // Added <br> to display each database on new line
+        echo "<i><li>" . htmlspecialchars($dblist) . "</li></i>";
     }
+    echo "</ol>";
 
 } catch (Exception $e) {
-    // Improved error message with actual error details for debugging
-    echo "Connection failed: " . $c->getMessage();
+    // Error message with details
+    echo "Connection failed: " . $e->getMessage();
 }
-=======
->>>>>>> 72fdcb3eaf5b05be122d4c5d432b4b9abdf08d4e
