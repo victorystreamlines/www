@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <?php
 $host = 'localhost';
 $dbname = 'naif10';
@@ -28,3 +29,5 @@ try {
     // Improved error message with actual error details for debugging
     echo "Connection failed: " . $c->getMessage();
 }
+=======
+>>>>>>> 72fdcb3eaf5b05be122d4c5d432b4b9abdf08d4e
