@@ -1,36 +1,30 @@
 <?php
-// Connection parameters
 $host = 'localhost';
-$dbname = 'naif';
-$username = 'root';
-$password = '';
+$dbname = 'naif10';
+$user = 'root';
+$pass = '';
 
-// Step 1: Connect to MySQL server without specifying a database
-$dsn_no_db = "mysql:host=$host";
+// Fix: Proper PDO connection with error handling and charset
 try {
-    $db_no_db = new PDO($dsn_no_db, $username, $password);
-    // Step 2: Create the database if it does not exist
-    $sql = "CREATE DATABASE IF NOT EXISTS `$dbname`";
-    $db_no_db->exec($sql);
+    // Establish PDO connection with UTF-8 charset for proper Arabic text support
+    $db = new PDO("mysql:host=$host;dbname=$dbname", $user, $pass);
+    // تمت الإزالة حسب طلبك يا ابو عليوي
 
-    // Step 3: Connect to the newly created (or existing) database
-    $dsn = "mysql:host=$host;dbname=$dbname";
-    try {
-        $db = new PDO($dsn, $username, $password);
-        echo "Connection successful";
-    } catch (PDOException $e) {
-        echo "Connection failed: " . $e->getMessage() . "<br>";
-        echo "Retrying...<br>";
-        // Step 4: Retry the connection once more
-        try {
-            $db = new PDO($dsn, $username, $password);
-            echo "Connection successful after retry";
-        } catch (PDOException $e2) {
-            echo "Connection failed again: " . $e2->getMessage();
-            // You can terminate the script here or handle the error as needed
-        }
+    // Display successful connection message
+    echo "Connection successful And the database name is : " . $dbname . "<br>";
+    
+    // Query to get all databases from MySQL server
+    $databases = $db->query('SHOW DATABASES');
+    $dblists = $databases->fetchAll(PDO::FETCH_COLUMN);
+    
+    echo "List of Databases Using PDO :<br>";
+    
+    // Fix: Add line break after each database name for proper display
+    foreach($dblists as $dblist) {
+        echo $dblist . "<br>"; // Added <br> to display each database on new line
     }
-} catch (PDOException $e) {
-    echo "Failed to connect to the server or create the database: " . $e->getMessage();
+
+} catch (Exception $e) {
+    // Improved error message with actual error details for debugging
+    echo "Connection failed: " . $c->getMessage();
 }
-?>
