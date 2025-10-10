@@ -1,0 +1,1874 @@
+<!--
+CONTROL PANEL METADATA (Phase 2 - ENHANCED)
+LAYOUT: top-nav
+THEME: gradient-sunset
+CSS_FRAMEWORK: none
+LANGUAGE: english
+SERVER: localhost
+DATABASE_OPERATIONS: list_databases, create_database, delete_database, rename_database, connect_database, set_database_credentials
+TABLE_OPERATIONS: list_tables, create_table, edit_table, delete_table, rename_table
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Control Panel - Enhanced</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #991b1b 100%);
+            min-height: 100vh;
+            color: #fef3c7;
+            padding-bottom: 50px;
+        }
+        .top-nav {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 2px solid rgba(251, 191, 36, 0.3);
+        }
+        .nav-container { display: flex; justify-content: space-between; align-items: center; max-width: 1600px; margin: 0 auto; flex-wrap: wrap; gap: 15px; }
+        .nav-brand { font-size: 24px; font-weight: bold; color: #fbbf24; display: flex; align-items: center; gap: 10px; }
+        .nav-menu { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .nav-btn {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fef3c7;
+            border: 1px solid #fbbf24;
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .nav-btn:hover { background: #fbbf24; color: #1e3a8a; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4); }
+        .container { max-width: 1600px; margin: 30px auto; padding: 0 30px; }
+        .status-bar {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .status-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .status-indicator { display: flex; align-items: center; gap: 10px; font-size: 16px; }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; animation: pulse 2s infinite; }
+        .status-dot.connected { background: #10b981; box-shadow: 0 0 15px #10b981; }
+        .status-dot.disconnected { background: #ef4444; box-shadow: 0 0 15px #ef4444; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fef3c7;
+            padding: 12px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .tab-btn.active, .tab-btn:hover {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #1e3a8a;
+            border-color: #fbbf24;
+            transform: translateY(-2px);
+        }
+        .tab-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; margin-bottom: 30px; }
+        .card {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(251, 191, 36, 0.2); border-color: #fbbf24; }
+        .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid rgba(251, 191, 36, 0.3); }
+        .card-icon { font-size: 28px; color: #fbbf24; }
+        .card-title { font-size: 20px; font-weight: bold; color: #fbbf24; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #fef3c7; font-weight: 500; font-size: 14px; }
+        input[type="text"], input[type="password"], input[type="number"], select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fef3c7;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #fbbf24; box-shadow: 0 0 15px rgba(251, 191, 36, 0.3); }
+        input:invalid:not(:placeholder-shown) { border-color: #ef4444 !important; background: rgba(239, 68, 68, 0.1); }
+        input:valid:not(:placeholder-shown):not([value=""]) { border-color: #10b981; }
+        input[disabled] { opacity: 0.5; cursor: not-allowed; background: rgba(0, 0, 0, 0.5) !important; }
+        select option { background: #1e3a8a; color: #fef3c7; }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+        .btn-primary { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #1e3a8a; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(251, 191, 36, 0.5); }
+        .btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5); }
+        .btn-secondary { background: rgba(251, 191, 36, 0.2); color: #fef3c7; border: 1px solid #fbbf24; }
+        .btn-secondary:hover { background: rgba(251, 191, 36, 0.3); transform: translateY(-2px); }
+        .btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5); }
+        .btn-small { padding: 6px 12px; font-size: 12px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+        .database-list, .table-list { margin-top: 20px; }
+        .database-item, .table-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .database-item:hover, .table-item:hover { background: rgba(251, 191, 36, 0.1); border-color: #fbbf24; transform: translateX(5px); }
+        .database-name, .table-name { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 500; }
+        .lock-icon { color: #fbbf24; font-size: 14px; }
+        .database-badge, .table-badge { background: rgba(251, 191, 36, 0.2); color: #fbbf24; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 2000; align-items: center; justify-content: center; overflow-y: auto; padding: 20px; }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: linear-gradient(135deg, #1e3a8a 0%, #991b1b 100%);
+            border: 2px solid #fbbf24;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: modalSlideIn 0.3s ease;
+        }
+        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid rgba(251, 191, 36, 0.3); }
+        .modal-title { font-size: 22px; font-weight: bold; color: #fbbf24; }
+        .close-btn {
+            background: none;
+            border: none;
+            color: #fef3c7;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            line-height: 1;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-btn:hover { color: #fbbf24; transform: rotate(90deg); }
+        .modal-footer { display: flex; gap: 15px; margin-top: 25px; justify-content: flex-end; flex-wrap: wrap; }
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        .alert-success { background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; }
+        .alert-error { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; }
+        .alert-info { background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; }
+        .alert-warning { background: rgba(251, 191, 36, 0.2); border: 1px solid #fbbf24; color: #fbbf24; }
+        .collapsible { margin-top: 15px; border-top: 1px solid rgba(251, 191, 36, 0.3); padding-top: 15px; }
+        .collapsible-toggle {
+            background: none;
+            border: none;
+            color: #fbbf24;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 0;
+            transition: all 0.3s ease;
+        }
+        .collapsible-toggle:hover { color: #f59e0b; }
+        .collapsible-content { display: none; margin-top: 15px; }
+        .collapsible-content.active { display: block; animation: slideDown 0.3s ease; }
+        @keyframes slideDown { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 2000px; } }
+        .helper-text { font-size: 12px; color: rgba(254, 243, 199, 0.7); margin-top: 5px; font-style: italic; }
+        .spinner { border: 3px solid rgba(251, 191, 36, 0.3); border-top: 3px solid #fbbf24; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .security-notice {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            display: flex;
+            align-items: start;
+            gap: 10px;
+        }
+        .security-notice-icon { color: #fbbf24; font-size: 18px; flex-shrink: 0; }
+        .connected-db-banner {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+        }
+        .connected-db-info { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 600; }
+        .column-row {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .column-row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .column-row-title { color: #fbbf24; font-weight: 600; font-size: 14px; }
+        .column-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 10px; }
+        .checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
+        .checkbox-label input[type="checkbox"] { width: auto; cursor: pointer; }
+        .sql-preview {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #10b981;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        @media (max-width: 768px) {
+            .nav-container { flex-direction: column; gap: 15px; }
+            .nav-menu { flex-wrap: wrap; justify-content: center; }
+            .grid { grid-template-columns: 1fr; }
+            .container { padding: 0 15px; }
+            .modal-content { padding: 20px; }
+            .column-fields { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <div class="nav-container">
+            <div class="nav-brand"><span>🗄️</span><span>Database Control Panel</span></div>
+            <div class="nav-menu">
+                <button class="nav-btn" onclick="checkConnection()"><span>🔌</span> Test Connection</button>
+                <button class="nav-btn" onclick="loadDatabases()"><span>🔄</span> Refresh DB</button>
+                <button class="nav-btn" onclick="clearCredentials()"><span>🗑️</span> Clear Credentials</button>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="status-bar">
+            <div class="status-content">
+                <div class="status-indicator">
+                    <div class="status-dot disconnected" id="statusDot"></div>
+                    <span id="statusText">Checking connection...</span>
+                </div>
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <span style="font-size: 14px; opacity: 0.8;">Server: <strong>localhost (127.0.0.1)</strong></span>
+                    <span style="font-size: 14px; opacity: 0.8;" id="dbCount">Databases: <strong>0</strong></span>
+                </div>
+            </div>
+        </div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('databases')" id="tab-databases">📊 Database Operations</button>
+            <button class="tab-btn" onclick="switchTab('tables')" id="tab-tables" disabled>📋 Table Operations</button>
+        </div>
+        <div id="tab-content-databases" class="tab-content active">
+            <div class="grid">
+                <div class="card" style="grid-column: 1 / -1;">
+                    <div class="card-header"><div class="card-icon">📊</div><div class="card-title">Available Databases</div></div>
+                    <div class="security-notice"><span class="security-notice-icon">🔒</span><div><strong>Security Notice:</strong> Database credentials are stored in your browser's localStorage for convenience. Use the "Clear Credentials" button to remove all saved credentials. Databases with a lock icon (🔒) have saved credentials.</div></div>
+                    <div id="databaseListContainer"><div class="alert alert-info"><span>ℹ️</span><span>Click "Refresh DB" to load databases. Click on any database name to connect to it.</span></div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-icon">➕</div><div class="card-title">Create Database</div></div>
+                    <form onsubmit="createDatabase(event)">
+                        <div class="form-group"><label for="newDbName">Database Name *</label><input type="text" id="newDbName" placeholder="Enter database name" required></div>
+                        <div class="collapsible">
+                            <button type="button" class="collapsible-toggle" onclick="toggleCollapsible('createCredentials')"><span id="createCredentialsIcon">▶️</span><span>Set Database Credentials (Optional)</span></button>
+                            <div class="collapsible-content" id="createCredentials">
+                                <div class="helper-text">Set specific username/password for this database (optional). Leave empty to use default credentials.</div>
+                                <div class="form-group"><label for="newDbUser">Database Username</label><input type="text" id="newDbUser" placeholder="Username (optional)"></div>
+                                <div class="form-group"><label for="newDbPass">Database Password</label><input type="password" id="newDbPass" placeholder="Password (optional)"></div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;"><span>➕</span> Create Database</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-icon">🔐</div><div class="card-title">Set Database Credentials</div></div>
+                    <form onsubmit="setDatabaseCredentials(event)">
+                        <div class="form-group"><label for="secureDbSelect">Select Database *</label><select id="secureDbSelect" required onchange="checkExistingCredentials()"><option value="">-- Select Database --</option></select></div>
+                        <div id="credentialStatusMessage"></div>
+                        <div class="form-group"><label for="secureDbUser">Username *</label><input type="text" id="secureDbUser" placeholder="Database username" required></div>
+                        <div class="form-group"><label for="secureDbPass">Password *</label><input type="password" id="secureDbPass" placeholder="Database password" required></div>
+                        <div class="form-group"><label for="secureDbPassConfirm">Confirm Password *</label><input type="password" id="secureDbPassConfirm" placeholder="Confirm password" required></div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;"><span>🔐</span> Set Credentials</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-icon">🗑️</div><div class="card-title">Delete Database</div></div>
+                    <form onsubmit="deleteDatabase(event)">
+                        <div class="form-group"><label for="deleteDbSelect">Select Database to Delete *</label><select id="deleteDbSelect" required><option value="">-- Select Database --</option></select></div>
+                        <div class="alert alert-warning"><span>⚠️</span><span>This action cannot be undone!</span></div>
+                        <button type="submit" class="btn btn-danger" style="width: 100%;"><span>🗑️</span> Delete Database</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-icon">✏️</div><div class="card-title">Rename Database</div></div>
+                    <form onsubmit="renameDatabase(event)">
+                        <div class="form-group"><label for="renameDbSelect">Select Database to Rename *</label><select id="renameDbSelect" required><option value="">-- Select Database --</option></select></div>
+                        <div class="form-group"><label for="newDbNameRename">New Database Name *</label><input type="text" id="newDbNameRename" placeholder="Enter new name" required></div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;"><span>✏️</span> Rename Database</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div id="tab-content-tables" class="tab-content">
+            <div id="connectedDbBanner" class="connected-db-banner" style="display:none;">
+                <div class="connected-db-info"><span>✅</span><span>Connected to: <span id="connectedDbName"></span></span></div>
+                <button class="btn btn-secondary btn-small" onclick="disconnectDatabase()">Disconnect</button>
+            </div>
+            <div class="grid">
+                <div class="card" style="grid-column: 1 / -1;">
+                    <div class="card-header"><div class="card-icon">📋</div><div class="card-title">Available Tables</div></div>
+                    <button class="btn btn-primary" onclick="loadTables()" style="margin-bottom: 15px;"><span>🔄</span> Refresh Tables</button>
+                    <div id="tableListContainer"><div class="alert alert-info"><span>ℹ️</span><span>Tables from the connected database will appear here.</span></div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-icon">➕</div><div class="card-title">Create Table</div></div>
+                    <button class="btn btn-primary" onclick="openCreateTableModal()" style="width: 100%;"><span>➕</span> Open Table Creator</button>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-icon">✏️</div><div class="card-title">Edit Table</div></div>
+                    <div class="form-group"><label for="editTableSelect">Select Table *</label><select id="editTableSelect"><option value="">-- Select Table --</option></select></div>
+                    <button class="btn btn-primary" onclick="openEditTableModal()" style="width: 100%;"><span>✏️</span> Edit Table Structure</button>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-icon">🗑️</div><div class="card-title">Delete Table</div></div>
+                    <form onsubmit="deleteTable(event)">
+                        <div class="form-group"><label for="deleteTableSelect">Select Table to Delete *</label><select id="deleteTableSelect" required><option value="">-- Select Table --</option></select></div>
+                        <div class="alert alert-warning"><span>⚠️</span><span>This action cannot be undone!</span></div>
+                        <button type="submit" class="btn btn-danger" style="width: 100%;"><span>🗑️</span> Delete Table</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-icon">✏️</div><div class="card-title">Rename Table</div></div>
+                    <form onsubmit="renameTable(event)">
+                        <div class="form-group"><label for="renameTableSelect">Select Table to Rename *</label><select id="renameTableSelect" required><option value="">-- Select Table --</option></select></div>
+                        <div class="form-group"><label for="newTableName">New Table Name *</label><input type="text" id="newTableName" placeholder="Enter new name" required></div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;"><span>✏️</span> Rename Table</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="credentialsModal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 class="modal-title">Database Authentication Required</h2><button class="close-btn" onclick="closeModal('credentialsModal')">&times;</button></div>
+            <div style="margin-bottom: 20px;">
+                <div class="alert alert-info"><span>🔒</span><span>This database requires authentication. Credentials will be saved locally for future use.</span></div>
+                <p style="font-size: 14px; margin-bottom: 15px;">Connecting to: <strong id="modalDbName"></strong></p>
+            </div>
+            <form onsubmit="connectWithCredentials(event)">
+                <div class="form-group"><label for="modalUsername">Username *</label><input type="text" id="modalUsername" placeholder="Database username" required list="savedUsernames"><datalist id="savedUsernames"></datalist></div>
+                <div class="form-group"><label for="modalPassword">Password *</label><input type="password" id="modalPassword" placeholder="Database password" required></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('credentialsModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><span>🔌</span> Connect</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="modal" id="confirmationModal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 class="modal-title">Confirm Action</h2><button class="close-btn" onclick="closeModal('confirmationModal')">&times;</button></div>
+            <div style="margin: 20px 0;"><p id="confirmationMessage" style="font-size: 16px;"></p></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('confirmationModal')">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmActionBtn"><span>✓</span> Confirm</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="createTableModal">
+        <div class="modal-content" style="max-width: 1000px;">
+            <div class="modal-header"><h2 class="modal-title">Create New Table</h2><button class="close-btn" onclick="closeModal('createTableModal')">&times;</button></div>
+            <form onsubmit="createTable(event)">
+                <div class="form-group"><label for="createTableName">Table Name *</label><input type="text" id="createTableName" placeholder="Enter table name" required></div>
+                <div class="form-group">
+                    <label for="tableTemplate">Use Template (Optional)</label>
+                    <select id="tableTemplate" onchange="applyTemplate(this.value)">
+                        <option value="">-- Select Template --</option>
+                        <option value="users">Users</option>
+                        <option value="products">Products</option>
+                        <option value="blog_posts">Blog Posts</option>
+                        <option value="orders">Orders</option>
+                        <option value="categories">Categories</option>
+                        <option value="comments">Comments</option>
+                        <option value="media">Media</option>
+                        <option value="settings">Settings</option>
+                        <option value="logs">Logs</option>
+                        <option value="sessions">Sessions</option>
+                    </select>
+                    <div class="helper-text">Select a template to auto-populate columns, then customize as needed</div>
+                </div>
+                <div id="columnsContainer"></div>
+                <button type="button" class="btn btn-success" onclick="addColumn()" style="margin-bottom: 20px;"><span>➕</span> Add Column</button>
+                <div class="collapsible">
+                    <button type="button" class="collapsible-toggle" onclick="toggleCollapsible('sqlPreview')"><span id="sqlPreviewIcon">▶️</span><span>Preview SQL</span></button>
+                    <div class="collapsible-content" id="sqlPreview"><div class="sql-preview" id="sqlPreviewContent">SQL will appear here...</div></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createTableModal')">Cancel</button>
+                    <button type="button" class="btn btn-secondary" onclick="previewSQL()">Preview SQL</button>
+                    <button type="submit" class="btn btn-primary"><span>✓</span> Create Table</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="modal" id="editTableModal">
+        <div class="modal-content" style="max-width: 1000px;">
+            <div class="modal-header"><h2 class="modal-title">Edit Table Structure</h2><button class="close-btn" onclick="closeModal('editTableModal')">&times;</button></div>
+            <div id="editTableContent"></div>
+        </div>
+    </div>
+    <script>
+        const API_URL = 'http://localhost/api.php';
+        let currentDatabases = [];
+        let currentTables = [];
+        let connectedDatabase = null;
+        let columnCounter = 0;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnection();
+            loadDatabases();
+        });
+
+        async function apiCall(action, data = {}) {
+            try {
+                const formData = new FormData();
+                formData.append('action', action);
+                
+                for (const key in data) {
+                    formData.append(key, data[key]);
+                }
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                return {
+                    success: false,
+                    message: 'Network error: ' + error.message
+                };
+            }
+        }
+
+        async function checkConnection() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            statusText.textContent = 'Checking connection...';
+            statusDot.className = 'status-dot disconnected';
+
+            const result = await apiCall('check_connection');
+            
+            if (result.success) {
+                statusDot.className = 'status-dot connected';
+                statusText.textContent = 'Connected to database server';
+            } else {
+                statusDot.className = 'status-dot disconnected';
+                statusText.textContent = 'Connection failed: ' + result.message;
+            }
+        }
+
+        async function loadDatabases() {
+            const container = document.getElementById('databaseListContainer');
+            container.innerHTML = '<div class="alert alert-info"><span class="spinner"></span><span>Loading databases...</span></div>';
+
+            const result = await apiCall('list_databases');
+
+            if (result.success) {
+                currentDatabases = result.databases || [];
+                document.getElementById('dbCount').innerHTML = `Databases: <strong>${currentDatabases.length}</strong>`;
+                
+                if (currentDatabases.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info"><span>ℹ️</span><span>No databases found.</span></div>';
+                } else {
+                    displayDatabases(currentDatabases);
+                }
+
+                updateDropdowns();
+            } else {
+                container.innerHTML = `<div class="alert alert-error"><span>❌</span><span>${result.message}</span></div>`;
+            }
+        }
+
+        function displayDatabases(databases) {
+            const container = document.getElementById('databaseListContainer');
+            const credentials = getStoredCredentials();
+            
+            let html = '<div class="database-list">';
+            
+            databases.forEach(db => {
+                const hasCredentials = credentials.some(c => c.dbName === db);
+                const lockIcon = hasCredentials ? '<span class="lock-icon">🔒</span>' : '';
+                
+                html += `
+                    <div class="database-item" onclick="connectToDatabase('${db}')">
+                        <div class="database-name">
+                            ${lockIcon}
+                            <span>${db}</span>
+                        </div>
+                        <div class="database-badge">Click to Connect</div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function updateDropdowns() {
+            const deleteSelect = document.getElementById('deleteDbSelect');
+            const renameSelect = document.getElementById('renameDbSelect');
+            const secureSelect = document.getElementById('secureDbSelect');
+
+            [deleteSelect, renameSelect, secureSelect].forEach(select => {
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+            });
+
+            currentDatabases.forEach(db => {
+                deleteSelect.add(new Option(db, db));
+                renameSelect.add(new Option(db, db));
+                secureSelect.add(new Option(db, db));
+            });
+        }
+
+        async function connectToDatabase(dbName) {
+            const credentials = getStoredCredentials();
+            const dbCreds = credentials.find(c => c.dbName === dbName);
+
+            const statusText = document.getElementById('statusText');
+            statusText.textContent = `Connecting to ${dbName}...`;
+
+            let result;
+            if (dbCreds) {
+                result = await apiCall('connect_database', {
+                    db_name: dbName,
+                    db_username: dbCreds.username,
+                    db_password: dbCreds.password
+                });
+            } else {
+                result = await apiCall('connect_database', {
+                    db_name: dbName
+                });
+            }
+
+            if (result.success) {
+                connectedDatabase = dbName;
+                showAlert('success', `✓ Successfully connected to database: ${dbName}`);
+                statusText.textContent = `Connected to: ${dbName}`;
+                
+                document.getElementById('connectedDbName').textContent = dbName;
+                document.getElementById('connectedDbBanner').style.display = 'flex';
+                document.getElementById('tab-tables').disabled = false;
+                
+                switchTab('tables');
+                loadTables();
+            } else if (result.requiresCredentials) {
+                showCredentialsModal(dbName);
+            } else {
+                showAlert('error', `Failed to connect: ${result.message}`);
+                statusText.textContent = 'Connection failed';
+            }
+        }
+
+        function showCredentialsModal(dbName) {
+            document.getElementById('modalDbName').textContent = dbName;
+            document.getElementById('modalUsername').value = '';
+            document.getElementById('modalPassword').value = '';
+            
+            const credentials = getStoredCredentials();
+            const datalist = document.getElementById('savedUsernames');
+            datalist.innerHTML = '';
+            
+            credentials.forEach(cred => {
+                const option = document.createElement('option');
+                option.value = cred.username;
+                datalist.appendChild(option);
+            });
+
+            openModal('credentialsModal');
+        }
+
+        async function connectWithCredentials(event) {
+            event.preventDefault();
+            
+            const dbName = document.getElementById('modalDbName').textContent;
+            const username = document.getElementById('modalUsername').value;
+            const password = document.getElementById('modalPassword').value;
+
+            const result = await apiCall('connect_database', {
+                db_name: dbName,
+                db_username: username,
+                db_password: password
+            });
+
+            if (result.success) {
+                saveCredentials(dbName, username, password);
+                
+                closeModal('credentialsModal');
+                
+                connectedDatabase = dbName;
+                showAlert('success', `✓ Successfully connected to database: ${dbName}. Credentials saved.`);
+                
+                document.getElementById('connectedDbName').textContent = dbName;
+                document.getElementById('connectedDbBanner').style.display = 'flex';
+                document.getElementById('tab-tables').disabled = false;
+                
+                switchTab('tables');
+                loadDatabases();
+                loadTables();
+            } else {
+                showAlert('error', `Connection failed: ${result.message}`);
+            }
+        }
+
+        function disconnectDatabase() {
+            connectedDatabase = null;
+            document.getElementById('connectedDbBanner').style.display = 'none';
+            document.getElementById('tab-tables').disabled = true;
+            switchTab('databases');
+            showAlert('info', '✓ Disconnected from database');
+        }
+
+        async function createDatabase(event) {
+            event.preventDefault();
+            
+            const dbName = document.getElementById('newDbName').value.trim();
+            const dbUser = document.getElementById('newDbUser').value.trim();
+            const dbPass = document.getElementById('newDbPass').value.trim();
+
+            const data = { db_name: dbName };
+            
+            if (dbUser && dbPass) {
+                data.db_username = dbUser;
+                data.db_password = dbPass;
+            }
+
+            const result = await apiCall('create_database', data);
+
+            if (result.success) {
+                showAlert('success', `✓ ${result.message}`);
+                
+                if (dbUser && dbPass) {
+                    saveCredentials(dbName, dbUser, dbPass);
+                    showAlert('info', '🔒 Database credentials saved for future use.');
+                }
+                
+                document.getElementById('newDbName').value = '';
+                document.getElementById('newDbUser').value = '';
+                document.getElementById('newDbPass').value = '';
+                
+                loadDatabases();
+            } else {
+                showAlert('error', `❌ ${result.message}`);
+            }
+        }
+
+        async function setDatabaseCredentials(event) {
+            event.preventDefault();
+            
+            const dbName = document.getElementById('secureDbSelect').value;
+            const username = document.getElementById('secureDbUser').value.trim();
+            const password = document.getElementById('secureDbPass').value.trim();
+            const confirmPassword = document.getElementById('secureDbPassConfirm').value.trim();
+
+            if (password !== confirmPassword) {
+                showAlert('error', '❌ Passwords do not match!');
+                return;
+            }
+
+            const result = await apiCall('set_database_credentials', {
+                db_name: dbName,
+                db_username: username,
+                db_password: password
+            });
+
+            if (result.success) {
+                saveCredentials(dbName, username, password);
+                
+                showAlert('success', `✓ ${result.message} Credentials saved locally.`);
+                
+                document.getElementById('secureDbSelect').value = '';
+                document.getElementById('secureDbUser').value = '';
+                document.getElementById('secureDbPass').value = '';
+                document.getElementById('secureDbPassConfirm').value = '';
+                document.getElementById('credentialStatusMessage').innerHTML = '';
+                
+                loadDatabases();
+            } else {
+                showAlert('error', `❌ ${result.message}`);
+            }
+        }
+
+        function checkExistingCredentials() {
+            const dbName = document.getElementById('secureDbSelect').value;
+            const messageDiv = document.getElementById('credentialStatusMessage');
+
+            if (!dbName) {
+                messageDiv.innerHTML = '';
+                return;
+            }
+
+            const credentials = getStoredCredentials();
+            const exists = credentials.some(c => c.dbName === dbName);
+
+            if (exists) {
+                messageDiv.innerHTML = '<div class="alert alert-warning"><span>⚠️</span><span>This database already has credentials. Do you want to update them?</span></div>';
+            } else {
+                messageDiv.innerHTML = '<div class="alert alert-info"><span>ℹ️</span><span>This database has no credentials. Add username and password to secure it.</span></div>';
+            }
+        }
+
+        async function deleteDatabase(event) {
+            event.preventDefault();
+            
+            const dbName = document.getElementById('deleteDbSelect').value;
+            
+            if (!dbName) {
+                showAlert('error', '❌ Please select a database to delete.');
+                return;
+            }
+
+            showConfirmationModal(
+                `Are you sure you want to delete database "<strong>${dbName}</strong>"?<br><br>
+                <span style="color: #ef4444;">⚠️ This action cannot be undone and all data will be lost!</span>`,
+                async () => {
+                    const result = await apiCall('delete_database', { db_name: dbName });
+                    
+                    if (result.success) {
+                        showAlert('success', `✓ ${result.message}`);
+                        
+                        removeCredentials(dbName);
+                        
+                        document.getElementById('deleteDbSelect').value = '';
+                        
+                        if (connectedDatabase === dbName) {
+                            disconnectDatabase();
+                        }
+                        
+                        loadDatabases();
+                    } else {
+                        showAlert('error', `❌ ${result.message}`);
+                    }
+                }
+            );
+        }
+
+        async function renameDatabase(event) {
+            event.preventDefault();
+            
+            const oldName = document.getElementById('renameDbSelect').value;
+            const newName = document.getElementById('newDbNameRename').value.trim();
+
+            if (!oldName || !newName) {
+                showAlert('error', '❌ Please fill in all fields.');
+                return;
+            }
+
+            const result = await apiCall('rename_database', {
+                old_name: oldName,
+                new_name: newName
+            });
+
+            if (result.success) {
+                showAlert('success', `✓ ${result.message}`);
+                
+                updateCredentialsDbName(oldName, newName);
+                
+                if (connectedDatabase === oldName) {
+                    connectedDatabase = newName;
+                    document.getElementById('connectedDbName').textContent = newName;
+                }
+                
+                document.getElementById('renameDbSelect').value = '';
+                document.getElementById('newDbNameRename').value = '';
+                
+                loadDatabases();
+            } else {
+                showAlert('error', `❌ ${result.message}`);
+            }
+        }
+
+        // ============================================================
+        // TABLE OPERATIONS
+        // ============================================================
+
+        async function loadTables() {
+            if (!connectedDatabase) {
+                showAlert('error', '❌ Please connect to a database first');
+                return;
+            }
+
+            const container = document.getElementById('tableListContainer');
+            container.innerHTML = '<div class="alert alert-info"><span class="spinner"></span><span>Loading tables...</span></div>';
+
+            const result = await apiCall('list_tables', { db_name: connectedDatabase });
+
+            if (result.success) {
+                currentTables = result.tables || [];
+                
+                if (currentTables.length === 0) {
+                    container.innerHTML = '<div class="alert alert-info"><span>ℹ️</span><span>No tables found in this database.</span></div>';
+                } else {
+                    displayTables(currentTables);
+                }
+
+                updateTableDropdowns();
+            } else {
+                container.innerHTML = `<div class="alert alert-error"><span>❌</span><span>${result.message}</span></div>`;
+            }
+        }
+
+        function displayTables(tables) {
+            const container = document.getElementById('tableListContainer');
+            
+            let html = '<div class="table-list">';
+            
+            tables.forEach(table => {
+                html += `
+                    <div class="table-item">
+                        <div class="table-name">
+                            <span>📄</span>
+                            <span>${table}</span>
+                        </div>
+                        <div class="table-badge">Table</div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function updateTableDropdowns() {
+            const deleteSelect = document.getElementById('deleteTableSelect');
+            const renameSelect = document.getElementById('renameTableSelect');
+            const editSelect = document.getElementById('editTableSelect');
+
+            [deleteSelect, renameSelect, editSelect].forEach(select => {
+                while (select.options.length > 1) {
+                    select.remove(1);
+                }
+            });
+
+            currentTables.forEach(table => {
+                deleteSelect.add(new Option(table, table));
+                renameSelect.add(new Option(table, table));
+                editSelect.add(new Option(table, table));
+            });
+        }
+
+        function openCreateTableModal() {
+            if (!connectedDatabase) {
+                showAlert('error', '❌ Please connect to a database first');
+                return;
+            }
+
+            document.getElementById('createTableName').value = '';
+            document.getElementById('tableTemplate').value = '';
+            document.getElementById('columnsContainer').innerHTML = '';
+            columnCounter = 0;
+            
+            addColumn();
+            
+            openModal('createTableModal');
+        }
+
+        function addColumn() {
+            columnCounter++;
+            const container = document.getElementById('columnsContainer');
+            
+            const columnRow = document.createElement('div');
+            columnRow.className = 'column-row';
+            columnRow.id = `column-${columnCounter}`;
+            
+            columnRow.innerHTML = `
+                <div class="column-row-header">
+                    <div class="column-row-title">Column ${columnCounter}</div>
+                    <button type="button" class="btn btn-danger btn-small" onclick="removeColumn(${columnCounter})">Remove</button>
+                </div>
+                <div class="column-fields">
+                    <div class="form-group">
+                        <label>Column Name *</label>
+                        <input type="text" name="col_name_${columnCounter}" placeholder="Column name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Data Type *</label>
+                        <select name="col_type_${columnCounter}" onchange="toggleLengthField(${columnCounter})" required>
+                            <option value="INT">INT</option>
+                            <option value="VARCHAR">VARCHAR</option>
+                            <option value="TEXT">TEXT</option>
+                            <option value="DATE">DATE</option>
+                            <option value="DATETIME">DATETIME</option>
+                            <option value="TIMESTAMP">TIMESTAMP</option>
+                            <option value="BOOLEAN">BOOLEAN</option>
+                            <option value="DECIMAL">DECIMAL</option>
+                            <option value="FLOAT">FLOAT</option>
+                            <option value="DOUBLE">DOUBLE</option>
+                            <option value="BLOB">BLOB</option>
+                            <option value="ENUM">ENUM</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Length</label>
+                        <input type="number" name="col_length_${columnCounter}" placeholder="Length" id="col_length_${columnCounter}">
+                    </div>
+                    <div class="form-group">
+                        <label>Default Value</label>
+                        <input type="text" name="col_default_${columnCounter}" placeholder="Default value">
+                    </div>
+                </div>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="col_primary_${columnCounter}">
+                        Primary Key
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="col_auto_increment_${columnCounter}">
+                        Auto Increment
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="col_nullable_${columnCounter}" checked>
+                        Nullable
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="col_unique_${columnCounter}">
+                        Unique
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="col_index_${columnCounter}">
+                        Index
+                    </label>
+                </div>
+            `;
+            
+            container.appendChild(columnRow);
+        }
+
+        function removeColumn(id) {
+            const column = document.getElementById(`column-${id}`);
+            if (column) {
+                column.remove();
+            }
+        }
+
+        function toggleLengthField(id) {
+            const typeSelect = document.querySelector(`select[name="col_type_${id}"]`);
+            const lengthInput = document.getElementById(`col_length_${id}`);
+            
+            const needsLength = ['VARCHAR', 'INT', 'DECIMAL', 'ENUM'].includes(typeSelect.value);
+            lengthInput.disabled = !needsLength;
+            
+            if (typeSelect.value === 'VARCHAR' && !lengthInput.value) {
+                lengthInput.value = 255;
+            }
+        }
+
+        function applyTemplate(templateName) {
+            if (!templateName) return;
+            
+            const templates = {
+                users: [
+                    {name: 'id', type: 'INT', length: 11, primary: true, auto_increment: true, nullable: false},
+                    {name: 'username', type: 'VARCHAR', length: 50, unique: true, nullable: false},
+                    {name: 'email', type: 'VARCHAR', length: 100, unique: true, nullable: false},
+                    {name: 'password', type: 'VARCHAR', length: 255, nullable: false},
+                    {name: 'created_at', type: 'TIMESTAMP', default: 'CURRENT_TIMESTAMP', nullable: false}
+                ],
+                products: [
+                    {name: 'id', type: 'INT', length: 11, primary: true, auto_increment: true, nullable: false},
+                    {name: 'name', type: 'VARCHAR', length: 200, nullable: false},
+                    {name: 'description', type: 'TEXT'},
+                    {name: 'price', type: 'DECIMAL', length: '10,2', nullable: false},
+                    {name: 'stock', type: 'INT', length: 11, default: '0'},
+                    {name: 'created_at', type: 'TIMESTAMP', default: 'CURRENT_TIMESTAMP'}
+                ],
+                blog_posts: [
+                    {name: 'id', type: 'INT', length: 11, primary: true, auto_increment: true, nullable: false},
+                    {name: 'title', type: 'VARCHAR', length: 255, nullable: false},
+                    {name: 'slug', type: 'VARCHAR', length: 255, unique: true, nullable: false},
+                    {name: 'content', type: 'TEXT'},
+                    {name: 'author_id', type: 'INT', length: 11, index: true},
+                    {name: 'published_at', type: 'DATETIME'},
+                    {name: 'created_at', type: 'TIMESTAMP', default: 'CURRENT_TIMESTAMP'}
+                ],
+                orders: [
+                    {name: 'id', type: 'INT', length: 11, primary: true, auto_increment: true, nullable: false},
+                    {name: 'user_id', type: 'INT', length: 11, index: true, nullable: false},
+                    {name: 'total_amount', type: 'DECIMAL', length: '10,2', nullable: false},
+                    {name: 'status', type: 'VARCHAR', length: 50, default: 'pending'},
+                    {name: 'created_at', type: 'TIMESTAMP', default: 'CURRENT_TIMESTAMP'}
+                ],
+                categories: [
+                    {name: 'id', type: 'INT', length: 11, primary: true, auto_increment: true, nullable: false},
+                    {name: 'name', type: 'VARCHAR', length: 100, unique: true, nullable: false},
+                    {name: 'slug', type: 'VARCHAR', length: 100, unique: true, nullable: false},
+                    {name: 'parent_id', type: 'INT', length: 11, index: true}
+                ],
+                comments: [
+                    {name: 'id', type: 'INT', length: 11, primary: true, auto_increment: true, nullable: false},
+                    {name: 'post_id', type: 'INT', length: 11, index: true, nullable: false},
+                    {name: 'user_id', type: 'INT', length: 11, index: true},
+                    {name: 'content', type: 'TEXT', nullable: false},
+                    {name: 'created_at', type: 'TIMESTAMP', default: 'CURRENT_TIMESTAMP'}
+                ],
+                media: [
+                    {name: 'id', type: 'INT', length: 11, primary: true, auto_increment: true, nullable: false},
+                    {name: 'filename', type: 'VARCHAR', length: 255, nullable: false},
+                    {name: 'file_path', type: 'VARCHAR', length: 500, nullable: false},
+                    {name: 'mime_type', type: 'VARCHAR', length: 100},
+                    {name: 'file_size', type: 'INT', length: 11},
+                    {name: 'uploaded_at', type: 'TIMESTAMP', default: 'CURRENT_TIMESTAMP'}
+                ],
+                settings: [
+                    {name: 'id', type: 'INT', length: 11, primary: true, auto_increment: true, nullable: false},
+                    {name: 'key', type: 'VARCHAR', length: 100, unique: true, nullable: false},
+                    {name: 'value', type: 'TEXT'},
+                    {name: 'type', type: 'VARCHAR', length: 50, default: 'string'},
+                    {name: 'updated_at', type: 'TIMESTAMP', default: 'CURRENT_TIMESTAMP'}
+                ],
+                logs: [
+                    {name: 'id', type: 'INT', length: 11, primary: true, auto_increment: true, nullable: false},
+                    {name: 'level', type: 'VARCHAR', length: 50, index: true},
+                    {name: 'message', type: 'TEXT'},
+                    {name: 'context', type: 'TEXT'},
+                    {name: 'created_at', type: 'TIMESTAMP', default: 'CURRENT_TIMESTAMP', index: true}
+                ],
+                sessions: [
+                    {name: 'id', type: 'VARCHAR', length: 128, primary: true, nullable: false},
+                    {name: 'user_id', type: 'INT', length: 11, index: true},
+                    {name: 'ip_address', type: 'VARCHAR', length: 45},
+                    {name: 'user_agent', type: 'TEXT'},
+                    {name: 'payload', type: 'TEXT'},
+                    {name: 'last_activity', type: 'TIMESTAMP', default: 'CURRENT_TIMESTAMP', index: true}
+                ]
+            };
+            
+            const template = templates[templateName];
+            if (!template) return;
+            
+            document.getElementById('columnsContainer').innerHTML = '';
+            columnCounter = 0;
+            
+            template.forEach(col => {
+                addColumn();
+                
+                const nameInput = document.querySelector(`input[name="col_name_${columnCounter}"]`);
+                const typeSelect = document.querySelector(`select[name="col_type_${columnCounter}"]`);
+                const lengthInput = document.querySelector(`input[name="col_length_${columnCounter}"]`);
+                const defaultInput = document.querySelector(`input[name="col_default_${columnCounter}"]`);
+                const primaryCheck = document.querySelector(`input[name="col_primary_${columnCounter}"]`);
+                const autoIncrementCheck = document.querySelector(`input[name="col_auto_increment_${columnCounter}"]`);
+                const nullableCheck = document.querySelector(`input[name="col_nullable_${columnCounter}"]`);
+                const uniqueCheck = document.querySelector(`input[name="col_unique_${columnCounter}"]`);
+                const indexCheck = document.querySelector(`input[name="col_index_${columnCounter}"]`);
+                
+                if (nameInput) nameInput.value = col.name;
+                if (typeSelect) typeSelect.value = col.type;
+                if (lengthInput && col.length) lengthInput.value = col.length;
+                if (defaultInput && col.default) defaultInput.value = col.default;
+                if (primaryCheck) primaryCheck.checked = col.primary || false;
+                if (autoIncrementCheck) autoIncrementCheck.checked = col.auto_increment || false;
+                if (nullableCheck) nullableCheck.checked = col.nullable !== false;
+                if (uniqueCheck) uniqueCheck.checked = col.unique || false;
+                if (indexCheck) indexCheck.checked = col.index || false;
+                
+                toggleLengthField(columnCounter);
+            });
+        }
+
+        function previewSQL() {
+            const tableName = document.getElementById('createTableName').value.trim();
+            if (!tableName) {
+                showAlert('error', '❌ Please enter a table name');
+                return;
+            }
+            
+            const columns = getColumnsData();
+            if (columns.length === 0) {
+                showAlert('error', '❌ Please add at least one column');
+                return;
+            }
+            
+            let sql = `CREATE TABLE \`${tableName}\` (\n`;
+            const columnDefs = [];
+            const primaryKeys = [];
+            
+            columns.forEach((col, index) => {
+                let def = `  \`${col.name}\` ${col.type}`;
+                
+                if (col.length) {
+                    def += `(${col.length})`;
+                }
+                
+                if (!col.nullable) {
+                    def += ' NOT NULL';
+                } else {
+                    def += ' NULL';
+                }
+                
+                if (col.auto_increment) {
+                    def += ' AUTO_INCREMENT';
+                }
+                
+                if (col.default && col.default !== '') {
+                    if (col.default === 'CURRENT_TIMESTAMP') {
+                        def += ` DEFAULT CURRENT_TIMESTAMP`;
+                    } else {
+                        def += ` DEFAULT '${col.default}'`;
+                    }
+                }
+                
+                columnDefs.push(def);
+                
+                if (col.primary_key) {
+                    primaryKeys.push(`\`${col.name}\``);
+                }
+            });
+            
+            if (primaryKeys.length > 0) {
+                columnDefs.push(`  PRIMARY KEY (${primaryKeys.join(', ')})`);
+            }
+            
+            sql += columnDefs.join(',\n');
+            sql += '\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;';
+            
+            document.getElementById('sqlPreviewContent').textContent = sql;
+            
+            const collapsible = document.getElementById('sqlPreview');
+            if (!collapsible.classList.contains('active')) {
+                toggleCollapsible('sqlPreview');
+            }
+        }
+
+        function getColumnsData() {
+            const columns = [];
+            const container = document.getElementById('columnsContainer');
+            const columnRows = container.querySelectorAll('.column-row');
+            
+            columnRows.forEach(row => {
+                const id = row.id.split('-')[1];
+                
+                const name = document.querySelector(`input[name="col_name_${id}"]`)?.value.trim();
+                if (!name) return;
+                
+                const type = document.querySelector(`select[name="col_type_${id}"]`)?.value || 'VARCHAR';
+                const length = document.querySelector(`input[name="col_length_${id}"]`)?.value.trim();
+                const defaultValue = document.querySelector(`input[name="col_default_${id}"]`)?.value.trim();
+                const primary = document.querySelector(`input[name="col_primary_${id}"]`)?.checked || false;
+                const autoIncrement = document.querySelector(`input[name="col_auto_increment_${id}"]`)?.checked || false;
+                const nullable = document.querySelector(`input[name="col_nullable_${id}"]`)?.checked || false;
+                const unique = document.querySelector(`input[name="col_unique_${id}"]`)?.checked || false;
+                const index = document.querySelector(`input[name="col_index_${id}"]`)?.checked || false;
+                
+                columns.push({
+                    name: name,
+                    type: type,
+                    length: length || '',
+                    default: defaultValue || '',
+                    primary_key: primary === true,
+                    auto_increment: autoIncrement === true,
+                    nullable: nullable === true,
+                    unique: unique === true,
+                    index: index === true
+                });
+            });
+            
+            return columns;
+        }
+
+        async function createTable(event) {
+            event.preventDefault();
+            
+            if (!connectedDatabase) {
+                showAlert('error', '❌ Please connect to a database first');
+                return;
+            }
+            
+            const tableName = document.getElementById('createTableName').value.trim();
+            
+            if (!tableName) {
+                showAlert('error', '❌ Please enter a table name');
+                return;
+            }
+            
+            const columns = getColumnsData();
+            
+            if (columns.length === 0) {
+                showAlert('error', '❌ Please add at least one column');
+                return;
+            }
+            
+            // Validate columns
+            for (let i = 0; i < columns.length; i++) {
+                if (!columns[i].name || !columns[i].type) {
+                    showAlert('error', `❌ Column ${i + 1} must have both name and type`);
+                    return;
+                }
+            }
+            
+            try {
+                const columnsJson = JSON.stringify(columns);
+                
+                const result = await apiCall('create_table', {
+                    db_name: connectedDatabase,
+                    table_name: tableName,
+                    columns: columnsJson
+                });
+                
+                if (result.success) {
+                    showAlert('success', `✓ ${result.message}`);
+                    closeModal('createTableModal');
+                    loadTables();
+                } else {
+                    showAlert('error', `❌ ${result.message}`);
+                }
+            } catch (error) {
+                showAlert('error', `❌ Error creating table: ${error.message}`);
+            }
+        }
+
+        async function deleteTable(event) {
+            event.preventDefault();
+            
+            if (!connectedDatabase) {
+                showAlert('error', '❌ Please connect to a database first');
+                return;
+            }
+            
+            const tableName = document.getElementById('deleteTableSelect').value;
+            
+            if (!tableName) {
+                showAlert('error', '❌ Please select a table to delete');
+                return;
+            }
+            
+            showConfirmationModal(
+                `Are you sure you want to delete table "<strong>${tableName}</strong>"?<br><br>
+                <span style="color: #ef4444;">⚠️ This action cannot be undone and all data will be lost!</span>`,
+                async () => {
+                    const result = await apiCall('delete_table', {
+                        db_name: connectedDatabase,
+                        table_name: tableName
+                    });
+                    
+                    if (result.success) {
+                        showAlert('success', `✓ ${result.message}`);
+                        document.getElementById('deleteTableSelect').value = '';
+                        loadTables();
+                    } else {
+                        showAlert('error', `❌ ${result.message}`);
+                    }
+                }
+            );
+        }
+
+        async function renameTable(event) {
+            event.preventDefault();
+            
+            if (!connectedDatabase) {
+                showAlert('error', '❌ Please connect to a database first');
+                return;
+            }
+            
+            const oldName = document.getElementById('renameTableSelect').value;
+            const newName = document.getElementById('newTableName').value.trim();
+            
+            if (!oldName || !newName) {
+                showAlert('error', '❌ Please fill in all fields');
+                return;
+            }
+            
+            const result = await apiCall('rename_table', {
+                db_name: connectedDatabase,
+                old_table_name: oldName,
+                new_table_name: newName
+            });
+            
+            if (result.success) {
+                showAlert('success', `✓ ${result.message}`);
+                document.getElementById('renameTableSelect').value = '';
+                document.getElementById('newTableName').value = '';
+                loadTables();
+            } else {
+                showAlert('error', `❌ ${result.message}`);
+            }
+        }
+
+        async function openEditTableModal() {
+            if (!connectedDatabase) {
+                showAlert('error', '❌ Please connect to a database first');
+                return;
+            }
+            
+            const tableName = document.getElementById('editTableSelect').value;
+            
+            if (!tableName) {
+                showAlert('error', '❌ Please select a table to edit');
+                return;
+            }
+            
+            const result = await apiCall('get_table_structure', {
+                db_name: connectedDatabase,
+                table_name: tableName
+            });
+            
+            if (result.success) {
+                displayEditTableForm(tableName, result.columns);
+                openModal('editTableModal');
+            } else {
+                showAlert('error', `❌ ${result.message}`);
+            }
+        }
+
+        function displayEditTableForm(tableName, columns) {
+            const content = document.getElementById('editTableContent');
+            
+            let html = `<div class="alert alert-info"><span>ℹ️</span><span>Editing table structure: <strong>${tableName}</strong></span></div>`;
+            
+            html += '<h3 style="color: #fbbf24; margin-bottom: 15px;">Existing Columns</h3>';
+            
+            columns.forEach(col => {
+                html += `
+                    <div class="column-row">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div>
+                                <strong style="color: #fbbf24;">${col.Field}</strong>
+                                <span style="opacity: 0.8;"> - ${col.Type}</span>
+                            </div>
+                            <button type="button" class="btn btn-danger btn-small" onclick="dropColumn('${tableName}', '${col.Field}')">Drop Column</button>
+                        </div>
+                        <div style="font-size: 13px; opacity: 0.8;">
+                            Null: ${col.Null}, Key: ${col.Key || 'None'}, Default: ${col.Default || 'None'}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '<h3 style="color: #fbbf24; margin: 25px 0 15px 0;">Add New Column</h3>';
+            html += `
+                <form onsubmit="addTableColumn(event, '${tableName}')">
+                    <div class="column-fields">
+                        <div class="form-group">
+                            <label>Column Name *</label>
+                            <input type="text" id="newColName" placeholder="Column name" required pattern="[a-zA-Z0-9_]+" title="Only letters, numbers, and underscores allowed">
+                        </div>
+                        <div class="form-group">
+                            <label>Data Type *</label>
+                            <select id="newColType" required onchange="updateFieldValidation()">
+                                <option value="INT">INT - Integer numbers</option>
+                                <option value="VARCHAR">VARCHAR - Text (up to specified length)</option>
+                                <option value="TEXT">TEXT - Long text</option>
+                                <option value="DATE">DATE - Date (YYYY-MM-DD)</option>
+                                <option value="DATETIME">DATETIME - Date and time</option>
+                                <option value="TIMESTAMP">TIMESTAMP - Timestamp</option>
+                                <option value="BOOLEAN">BOOLEAN - True/False (0/1)</option>
+                                <option value="DECIMAL">DECIMAL - Decimal numbers</option>
+                                <option value="FLOAT">FLOAT - Floating point</option>
+                                <option value="DOUBLE">DOUBLE - Double precision</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Length</label>
+                            <input type="text" id="newColLength" placeholder="e.g., 255" pattern="[0-9,]+" title="Only numbers and comma for DECIMAL">
+                            <div class="helper-text" id="lengthHelper">Optional. Required for VARCHAR.</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Default Value</label>
+                            <input type="text" id="newColDefault" placeholder="Leave empty for none">
+                            <div class="helper-text" id="defaultHelper">Leave empty or see examples below</div>
+                        </div>
+                    </div>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="newColNullable" checked>
+                            Nullable
+                        </label>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('editTableModal')">Close</button>
+                        <button type="submit" class="btn btn-success"><span>➕</span> Add Column</button>
+                    </div>
+                </form>
+            `;
+            
+            content.innerHTML = html;
+            
+            // Initialize field validation after content is loaded
+            setTimeout(() => {
+                updateFieldValidation();
+            }, 100);
+        }
+
+        async function addTableColumn(event, tableName) {
+            event.preventDefault();
+            
+            if (!connectedDatabase) {
+                showAlert('error', '❌ Please connect to a database first');
+                return;
+            }
+            
+            // Get values from form
+            const colName = document.getElementById('newColName').value.trim();
+            const colType = document.getElementById('newColType').value;
+            const colLength = document.getElementById('newColLength').value.trim();
+            const colDefault = document.getElementById('newColDefault').value.trim();
+            const colNullable = document.getElementById('newColNullable').checked;
+            
+            // Basic validation
+            if (!colName) {
+                showAlert('error', '❌ Column name is required');
+                return;
+            }
+            
+            if (!colType) {
+                showAlert('error', '❌ Column type is required');
+                return;
+            }
+            
+            // Validate column name
+            if (!/^[a-zA-Z0-9_]+$/.test(colName)) {
+                showAlert('error', '❌ Column name can only contain letters, numbers, and underscores');
+                return;
+            }
+            
+            // Validate length for VARCHAR and DECIMAL
+            if (colType === 'VARCHAR' && !colLength) {
+                showAlert('error', '❌ Length is required for VARCHAR type');
+                return;
+            }
+            
+            if (colType === 'DECIMAL' && !colLength) {
+                showAlert('error', '❌ Length is required for DECIMAL type (format: precision,scale e.g., 10,2)');
+                return;
+            }
+            
+            // Validate length format for DECIMAL
+            if (colType === 'DECIMAL' && colLength && !/^\d+,\d+$/.test(colLength)) {
+                showAlert('error', '❌ DECIMAL length must be in format: precision,scale (e.g., 10,2)');
+                return;
+            }
+            
+            // Validate default value if provided
+            if (colDefault) {
+                const validationResult = validateDefaultValue(colType, colDefault);
+                if (!validationResult.valid) {
+                    showAlert('error', `❌ ${validationResult.message}`);
+                    return;
+                }
+            }
+            
+            // Build column data object
+            const columnData = {
+                name: colName,
+                type: colType,
+                length: colLength,
+                default: colDefault,
+                nullable: colNullable
+            };
+            
+            console.log('Sending column data:', columnData);
+            
+            try {
+                const columnJson = JSON.stringify(columnData);
+                console.log('JSON string:', columnJson);
+                
+                const result = await apiCall('alter_table_add_column', {
+                    db_name: connectedDatabase,
+                    table_name: tableName,
+                    column: columnJson
+                });
+                
+                console.log('API Result:', result);
+                
+                if (result.success) {
+                    showAlert('success', `✓ ${result.message}`);
+                    closeModal('editTableModal');
+                    loadTables();
+                } else {
+                    showAlert('error', `❌ ${result.message}`);
+                }
+            } catch (error) {
+                console.error('Error adding column:', error);
+                showAlert('error', `❌ Error adding column: ${error.message}`);
+            }
+        }
+        
+        function validateDefaultValue(type, value) {
+            if (!value) return { valid: true };
+            
+            const validators = {
+                'INT': {
+                    pattern: /^-?\d+$/,
+                    message: 'Default value for INT must be an integer (e.g., 0, 100, -50)'
+                },
+                'DECIMAL': {
+                    pattern: /^-?\d+(\.\d+)?$/,
+                    message: 'Default value for DECIMAL must be a number (e.g., 10.50, 99.99)'
+                },
+                'FLOAT': {
+                    pattern: /^-?\d+(\.\d+)?$/,
+                    message: 'Default value for FLOAT must be a number (e.g., 3.14)'
+                },
+                'DOUBLE': {
+                    pattern: /^-?\d+(\.\d+)?$/,
+                    message: 'Default value for DOUBLE must be a number'
+                },
+                'BOOLEAN': {
+                    pattern: /^(0|1|true|false)$/i,
+                    message: 'Default value for BOOLEAN must be: 0, 1, true, or false'
+                },
+                'DATE': {
+                    pattern: /^\d{4}-\d{2}-\d{2}$/,
+                    message: 'Default value for DATE must be in format YYYY-MM-DD (e.g., 2024-01-01)'
+                },
+                'DATETIME': {
+                    pattern: /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}|CURRENT_TIMESTAMP)$/,
+                    message: 'Default value for DATETIME must be YYYY-MM-DD HH:MM:SS or CURRENT_TIMESTAMP'
+                },
+                'TIMESTAMP': {
+                    pattern: /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}|CURRENT_TIMESTAMP)$/,
+                    message: 'Default value for TIMESTAMP must be YYYY-MM-DD HH:MM:SS or CURRENT_TIMESTAMP'
+                }
+            };
+            
+            const validator = validators[type];
+            if (validator) {
+                if (!validator.pattern.test(value)) {
+                    return { valid: false, message: validator.message };
+                }
+            }
+            
+            return { valid: true };
+        }
+
+        function updateFieldValidation() {
+            const typeSelect = document.getElementById('newColType');
+            const defaultInput = document.getElementById('newColDefault');
+            const lengthInput = document.getElementById('newColLength');
+            const defaultHelper = document.getElementById('defaultHelper');
+            const lengthHelper = document.getElementById('lengthHelper');
+            
+            if (!typeSelect || !defaultInput || !lengthInput) return;
+            
+            const type = typeSelect.value;
+            
+            // Reset validation attributes
+            defaultInput.removeAttribute('pattern');
+            defaultInput.removeAttribute('title');
+            defaultInput.removeAttribute('type');
+            defaultInput.setAttribute('type', 'text');
+            lengthInput.removeAttribute('required');
+            
+            // Helper text objects
+            const helpers = {
+                'INT': 'Only integers: 0, 100, -50 (no decimals)',
+                'VARCHAR': 'Any text allowed',
+                'TEXT': 'Any text allowed',
+                'DATE': 'Format: YYYY-MM-DD (e.g., 2024-01-01)',
+                'DATETIME': 'Format: YYYY-MM-DD HH:MM:SS or CURRENT_TIMESTAMP',
+                'TIMESTAMP': 'Use: CURRENT_TIMESTAMP (recommended)',
+                'BOOLEAN': 'Only: 0, 1, true, false',
+                'DECIMAL': 'Decimal numbers: 10.50, 99.99',
+                'FLOAT': 'Decimal numbers: 3.14, 99.9',
+                'DOUBLE': 'Decimal numbers: 123.456'
+            };
+            
+            const lengthHelpers = {
+                'INT': 'Optional. Common: 11',
+                'VARCHAR': 'REQUIRED! Example: 255',
+                'TEXT': 'Not needed',
+                'DATE': 'Not needed',
+                'DATETIME': 'Not needed',
+                'TIMESTAMP': 'Not needed',
+                'BOOLEAN': 'Not needed',
+                'DECIMAL': 'REQUIRED! Format: 10,2 (precision,scale)',
+                'FLOAT': 'Optional',
+                'DOUBLE': 'Optional'
+            };
+            
+            // Set validation based on type
+            switch(type) {
+                case 'INT':
+                    defaultInput.setAttribute('pattern', '^-?\\d+$');
+                    defaultInput.setAttribute('title', 'Integer numbers only (e.g., 0, 100, -50)');
+                    defaultInput.setAttribute('placeholder', 'e.g., 0 or 100');
+                    lengthInput.setAttribute('pattern', '\\d+');
+                    lengthInput.setAttribute('placeholder', 'e.g., 11');
+                    break;
+                
+                case 'DECIMAL':
+                    defaultInput.setAttribute('pattern', '^-?\\d+(\\.\\d+)?$');
+                    defaultInput.setAttribute('title', 'Decimal numbers only (e.g., 10.50, 99.99)');
+                    defaultInput.setAttribute('placeholder', 'e.g., 10.50');
+                    lengthInput.setAttribute('pattern', '\\d+,\\d+');
+                    lengthInput.setAttribute('title', 'Format: precision,scale (e.g., 10,2)');
+                    lengthInput.setAttribute('placeholder', 'e.g., 10,2');
+                    lengthInput.setAttribute('required', 'required');
+                    break;
+                
+                case 'FLOAT':
+                case 'DOUBLE':
+                    defaultInput.setAttribute('pattern', '^-?\\d+(\\.\\d+)?$');
+                    defaultInput.setAttribute('title', 'Numeric values only (e.g., 3.14, 99.9)');
+                    defaultInput.setAttribute('placeholder', 'e.g., 3.14');
+                    break;
+                
+                case 'BOOLEAN':
+                    defaultInput.setAttribute('pattern', '^(0|1|true|false)$');
+                    defaultInput.setAttribute('title', 'Only: 0, 1, true, or false');
+                    defaultInput.setAttribute('placeholder', '0 or 1');
+                    break;
+                
+                case 'DATE':
+                    defaultInput.setAttribute('pattern', '^\\d{4}-\\d{2}-\\d{2}$');
+                    defaultInput.setAttribute('title', 'Format: YYYY-MM-DD (e.g., 2024-01-01)');
+                    defaultInput.setAttribute('placeholder', 'YYYY-MM-DD');
+                    break;
+                
+                case 'DATETIME':
+                    defaultInput.setAttribute('pattern', '^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}|CURRENT_TIMESTAMP)$');
+                    defaultInput.setAttribute('title', 'Format: YYYY-MM-DD HH:MM:SS or CURRENT_TIMESTAMP');
+                    defaultInput.setAttribute('placeholder', 'CURRENT_TIMESTAMP');
+                    break;
+                
+                case 'TIMESTAMP':
+                    defaultInput.setAttribute('pattern', '^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}|CURRENT_TIMESTAMP)$');
+                    defaultInput.setAttribute('title', 'Use: CURRENT_TIMESTAMP or YYYY-MM-DD HH:MM:SS');
+                    defaultInput.setAttribute('placeholder', 'CURRENT_TIMESTAMP');
+                    break;
+                
+                case 'VARCHAR':
+                    defaultInput.removeAttribute('pattern');
+                    defaultInput.setAttribute('placeholder', 'Any text');
+                    lengthInput.setAttribute('pattern', '\\d+');
+                    lengthInput.setAttribute('title', 'Numeric length required (e.g., 255)');
+                    lengthInput.setAttribute('placeholder', '255');
+                    lengthInput.setAttribute('required', 'required');
+                    break;
+                
+                case 'TEXT':
+                    defaultInput.removeAttribute('pattern');
+                    defaultInput.setAttribute('placeholder', 'Any text (optional)');
+                    lengthInput.removeAttribute('pattern');
+                    lengthInput.setAttribute('placeholder', 'Not needed');
+                    lengthInput.removeAttribute('required');
+                    lengthInput.setAttribute('disabled', 'disabled');
+                    break;
+                
+                default:
+                    defaultInput.setAttribute('placeholder', 'Leave empty');
+                    break;
+            }
+            
+            // Update helper text
+            if (defaultHelper) {
+                defaultHelper.textContent = helpers[type] || 'Leave empty for no default value';
+            }
+            if (lengthHelper) {
+                lengthHelper.textContent = lengthHelpers[type] || 'Optional';
+            }
+            
+            // Re-enable length input for non-TEXT types
+            if (type !== 'TEXT') {
+                lengthInput.removeAttribute('disabled');
+            }
+        }
+
+        async function dropColumn(tableName, columnName) {
+            if (!confirm(`Are you sure you want to drop column "${columnName}"?`)) {
+                return;
+            }
+            
+            const result = await apiCall('alter_table_drop_column', {
+                db_name: connectedDatabase,
+                table_name: tableName,
+                column_name: columnName
+            });
+            
+            if (result.success) {
+                showAlert('success', `✓ ${result.message}`);
+                closeModal('editTableModal');
+                loadTables();
+            } else {
+                showAlert('error', `❌ ${result.message}`);
+            }
+        }
+
+        // ============================================================
+        // UTILITY FUNCTIONS
+        // ============================================================
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            document.getElementById(`tab-content-${tabName}`).classList.add('active');
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function showConfirmationModal(message, onConfirm) {
+            document.getElementById('confirmationMessage').innerHTML = message;
+            document.getElementById('confirmActionBtn').onclick = function() {
+                closeModal('confirmationModal');
+                onConfirm();
+            };
+            openModal('confirmationModal');
+        }
+
+        function toggleCollapsible(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById(id + 'Icon');
+            
+            if (content.classList.contains('active')) {
+                content.classList.remove('active');
+                if (icon) icon.textContent = '▶️';
+            } else {
+                content.classList.add('active');
+                if (icon) icon.textContent = '🔽';
+            }
+        }
+
+        function showAlert(type, message) {
+            const container = document.querySelector('.tab-content.active .card');
+            if (!container) return;
+            
+            const alertClass = `alert alert-${type}`;
+            const icons = {
+                success: '✓',
+                error: '❌',
+                info: 'ℹ️',
+                warning: '⚠️'
+            };
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.className = alertClass;
+            alertDiv.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
+            
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        function getStoredCredentials() {
+            const stored = localStorage.getItem('dbCredentials');
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        function saveCredentials(dbName, username, password) {
+            let credentials = getStoredCredentials();
+            credentials = credentials.filter(c => c.dbName !== dbName);
+            credentials.push({ dbName, username, password });
+            localStorage.setItem('dbCredentials', JSON.stringify(credentials));
+        }
+
+        function removeCredentials(dbName) {
+            let credentials = getStoredCredentials();
+            credentials = credentials.filter(c => c.dbName !== dbName);
+            localStorage.setItem('dbCredentials', JSON.stringify(credentials));
+        }
+
+        function updateCredentialsDbName(oldName, newName) {
+            let credentials = getStoredCredentials();
+            const index = credentials.findIndex(c => c.dbName === oldName);
+            
+            if (index !== -1) {
+                credentials[index].dbName = newName;
+                localStorage.setItem('dbCredentials', JSON.stringify(credentials));
+            }
+        }
+
+        function clearCredentials() {
+            if (confirm('Are you sure you want to clear all saved database credentials?')) {
+                localStorage.removeItem('dbCredentials');
+                showAlert('success', '✓ All saved credentials have been cleared.');
+                loadDatabases();
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>
+

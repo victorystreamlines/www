@@ -1,0 +1,1332 @@
+═══════════════════════════════════════════════════════════════
+PHASE 3: ADD COLUMN VALIDATION - COMPREHENSIVE ENHANCEMENT
+═══════════════════════════════════════════════════════════════
+
+PHASE OVERVIEW:
+--------------
+Phase 3 adds robust type-based validation to the "Add Column" functionality
+in table operations. This phase ensures that default values and length 
+specifications match the selected data type, preventing SQL errors and 
+providing excellent user experience with real-time feedback.
+
+WHAT PHASE 3 FIXES:
+-------------------
+❌ Problem: Users could enter integer defaults for VARCHAR columns
+❌ Problem: Users could enter text defaults for INT columns
+❌ Problem: DECIMAL columns created without proper length format
+❌ Problem: VARCHAR columns created without required length
+❌ Problem: CURRENT_TIMESTAMP used on non-date types
+❌ Problem: No real-time feedback on invalid inputs
+❌ Problem: Confusing error messages from database
+
+✅ Solution: Comprehensive frontend and backend validation
+✅ Solution: Real-time visual feedback (red/green borders)
+✅ Solution: Type-specific input patterns and helpers
+✅ Solution: Clear, user-friendly error messages
+✅ Solution: Prevent invalid data before submission
+
+WHEN TO APPLY PHASE 3:
+----------------------
+Apply this phase when enhancing the database control panel with table 
+operations, specifically in the "Edit Table" or "Add Column" functionality.
+This phase should be integrated into the TABLE OPERATIONS section of your
+main prompt.
+
+═══════════════════════════════════════════════════════════════
+SECTION 1: BACKEND VALIDATION REQUIREMENTS (api.php)
+═══════════════════════════════════════════════════════════════
+
+ENDPOINT: alter_table_add_column
+
+CRITICAL: Implement comprehensive type-based validation on the backend to
+prevent SQL errors from type mismatches between default values and column types.
+
+1. JSON DECODE ERROR CHECKING:
+   =============================
+   - Use json_last_error() immediately after json_decode()
+   - Provide detailed error messages for each JSON error type
+   - Return specific error: "JSON decode error: [error description]"
+   
+   Implementation:
+   ```php
+   $column = json_decode($columnJson, true);
+   if (json_last_error() !== JSON_ERROR_NONE) {
+       sendResponse(false, 'JSON decode error: ' . json_last_error_msg(), [], 400);
+   }
+   if (!$column || !isset($column['name']) || !isset($column['type'])) {
+       sendResponse(false, 'Invalid column data: name and type are required', [], 400);
+   }
+   ```
+
+2. COLUMN NAME VALIDATION:
+   ========================
+   - Pattern: /^[a-zA-Z0-9_]+$/
+   - Reject special characters, spaces, hyphens (except underscore)
+   - Error: "Invalid column name. Use only alphanumeric characters and underscores."
+   
+   Implementation:
+   ```php
+   $columnName = trim($column['name']);
+   if (empty($columnName) || !preg_match('/^[a-zA-Z0-9_]+$/', $columnName)) {
+       $conn->close();
+       sendResponse(false, 'Invalid column name. Use only alphanumeric characters and underscores.', [], 400);
+   }
+   ```
+
+3. LENGTH VALIDATION:
+   ===================
+   - Only add length if: isset($column['length']) && trim($column['length']) !== ''
+   - Validate numeric for INT/VARCHAR: /^[0-9]+$/
+   - Validate precision,scale for DECIMAL: /^[0-9,]+$/
+   - Use $conn->real_escape_string() for length values
+   
+   Implementation:
+   ```php
+   $typeDefinition = $columnType;
+   if (isset($column['length']) && trim($column['length']) !== '') {
+       $length = trim($column['length']);
+       if (preg_match('/^[0-9,]+$/', $length)) {
+           $typeDefinition .= "($length)";
+       }
+   }
+   ```
+
+4. NULLABLE HANDLING:
+   ===================
+   - Use: filter_var($column['nullable'], FILTER_VALIDATE_BOOLEAN)
+   - Default value: true (allow NULL)
+   - Add to SQL: ' NULL' or ' NOT NULL'
+   
+   Implementation:
+   ```php
+   $nullable = isset($column['nullable']) ? filter_var($column['nullable'], FILTER_VALIDATE_BOOLEAN) : true;
+   $columnDefinition .= $nullable ? ' NULL' : ' NOT NULL';
+   ```
+
+5. DEFAULT VALUE TYPE VALIDATION (CRITICAL):
+   ==========================================
+   
+   IMPORTANT: Implement a switch statement that validates default values
+   based on the column type. Each type has specific validation rules.
+
+   A) INTEGER TYPES (INT, INTEGER, TINYINT, SMALLINT, MEDIUMINT, BIGINT):
+      -------------------------------------------------------------------
+      Pattern: /^-?\d+$/ (integers only, negative allowed)
+      Validation: is_numeric($defaultValue) && preg_match('/^-?\d+$/', $defaultValue)
+      Valid Examples: 0, 100, -50, 999
+      Invalid Examples: 10.5, abc, "text"
+      SQL Format: DEFAULT $defaultValue (no quotes)
+      Error Message: "Default value for INT must be an integer number"
+      
+      Implementation:
+      ```php
+      case 'INT':
+      case 'INTEGER':
+      case 'TINYINT':
+      case 'SMALLINT':
+      case 'MEDIUMINT':
+      case 'BIGINT':
+          if (!is_numeric($defaultValue) || !preg_match('/^-?\d+$/', $defaultValue)) {
+              $conn->close();
+              sendResponse(false, "Default value for $columnType must be an integer number (e.g., 0, 100, -50)", [], 400);
+          }
+          $columnDefinition .= " DEFAULT $defaultValue";
+          break;
+      ```
+
+   B) DECIMAL TYPES (DECIMAL, FLOAT, DOUBLE, REAL):
+      ---------------------------------------------
+      Validation: is_numeric($defaultValue)
+      Valid Examples: 10.50, 3.14, 99.99, 0, 100
+      Invalid Examples: abc, "text"
+      SQL Format: DEFAULT $defaultValue (no quotes)
+      Error Message: "Default value for DECIMAL must be a numeric value"
+      
+      Implementation:
+      ```php
+      case 'DECIMAL':
+      case 'FLOAT':
+      case 'DOUBLE':
+      case 'REAL':
+          if (!is_numeric($defaultValue)) {
+              $conn->close();
+              sendResponse(false, "Default value for $columnType must be a numeric value (e.g., 10.50, 99.99)", [], 400);
+          }
+          $columnDefinition .= " DEFAULT $defaultValue";
+          break;
+      ```
+
+   C) BOOLEAN/BOOL:
+      -------------
+      Pattern: /^(0|1|true|false)$/i
+      Convert to 0 or 1 for SQL
+      Valid: 0, 1, true, false (case insensitive)
+      Invalid: 2, yes, no
+      SQL Format: DEFAULT 0 or DEFAULT 1
+      Error Message: "Default value for BOOLEAN must be 0, 1, true, or false"
+      
+      Implementation:
+      ```php
+      case 'BOOLEAN':
+      case 'BOOL':
+          if (!preg_match('/^(0|1|true|false)$/i', $defaultValue)) {
+              $conn->close();
+              sendResponse(false, "Default value for BOOLEAN must be 0, 1, true, or false", [], 400);
+          }
+          $boolValue = (strtolower($defaultValue) === 'true' || $defaultValue === '1') ? 1 : 0;
+          $columnDefinition .= " DEFAULT $boolValue";
+          break;
+      ```
+
+   D) DATE:
+      -----
+      Pattern: /^\d{4}-\d{2}-\d{2}$/
+      Valid Examples: 2024-01-01, 2025-12-31
+      Invalid Examples: 01/01/2024, 2024-1-1, today
+      SQL Format: DEFAULT '$escapedValue' (with quotes)
+      Error Message: "Default value for DATE must be in format YYYY-MM-DD"
+      
+      Implementation:
+      ```php
+      case 'DATE':
+          if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $defaultValue)) {
+              $conn->close();
+              sendResponse(false, "Default value for DATE must be in format YYYY-MM-DD (e.g., 2024-01-01)", [], 400);
+          }
+          $columnDefinition .= " DEFAULT '" . $conn->real_escape_string($defaultValue) . "'";
+          break;
+      ```
+
+   E) DATETIME:
+      ---------
+      Pattern: /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      OR: CURRENT_TIMESTAMP keyword
+      Valid Examples: 2024-01-01 12:00:00, CURRENT_TIMESTAMP
+      Invalid Examples: 2024-01-01, 12:00:00, now
+      SQL Format: DEFAULT '$escapedValue' or DEFAULT CURRENT_TIMESTAMP
+      Error Message: "Default value for DATETIME must be in format YYYY-MM-DD HH:MM:SS"
+      
+      Implementation:
+      ```php
+      case 'DATETIME':
+          if (strtoupper($defaultValue) === 'CURRENT_TIMESTAMP') {
+              $columnDefinition .= ' DEFAULT CURRENT_TIMESTAMP';
+          } elseif (!preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $defaultValue)) {
+              $conn->close();
+              sendResponse(false, "Default value for DATETIME must be in format YYYY-MM-DD HH:MM:SS or CURRENT_TIMESTAMP", [], 400);
+          } else {
+              $columnDefinition .= " DEFAULT '" . $conn->real_escape_string($defaultValue) . "'";
+          }
+          break;
+      ```
+
+   F) TIMESTAMP:
+      ----------
+      Accept: CURRENT_TIMESTAMP (recommended)
+      OR Pattern: /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      SQL Format: DEFAULT CURRENT_TIMESTAMP (no quotes)
+      IMPORTANT: CURRENT_TIMESTAMP only valid for TIMESTAMP, DATETIME, DATE
+      Error Message: "CURRENT_TIMESTAMP is only valid for TIMESTAMP, DATETIME, or DATE types"
+      
+      Implementation:
+      ```php
+      case 'TIMESTAMP':
+          if (strtoupper($defaultValue) === 'CURRENT_TIMESTAMP') {
+              $columnDefinition .= ' DEFAULT CURRENT_TIMESTAMP';
+          } elseif (!preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $defaultValue)) {
+              $conn->close();
+              sendResponse(false, "Default value for TIMESTAMP must be in format YYYY-MM-DD HH:MM:SS or CURRENT_TIMESTAMP", [], 400);
+          } else {
+              $columnDefinition .= " DEFAULT '" . $conn->real_escape_string($defaultValue) . "'";
+          }
+          break;
+      
+      // Special validation for CURRENT_TIMESTAMP on non-date types
+      if (strtoupper($defaultValue) === 'CURRENT_TIMESTAMP') {
+          if (!in_array($columnType, ['TIMESTAMP', 'DATETIME', 'DATE'])) {
+              $conn->close();
+              sendResponse(false, "CURRENT_TIMESTAMP is only valid for TIMESTAMP, DATETIME, or DATE types, not $columnType", [], 400);
+          }
+      }
+      ```
+
+   G) TIME:
+      -----
+      Pattern: /^\d{2}:\d{2}:\d{2}$/
+      Valid Examples: 12:30:00, 23:59:59, 00:00:00
+      Invalid Examples: 12:30, 5pm, noon
+      SQL Format: DEFAULT '$escapedValue'
+      Error Message: "Default value for TIME must be in format HH:MM:SS"
+      
+      Implementation:
+      ```php
+      case 'TIME':
+          if (!preg_match('/^\d{2}:\d{2}:\d{2}$/', $defaultValue)) {
+              $conn->close();
+              sendResponse(false, "Default value for TIME must be in format HH:MM:SS (e.g., 12:30:00)", [], 400);
+          }
+          $columnDefinition .= " DEFAULT '" . $conn->real_escape_string($defaultValue) . "'";
+          break;
+      ```
+
+   H) YEAR:
+      -----
+      Pattern: /^\d{4}$/
+      Valid Examples: 2024, 1999, 2050
+      Invalid Examples: 24, 99, next year
+      SQL Format: DEFAULT $defaultValue (no quotes)
+      Error Message: "Default value for YEAR must be a 4-digit year"
+      
+      Implementation:
+      ```php
+      case 'YEAR':
+          if (!preg_match('/^\d{4}$/', $defaultValue)) {
+              $conn->close();
+              sendResponse(false, "Default value for YEAR must be a 4-digit year (e.g., 2024)", [], 400);
+          }
+          $columnDefinition .= " DEFAULT $defaultValue";
+          break;
+      ```
+
+   I) TEXT TYPES (VARCHAR, CHAR, TEXT, TINYTEXT, MEDIUMTEXT, LONGTEXT, ENUM, SET):
+      ----------------------------------------------------------------------------
+      Accept ANY text value
+      Always use $conn->real_escape_string()
+      SQL Format: DEFAULT '$escapedValue'
+      No validation needed - all text valid
+      
+      Implementation:
+      ```php
+      case 'VARCHAR':
+      case 'CHAR':
+      case 'TEXT':
+      case 'TINYTEXT':
+      case 'MEDIUMTEXT':
+      case 'LONGTEXT':
+      case 'ENUM':
+      case 'SET':
+          $columnDefinition .= " DEFAULT '" . $conn->real_escape_string($defaultValue) . "'";
+          break;
+      ```
+
+   J) BLOB TYPES (BLOB, TINYBLOB, MEDIUMBLOB, LONGBLOB, BINARY, VARBINARY):
+      -----------------------------------------------------------------------
+      REJECT any default value
+      MySQL does NOT support default values for BLOB types
+      Return error immediately if default provided
+      Error Message: "BLOB columns cannot have default values in MySQL"
+      
+      Implementation:
+      ```php
+      case 'BLOB':
+      case 'TINYBLOB':
+      case 'MEDIUMBLOB':
+      case 'LONGBLOB':
+      case 'BINARY':
+      case 'VARBINARY':
+          $conn->close();
+          sendResponse(false, "BLOB columns cannot have default values in MySQL", [], 400);
+          break;
+      ```
+
+6. SQL QUERY STRUCTURE:
+   ====================
+   Syntax: ALTER TABLE `table_name` ADD COLUMN `column_name` TYPE(LENGTH) [NOT] NULL [DEFAULT value]
+   
+   Example Queries:
+   - ALTER TABLE `users` ADD COLUMN `age` INT(3) NOT NULL DEFAULT 0
+   - ALTER TABLE `users` ADD COLUMN `name` VARCHAR(100) NULL DEFAULT 'Unknown'
+   - ALTER TABLE `logs` ADD COLUMN `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+   - ALTER TABLE `products` ADD COLUMN `price` DECIMAL(10,2) NULL DEFAULT 0.00
+
+7. ERROR RESPONSE FORMAT:
+   ======================
+   - Always include the actual SQL query in error messages for debugging
+   - Format: "SQL Error: [error] | Query: [full SQL query]"
+   - This helps identify exact validation issues
+   
+   Implementation:
+   ```php
+   if (!$conn->query($alterQuery)) {
+       $error = $conn->error;
+       $conn->close();
+       sendResponse(false, "SQL Error: $error | Query: $alterQuery", [], 500);
+   }
+   ```
+
+8. COMPLETE BACKEND VALIDATION FLOW:
+   =================================
+   ```php
+   case 'alter_table_add_column':
+       // 1. Get and validate inputs
+       $tableName = $_POST['table_name'] ?? '';
+       $dbName = $_POST['db_name'] ?? '';
+       $columnJson = $_POST['column'] ?? '';
+       
+       // 2. Decode JSON with error checking
+       $column = json_decode($columnJson, true);
+       if (json_last_error() !== JSON_ERROR_NONE) {
+           sendResponse(false, 'JSON decode error: ' . json_last_error_msg(), [], 400);
+       }
+       if (!$column || !isset($column['name']) || !isset($column['type'])) {
+           sendResponse(false, 'Invalid column data: name and type are required', [], 400);
+       }
+       
+       // 3. Connect to database
+       $conn = getDatabaseConnection($dbName);
+       if (!$conn) {
+           sendResponse(false, 'Failed to connect to database', [], 500);
+       }
+       
+       // 4. Validate column name
+       $columnName = trim($column['name']);
+       $columnType = strtoupper(trim($column['type']));
+       
+       if (empty($columnName) || !preg_match('/^[a-zA-Z0-9_]+$/', $columnName)) {
+           $conn->close();
+           sendResponse(false, 'Invalid column name. Use only alphanumeric characters and underscores.', [], 400);
+       }
+       
+       // 5. Escape identifiers
+       $escapedTableName = escapeIdentifier($tableName);
+       $escapedColumnName = escapeIdentifier($columnName);
+       
+       // 6. Build type with length
+       $typeDefinition = $columnType;
+       if (isset($column['length']) && trim($column['length']) !== '') {
+           $length = trim($column['length']);
+           if (preg_match('/^[0-9,]+$/', $length)) {
+               $typeDefinition .= "($length)";
+           }
+       }
+       
+       // 7. Start building column definition
+       $columnDefinition = "$escapedColumnName $typeDefinition";
+       
+       // 8. Add NULL/NOT NULL
+       $nullable = isset($column['nullable']) ? filter_var($column['nullable'], FILTER_VALIDATE_BOOLEAN) : true;
+       $columnDefinition .= $nullable ? ' NULL' : ' NOT NULL';
+       
+       // 9. Validate and add default value (see switch statement above)
+       if (isset($column['default']) && trim($column['default']) !== '') {
+           $defaultValue = trim($column['default']);
+           
+           // Special handling for CURRENT_TIMESTAMP
+           if (strtoupper($defaultValue) === 'CURRENT_TIMESTAMP') {
+               if (in_array($columnType, ['TIMESTAMP', 'DATETIME', 'DATE'])) {
+                   $columnDefinition .= ' DEFAULT CURRENT_TIMESTAMP';
+               } else {
+                   $conn->close();
+                   sendResponse(false, "CURRENT_TIMESTAMP is only valid for TIMESTAMP, DATETIME, or DATE types, not $columnType", [], 400);
+               }
+           } elseif (strtoupper($defaultValue) === 'NULL') {
+               $columnDefinition .= ' DEFAULT NULL';
+           } else {
+               // Type-specific validation (implement switch statement here)
+               // See sections 5A through 5J above
+           }
+       }
+       
+       // 10. Build and execute query
+       $alterQuery = "ALTER TABLE $escapedTableName ADD COLUMN $columnDefinition";
+       if (!$conn->query($alterQuery)) {
+           $error = $conn->error;
+           $conn->close();
+           sendResponse(false, "SQL Error: $error | Query: $alterQuery", [], 500);
+       }
+       
+       $conn->close();
+       sendResponse(true, "Column '$columnName' added successfully to table '$tableName'");
+       break;
+   ```
+
+═══════════════════════════════════════════════════════════════
+SECTION 2: FRONTEND VALIDATION REQUIREMENTS (index.html)
+═══════════════════════════════════════════════════════════════
+
+LOCATION: Edit Table Modal - "Add New Column" Form Section
+
+CRITICAL: Implement dynamic HTML5 validation that changes based on the
+selected data type, providing real-time visual feedback to users.
+
+1. HTML5 PATTERN ATTRIBUTES (Dynamic):
+   ===================================
+
+   A) Column Name Input:
+      ------------------
+      ```html
+      <input type="text" 
+             id="newColName" 
+             pattern="[a-zA-Z0-9_]+" 
+             title="Only letters, numbers, and underscores allowed"
+             placeholder="Column name" 
+             required>
+      ```
+
+   B) Data Type Dropdown:
+      -------------------
+      IMPORTANT: Add onchange event to trigger validation updates
+      
+      ```html
+      <select id="newColType" required onchange="updateFieldValidation()">
+          <option value="INT">INT - Integer numbers</option>
+          <option value="VARCHAR">VARCHAR - Text (up to specified length)</option>
+          <option value="TEXT">TEXT - Long text</option>
+          <option value="DATE">DATE - Date (YYYY-MM-DD)</option>
+          <option value="DATETIME">DATETIME - Date and time</option>
+          <option value="TIMESTAMP">TIMESTAMP - Timestamp</option>
+          <option value="BOOLEAN">BOOLEAN - True/False (0/1)</option>
+          <option value="DECIMAL">DECIMAL - Decimal numbers</option>
+          <option value="FLOAT">FLOAT - Floating point</option>
+          <option value="DOUBLE">DOUBLE - Double precision</option>
+      </select>
+      ```
+
+   C) Length Input:
+      -------------
+      ```html
+      <input type="text" 
+             id="newColLength" 
+             pattern="[0-9,]+" 
+             title="Only numbers and comma for DECIMAL"
+             placeholder="e.g., 255">
+      <div class="helper-text" id="lengthHelper">Optional. Required for VARCHAR.</div>
+      ```
+
+   D) Default Value Input:
+      --------------------
+      Base structure (pattern changes dynamically):
+      ```html
+      <input type="text" 
+             id="newColDefault" 
+             placeholder="Leave empty for none">
+      <div class="helper-text" id="defaultHelper">Leave empty for no default value</div>
+      ```
+      
+      Dynamic Patterns by Type:
+      ------------------------
+      INT:        pattern="^-?\d+$"
+                  placeholder="e.g., 0 or 100"
+                  title="Integer numbers only (e.g., 0, 100, -50)"
+      
+      DECIMAL:    pattern="^-?\d+(\.\d+)?$"
+                  placeholder="e.g., 10.50"
+                  title="Decimal numbers only (e.g., 10.50, 99.99)"
+      
+      FLOAT:      pattern="^-?\d+(\.\d+)?$"
+                  placeholder="e.g., 3.14"
+                  title="Numeric values only (e.g., 3.14, 99.9)"
+      
+      DOUBLE:     pattern="^-?\d+(\.\d+)?$"
+                  placeholder="e.g., 123.456"
+                  title="Numeric values only"
+      
+      BOOLEAN:    pattern="^(0|1|true|false)$"
+                  placeholder="0 or 1"
+                  title="Only: 0, 1, true, or false"
+      
+      DATE:       pattern="^\d{4}-\d{2}-\d{2}$"
+                  placeholder="YYYY-MM-DD"
+                  title="Format: YYYY-MM-DD (e.g., 2024-01-01)"
+      
+      DATETIME:   pattern="^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}|CURRENT_TIMESTAMP)$"
+                  placeholder="CURRENT_TIMESTAMP"
+                  title="Format: YYYY-MM-DD HH:MM:SS or CURRENT_TIMESTAMP"
+      
+      TIMESTAMP:  pattern="^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}|CURRENT_TIMESTAMP)$"
+                  placeholder="CURRENT_TIMESTAMP"
+                  title="Use: CURRENT_TIMESTAMP or YYYY-MM-DD HH:MM:SS"
+      
+      VARCHAR:    NO pattern (any text allowed)
+                  placeholder="Any text"
+      
+      TEXT:       NO pattern (any text allowed)
+                  placeholder="Any text (optional)"
+
+2. DYNAMIC FIELD VALIDATION FUNCTION:
+   ==================================
+   
+   Function Name: updateFieldValidation()
+   Called: When data type dropdown changes (onchange event)
+   Purpose: Updates pattern, placeholder, helper text, required/disabled status
+   
+   ```javascript
+   function updateFieldValidation() {
+       const typeSelect = document.getElementById('newColType');
+       const defaultInput = document.getElementById('newColDefault');
+       const lengthInput = document.getElementById('newColLength');
+       const defaultHelper = document.getElementById('defaultHelper');
+       const lengthHelper = document.getElementById('lengthHelper');
+       
+       if (!typeSelect || !defaultInput || !lengthInput) return;
+       
+       const type = typeSelect.value;
+       
+       // Reset all attributes
+       defaultInput.removeAttribute('pattern');
+       defaultInput.removeAttribute('title');
+       defaultInput.removeAttribute('type');
+       defaultInput.setAttribute('type', 'text');
+       lengthInput.removeAttribute('required');
+       lengthInput.removeAttribute('disabled');
+       lengthInput.removeAttribute('pattern');
+       lengthInput.removeAttribute('title');
+       lengthInput.setAttribute('placeholder', 'e.g., 255');
+       defaultInput.setAttribute('placeholder', 'Leave empty for none');
+       
+       // Helper text objects
+       const helpers = {
+           'INT': 'Only integers: 0, 100, -50 (no decimals)',
+           'DECIMAL': 'Decimal numbers: 10.50, 99.99',
+           'FLOAT': 'Floating point: 3.14, 99.9',
+           'DOUBLE': 'Double precision: 123.456',
+           'BOOLEAN': 'Only: 0, 1, true, or false',
+           'DATE': 'Format: YYYY-MM-DD (e.g., 2024-01-01)',
+           'DATETIME': 'Use: CURRENT_TIMESTAMP or YYYY-MM-DD HH:MM:SS',
+           'TIMESTAMP': 'Use: CURRENT_TIMESTAMP (recommended)',
+           'VARCHAR': 'Any text allowed',
+           'TEXT': 'Any text allowed'
+       };
+       
+       const lengthHelpers = {
+           'INT': 'Optional. Common: 11',
+           'VARCHAR': 'REQUIRED! Example: 255',
+           'TEXT': 'Not needed',
+           'DECIMAL': 'REQUIRED! Format: 10,2 (precision,scale)',
+           'FLOAT': 'Optional',
+           'DOUBLE': 'Optional',
+           'BOOLEAN': 'Not needed',
+           'DATE': 'Not needed',
+           'DATETIME': 'Not needed',
+           'TIMESTAMP': 'Not needed'
+       };
+       
+       // Apply type-specific validation
+       switch(type) {
+           case 'INT':
+               defaultInput.setAttribute('pattern', '^-?\\d+$');
+               defaultInput.setAttribute('title', 'Integer numbers only (e.g., 0, 100, -50)');
+               defaultInput.setAttribute('placeholder', 'e.g., 0 or 100');
+               lengthInput.setAttribute('pattern', '\\d+');
+               lengthInput.setAttribute('title', 'Numeric length');
+               lengthInput.setAttribute('placeholder', 'e.g., 11');
+               break;
+               
+           case 'VARCHAR':
+               defaultInput.removeAttribute('pattern');
+               defaultInput.setAttribute('placeholder', 'Any text');
+               lengthInput.setAttribute('pattern', '\\d+');
+               lengthInput.setAttribute('title', 'Numeric length required (e.g., 255)');
+               lengthInput.setAttribute('required', 'required');
+               lengthInput.setAttribute('placeholder', '255');
+               break;
+               
+           case 'TEXT':
+               defaultInput.removeAttribute('pattern');
+               defaultInput.setAttribute('placeholder', 'Any text (optional)');
+               lengthInput.setAttribute('placeholder', 'Not needed');
+               lengthInput.setAttribute('disabled', 'disabled');
+               break;
+               
+           case 'DECIMAL':
+               defaultInput.setAttribute('pattern', '^-?\\d+(\\.\\d+)?$');
+               defaultInput.setAttribute('title', 'Decimal numbers only (e.g., 10.50, 99.99)');
+               defaultInput.setAttribute('placeholder', 'e.g., 10.50');
+               lengthInput.setAttribute('pattern', '\\d+,\\d+');
+               lengthInput.setAttribute('title', 'Format: precision,scale (e.g., 10,2)');
+               lengthInput.setAttribute('required', 'required');
+               lengthInput.setAttribute('placeholder', 'e.g., 10,2');
+               break;
+               
+           case 'FLOAT':
+           case 'DOUBLE':
+               defaultInput.setAttribute('pattern', '^-?\\d+(\\.\\d+)?$');
+               defaultInput.setAttribute('title', 'Numeric values only (e.g., 3.14, 99.9)');
+               defaultInput.setAttribute('placeholder', 'e.g., 3.14');
+               break;
+               
+           case 'BOOLEAN':
+               defaultInput.setAttribute('pattern', '^(0|1|true|false)$');
+               defaultInput.setAttribute('title', 'Only: 0, 1, true, or false');
+               defaultInput.setAttribute('placeholder', '0 or 1');
+               break;
+               
+           case 'DATE':
+               defaultInput.setAttribute('pattern', '^\\d{4}-\\d{2}-\\d{2}$');
+               defaultInput.setAttribute('title', 'Format: YYYY-MM-DD (e.g., 2024-01-01)');
+               defaultInput.setAttribute('placeholder', 'YYYY-MM-DD');
+               break;
+               
+           case 'DATETIME':
+               defaultInput.setAttribute('pattern', '^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}|CURRENT_TIMESTAMP)$');
+               defaultInput.setAttribute('title', 'Format: YYYY-MM-DD HH:MM:SS or CURRENT_TIMESTAMP');
+               defaultInput.setAttribute('placeholder', 'CURRENT_TIMESTAMP');
+               break;
+               
+           case 'TIMESTAMP':
+               defaultInput.setAttribute('pattern', '^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}|CURRENT_TIMESTAMP)$');
+               defaultInput.setAttribute('title', 'Use: CURRENT_TIMESTAMP or YYYY-MM-DD HH:MM:SS');
+               defaultInput.setAttribute('placeholder', 'CURRENT_TIMESTAMP');
+               break;
+               
+           default:
+               break;
+       }
+       
+       // Update helper text
+       if (defaultHelper) {
+           defaultHelper.textContent = helpers[type] || 'Leave empty for no default value';
+       }
+       if (lengthHelper) {
+           lengthHelper.textContent = lengthHelpers[type] || 'Optional';
+       }
+   }
+   ```
+
+3. VISUAL FEEDBACK CSS (CRITICAL):
+   ===============================
+   
+   Add these CSS rules to provide real-time visual feedback:
+   
+   ```css
+   /* Red border for invalid input */
+   input:invalid:not(:placeholder-shown) {
+       border-color: #ef4444 !important;
+       background: rgba(239, 68, 68, 0.1);
+   }
+   
+   /* Green border for valid input */
+   input:valid:not(:placeholder-shown):not([value=""]) {
+       border-color: #10b981;
+   }
+   
+   /* Disabled field styling */
+   input[disabled] {
+       opacity: 0.5;
+       cursor: not-allowed;
+       background: rgba(0, 0, 0, 0.5) !important;
+   }
+   
+   /* Helper text styling */
+   .helper-text {
+       font-size: 0.85rem;
+       color: rgba(255, 255, 255, 0.6);
+       margin-top: 4px;
+   }
+   ```
+
+4. PRE-SUBMIT JAVASCRIPT VALIDATION:
+   =================================
+   
+   Enhance the addTableColumn function with validation checks:
+   
+   ```javascript
+   async function addTableColumn(event, tableName) {
+       event.preventDefault();
+       
+       const colName = document.getElementById('newColName').value.trim();
+       const colType = document.getElementById('newColType').value;
+       const colLength = document.getElementById('newColLength').value.trim();
+       const colDefault = document.getElementById('newColDefault').value.trim();
+       const colNullable = document.getElementById('newColNullable').checked;
+       
+       // 1. Validate column name
+       if (!colName) {
+           showAlert('error', '❌ Column name is required');
+           return;
+       }
+       
+       if (!/^[a-zA-Z0-9_]+$/.test(colName)) {
+           showAlert('error', '❌ Column name can only contain letters, numbers, and underscores');
+           return;
+       }
+       
+       // 2. Validate column type
+       if (!colType) {
+           showAlert('error', '❌ Data type is required');
+           return;
+       }
+       
+       // 3. Validate VARCHAR length required
+       if (colType === 'VARCHAR' && !colLength) {
+           showAlert('error', '❌ Length is required for VARCHAR type');
+           return;
+       }
+       
+       // 4. Validate DECIMAL length required and format
+       if (colType === 'DECIMAL') {
+           if (!colLength) {
+               showAlert('error', '❌ Length is required for DECIMAL type (format: precision,scale e.g., 10,2)');
+               return;
+           }
+           if (!/^\d+,\d+$/.test(colLength)) {
+               showAlert('error', '❌ DECIMAL length must be in format: precision,scale (e.g., 10,2)');
+               return;
+           }
+       }
+       
+       // 5. Validate default value if provided
+       if (colDefault) {
+           const validationResult = validateDefaultValue(colType, colDefault);
+           if (!validationResult.valid) {
+               showAlert('error', `❌ ${validationResult.message}`);
+               return;
+           }
+       }
+       
+       // 6. Build column object
+       const columnData = {
+           name: colName,
+           type: colType,
+           length: colLength,
+           default: colDefault,
+           nullable: colNullable
+       };
+       
+       // 7. Send to backend
+       try {
+           const response = await fetch(API_URL, {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+               body: new URLSearchParams({
+                   action: 'alter_table_add_column',
+                   db_name: currentDatabase,
+                   table_name: tableName,
+                   column: JSON.stringify(columnData)
+               })
+           });
+           
+           const result = await response.json();
+           
+           if (result.success) {
+               showAlert('success', `✅ ${result.message}`);
+               closeModal('editTableModal');
+               loadTables();
+           } else {
+               showAlert('error', `❌ ${result.message}`);
+           }
+       } catch (error) {
+           console.error('Add column error:', error);
+           showAlert('error', '❌ Failed to add column. Please try again.');
+       }
+   }
+   ```
+
+5. VALIDATE DEFAULT VALUE HELPER FUNCTION:
+   =======================================
+   
+   ```javascript
+   function validateDefaultValue(type, value) {
+       if (!value) return { valid: true };
+       
+       const validators = {
+           'INT': {
+               pattern: /^-?\d+$/,
+               message: 'Default value for INT must be an integer (e.g., 0, 100, -50)'
+           },
+           'DECIMAL': {
+               pattern: /^-?\d+(\.\d+)?$/,
+               message: 'Default value for DECIMAL must be a number (e.g., 10.50, 99.99)'
+           },
+           'FLOAT': {
+               pattern: /^-?\d+(\.\d+)?$/,
+               message: 'Default value for FLOAT must be a number (e.g., 3.14)'
+           },
+           'DOUBLE': {
+               pattern: /^-?\d+(\.\d+)?$/,
+               message: 'Default value for DOUBLE must be a number'
+           },
+           'BOOLEAN': {
+               pattern: /^(0|1|true|false)$/i,
+               message: 'Default value for BOOLEAN must be: 0, 1, true, or false'
+           },
+           'DATE': {
+               pattern: /^\d{4}-\d{2}-\d{2}$/,
+               message: 'Default value for DATE must be in format YYYY-MM-DD (e.g., 2024-01-01)'
+           },
+           'DATETIME': {
+               pattern: /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}|CURRENT_TIMESTAMP)$/,
+               message: 'Default value for DATETIME must be YYYY-MM-DD HH:MM:SS or CURRENT_TIMESTAMP'
+           },
+           'TIMESTAMP': {
+               pattern: /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}|CURRENT_TIMESTAMP)$/,
+               message: 'Default value for TIMESTAMP must be YYYY-MM-DD HH:MM:SS or CURRENT_TIMESTAMP'
+           }
+       };
+       
+       const validator = validators[type];
+       if (validator && !validator.pattern.test(value)) {
+           return { valid: false, message: validator.message };
+       }
+       
+       return { valid: true };
+   }
+   ```
+
+6. INITIALIZE VALIDATION ON MODAL OPEN:
+   ====================================
+   
+   After building the Edit Table form HTML, initialize validation:
+   
+   ```javascript
+   function displayEditTableForm(tableName, columns) {
+       const content = document.getElementById('editTableContent');
+       
+       // Build form HTML (include all the HTML from sections above)
+       const html = `
+           <form onsubmit="addTableColumn(event, '${tableName}')">
+               <!-- All form fields here -->
+           </form>
+       `;
+       
+       content.innerHTML = html;
+       
+       // CRITICAL: Initialize validation after DOM is ready
+       setTimeout(() => {
+           updateFieldValidation();
+       }, 100);
+   }
+   ```
+
+═══════════════════════════════════════════════════════════════
+SECTION 3: REQUIRED FIELD BEHAVIOR
+═══════════════════════════════════════════════════════════════
+
+CRITICAL: Some data types have specific length requirements.
+
+1. VARCHAR Type:
+   -------------
+   - Length field: REQUIRED
+   - Add required attribute to length input
+   - Helper text: "REQUIRED! Example: 255"
+   - Cannot submit form without length value
+   - Frontend validation: Check before API call
+   
+   Implementation:
+   ```javascript
+   case 'VARCHAR':
+       lengthInput.setAttribute('required', 'required');
+       lengthHelper.textContent = 'REQUIRED! Example: 255';
+   ```
+
+2. DECIMAL Type:
+   -------------
+   - Length field: REQUIRED
+   - Format: precision,scale (e.g., 10,2)
+   - Pattern: \d+,\d+
+   - Helper text: "REQUIRED! Format: 10,2 (precision,scale)"
+   - Frontend validation: Check format /^\d+,\d+$/
+   
+   Implementation:
+   ```javascript
+   case 'DECIMAL':
+       lengthInput.setAttribute('required', 'required');
+       lengthInput.setAttribute('pattern', '\\d+,\\d+');
+       lengthHelper.textContent = 'REQUIRED! Format: 10,2 (precision,scale)';
+   ```
+
+3. TEXT Type:
+   ----------
+   - Length field: DISABLED
+   - Add disabled attribute to length input
+   - Visual: Grayed out, not clickable
+   - Helper text: "Not needed"
+   - Placeholder: "Not needed"
+   
+   Implementation:
+   ```javascript
+   case 'TEXT':
+       lengthInput.setAttribute('disabled', 'disabled');
+       lengthInput.setAttribute('placeholder', 'Not needed');
+       lengthHelper.textContent = 'Not needed';
+   ```
+
+4. Other Types:
+   ------------
+   - Length field: OPTIONAL
+   - No required attribute
+   - No disabled attribute
+   - User can leave empty or provide value
+
+═══════════════════════════════════════════════════════════════
+SECTION 4: USER EXPERIENCE REQUIREMENTS
+═══════════════════════════════════════════════════════════════
+
+GOAL: Provide excellent UX with real-time feedback and clear guidance.
+
+1. REAL-TIME VISUAL FEEDBACK:
+   ===========================
+   - As user types, border color changes instantly
+   - Red border = invalid format (before user even submits)
+   - Green border = valid format
+   - Gray/normal border = empty field
+   - Disabled appearance = field not needed for this type
+   
+   User sees validation feedback IMMEDIATELY, not just on submit.
+
+2. DYNAMIC PLACEHOLDER TEXT:
+   =========================
+   - Changes based on selected data type
+   - Shows example in correct format
+   - Guides user to enter data correctly
+   
+   Examples:
+   - INT: "e.g., 0 or 100"
+   - DATE: "YYYY-MM-DD"
+   - VARCHAR: "Any text"
+   - TIMESTAMP: "CURRENT_TIMESTAMP"
+
+3. HELPER TEXT UPDATES:
+   ====================
+   - Appears below input field in smaller, muted text
+   - Updates immediately when data type changes
+   - Provides guidance without cluttering interface
+   - Indicates required vs optional fields
+   
+   Examples:
+   - "Only integers: 0, 100, -50 (no decimals)"
+   - "REQUIRED! Example: 255"
+   - "Format: YYYY-MM-DD (e.g., 2024-01-01)"
+   - "Use: CURRENT_TIMESTAMP (recommended)"
+
+4. TOOLTIP ON HOVER:
+   =================
+   - HTML title attribute shows validation rule
+   - Appears when user hovers over field
+   - Provides detailed format requirements
+   
+   Example: "Integer numbers only (e.g., 0, 100, -50)"
+
+5. CLEAR ERROR MESSAGES:
+   =====================
+   - Frontend: User-friendly messages before submission
+   - Backend: Detailed technical messages with SQL query
+   - Format: "❌ [Problem] ([Example of correct format])"
+   
+   Good Examples:
+   ✅ "❌ Length is required for VARCHAR type"
+   ✅ "❌ Default value for INT must be an integer (e.g., 0, 100, -50)"
+   ✅ "❌ DECIMAL length must be in format: precision,scale (e.g., 10,2)"
+   
+   Bad Examples (avoid):
+   ❌ "Invalid value"
+   ❌ "Error"
+   ❌ "SQL Error: 1234"
+
+6. PREVENT INVALID SUBMISSIONS:
+   ============================
+   Three layers of validation:
+   
+   Layer 1: HTML5 validation
+   - Browser prevents form submit if pattern doesn't match
+   - Instant feedback, no API call needed
+   
+   Layer 2: JavaScript validation
+   - Checks complex rules before API call
+   - Provides friendly error messages
+   - Saves server resources
+   
+   Layer 3: Backend validation
+   - Final safety net against invalid data
+   - Returns detailed error with SQL query
+   - Protects database integrity
+
+═══════════════════════════════════════════════════════════════
+SECTION 5: VALIDATION SUMMARY TABLE
+═══════════════════════════════════════════════════════════════
+
+Quick reference for type-specific validation rules:
+
+Type        | Default Value Rules                      | Length Rules
+------------|------------------------------------------|--------------------------------
+INT         | Integers only (e.g., 0, 100, -50)       | Optional numeric
+VARCHAR     | Any text                                 | REQUIRED numeric (e.g., 255)
+TEXT        | Any text                                 | DISABLED (not needed)
+DATE        | YYYY-MM-DD format                        | Not needed
+DATETIME    | YYYY-MM-DD HH:MM:SS or CURRENT_TIMESTAMP | Not needed
+TIMESTAMP   | CURRENT_TIMESTAMP (recommended)          | Not needed
+BOOLEAN     | 0, 1, true, false only                   | Not needed
+DECIMAL     | Numeric with decimals (e.g., 10.50)      | REQUIRED format: 10,2
+FLOAT       | Numeric with decimals                    | Optional
+DOUBLE      | Numeric with decimals                    | Optional
+BLOB        | NO default allowed (MySQL limitation)    | Not needed
+
+═══════════════════════════════════════════════════════════════
+SECTION 6: IMPLEMENTATION CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+Use this checklist to ensure complete implementation:
+
+BACKEND (api.php) - alter_table_add_column endpoint:
+---------------------------------------------------
+☐ JSON decode with error checking (json_last_error())
+☐ Validate column data exists and has name/type
+☐ Column name validation (alphanumeric + underscore only)
+☐ Length handling (only if not empty, proper escaping)
+☐ Type-specific default value validation (switch statement)
+☐   INT types: integer-only validation
+☐   DECIMAL types: numeric validation
+☐   BOOLEAN: 0/1/true/false validation
+☐   DATE: YYYY-MM-DD pattern validation
+☐   DATETIME: YYYY-MM-DD HH:MM:SS or CURRENT_TIMESTAMP
+☐   TIMESTAMP: CURRENT_TIMESTAMP restriction for date types only
+☐   TEXT types: accept any text, escape properly
+☐   BLOB types: reject default values completely
+☐ Nullable handling with filter_var boolean validation
+☐ SQL query returns full query in error messages
+☐ Proper escaping of all user inputs with real_escape_string
+
+FRONTEND (index.html) - Add New Column form:
+--------------------------------------------
+☐ Column name input with pattern="[a-zA-Z0-9_]+"
+☐ Column name input with title attribute for tooltip
+☐ Length input with pattern="[0-9,]+"
+☐ Default value input (no initial pattern, changes dynamically)
+☐ Data type dropdown with onchange="updateFieldValidation()"
+☐ Helper text div below length input (id="lengthHelper")
+☐ Helper text div below default value input (id="defaultHelper")
+☐ updateFieldValidation() function implemented completely
+☐ Switch statement for all data types in updateFieldValidation()
+☐   INT: pattern, placeholder, helper text
+☐   VARCHAR: no pattern, required length
+☐   TEXT: no pattern, disabled length
+☐   DECIMAL: pattern, required length with format
+☐   FLOAT/DOUBLE: pattern for decimals
+☐   BOOLEAN: pattern for 0/1/true/false
+☐   DATE: pattern for YYYY-MM-DD
+☐   DATETIME: pattern with CURRENT_TIMESTAMP option
+☐   TIMESTAMP: pattern with CURRENT_TIMESTAMP option
+☐ Dynamic pattern attribute changes implemented
+☐ Dynamic placeholder changes implemented
+☐ Dynamic helper text changes implemented
+☐ Required attribute added/removed for VARCHAR/DECIMAL length
+☐ Disabled attribute added/removed for TEXT length
+☐ Visual feedback CSS (red/green borders) added
+☐ CSS for invalid input (red border)
+☐ CSS for valid input (green border)
+☐ CSS for disabled input (grayed out)
+☐ Pre-submit JavaScript validation in addTableColumn()
+☐ Validate column name is not empty
+☐ Validate column name pattern matches
+☐ VARCHAR length required check
+☐ DECIMAL length required check
+☐ DECIMAL length format check (/^\d+,\d+$/)
+☐ validateDefaultValue() function implemented
+☐ validateDefaultValue() has all type validators
+☐ Default value type match check before API call
+☐ Initialize validation on modal open (setTimeout)
+☐ Clear error messages matching backend format
+
+TESTING:
+--------
+☐ Test INT with text default (should fail with clear message)
+☐ Test INT with decimal default like 10.5 (should fail)
+☐ Test INT with valid integer 100 (should succeed)
+☐ Test VARCHAR without length (should fail - required)
+☐ Test VARCHAR with length 255 (should succeed)
+☐ Test TEXT with length field (should be disabled/grayed out)
+☐ Test DECIMAL without length (should fail - required)
+☐ Test DECIMAL with wrong format "10" (should fail)
+☐ Test DECIMAL with correct format "10,2" (should succeed)
+☐ Test DATE with wrong format "01/01/2024" (should fail)
+☐ Test DATE with correct format "2024-01-01" (should succeed)
+☐ Test DATETIME with CURRENT_TIMESTAMP (should succeed)
+☐ Test TIMESTAMP with CURRENT_TIMESTAMP (should succeed)
+☐ Test CURRENT_TIMESTAMP on INT (should fail with clear error)
+☐ Test BOOLEAN with "yes" (should fail)
+☐ Test BOOLEAN with "0" or "1" (should succeed)
+☐ Test all valid combinations (should all succeed)
+☐ Verify red border appears for invalid input
+☐ Verify green border appears for valid input
+☐ Verify helper text updates when changing data type
+☐ Verify placeholder updates when changing data type
+☐ Verify required fields are enforced by browser
+☐ Verify disabled fields cannot be edited
+
+═══════════════════════════════════════════════════════════════
+SECTION 7: COMMON ERRORS AND SOLUTIONS
+═══════════════════════════════════════════════════════════════
+
+Error: "unexpected database server error"
+Cause: Default value type doesn't match column type
+Solution: Implement type validation on both frontend and backend
+Details: User tried to add INT column with text default, or VARCHAR with numeric default
+
+Error: Column created but with wrong default value
+Cause: Frontend validation passed incorrect format to backend
+Solution: Add pattern attribute matching backend validation
+Details: Frontend didn't validate, backend accepted invalid format
+
+Error: Form submits but SQL fails with "Invalid default value"
+Cause: JavaScript validation missing or pattern incorrect
+Solution: Ensure validateDefaultValue() matches backend validators
+Details: Gap between frontend and backend validation rules
+
+Error: User confused about what format is expected
+Cause: No guidance on what format is expected
+Solution: Add helper text and dynamic placeholders
+Details: User doesn't know to use YYYY-MM-DD for dates
+
+Error: VARCHAR created without length, causing SQL error
+Cause: Length not marked as required
+Solution: Add required attribute when VARCHAR selected
+Details: HTML5 validation not enforcing required length
+
+Error: TEXT column rejected because user provided length
+Cause: Frontend allows length input for TEXT type
+Solution: Disable length field when TEXT selected
+Details: Length field should be grayed out/disabled for TEXT
+
+Error: DECIMAL created with wrong format "10" instead of "10,2"
+Cause: Length pattern doesn't enforce comma format
+Solution: Set pattern="\\d+,\\d+" for DECIMAL type
+Details: Need precision,scale format validation
+
+Error: INT column with decimal default like "10.5"
+Cause: Pattern allows decimal point
+Solution: Use pattern="^-?\\d+$" (no decimal point)
+Details: INT must be integers only, no decimals
+
+Error: CURRENT_TIMESTAMP used on INT column
+Cause: Backend doesn't restrict CURRENT_TIMESTAMP to date types
+Solution: Check if type is TIMESTAMP/DATETIME/DATE before allowing
+Details: CURRENT_TIMESTAMP only valid for date/time types
+
+═══════════════════════════════════════════════════════════════
+SECTION 8: INTEGRATION INSTRUCTIONS
+═══════════════════════════════════════════════════════════════
+
+WHERE TO ADD PHASE 3 IN YOUR MAIN PROMPT:
+-----------------------------------------
+
+1. Locate the "TABLE OPERATIONS SPECIFICATIONS" section in your main prompt
+
+2. Find the subsection "3) EDIT TABLE (within connected database)"
+
+3. Insert Phase 3 content immediately after the EDIT TABLE description
+
+4. The structure should look like:
+
+   TABLE OPERATIONS SPECIFICATIONS:
+   
+   1) LIST TABLES (within connected database):
+      ...
+   
+   2) CREATE TABLE (within connected database):
+      ...
+   
+   3) EDIT TABLE (within connected database):
+      - Frontend: Dropdown to select table...
+      - Backend: Accept db_name, table_name, action...
+      
+      ⬇️ INSERT PHASE 3 HERE ⬇️
+      
+      [All Phase 3 content from this file]
+      
+   4) DELETE TABLE (within connected database):
+      ...
+   
+   5) RENAME TABLE (within connected database):
+      ...
+
+ALTERNATIVE INTEGRATION:
+-----------------------
+
+If your prompt generator supports separate phases/stages, you can:
+
+1. Keep Phase 1: Database operations (list, create, delete, rename databases)
+2. Keep Phase 2: Basic table operations (list, create, edit, delete, rename tables)
+3. Add Phase 3: Enhanced validation for Add Column feature
+
+Phase 3 enhances Phase 2, specifically the "Add Column" functionality within
+the "Edit Table" operation.
+
+TESTING AFTER INTEGRATION:
+-------------------------
+
+After regenerating your files with Phase 3 integrated:
+
+1. Test basic column addition (should work)
+2. Test invalid default values (should show clear errors)
+3. Test VARCHAR without length (should prevent submission)
+4. Test DECIMAL with wrong format (should show error)
+5. Test real-time visual feedback (red/green borders)
+6. Test helper text updates (should change with type)
+7. Test disabled fields (TEXT length should be grayed out)
+
+═══════════════════════════════════════════════════════════════
+SECTION 9: WHAT GETS GENERATED
+═══════════════════════════════════════════════════════════════
+
+When your prompt generator processes this Phase 3 enhancement, it will
+modify the existing index.html and api.php files to include:
+
+IN index.html:
+--------------
+1. Enhanced HTML for Add New Column form with:
+   - Pattern attributes on inputs
+   - Helper text divs
+   - onchange event on data type dropdown
+
+2. New JavaScript function: updateFieldValidation()
+   - 100+ lines of code
+   - Switch statement for all data types
+   - Dynamic attribute management
+
+3. New JavaScript function: validateDefaultValue()
+   - Helper function for pre-submit validation
+   - Pattern validators for all types
+
+4. Enhanced addTableColumn() function with:
+   - Column name validation
+   - Length requirement checks
+   - DECIMAL format validation
+   - Default value validation
+
+5. New CSS rules for visual feedback:
+   - Red borders for invalid input
+   - Green borders for valid input
+   - Disabled field styling
+   - Helper text styling
+
+IN api.php:
+-----------
+1. Completely rewritten alter_table_add_column endpoint with:
+   - JSON decode error checking
+   - Column name validation
+   - Switch statement for type-specific default value validation
+   - Proper boolean handling for nullable
+   - Enhanced error messages with SQL query
+
+2. Type validators for:
+   - INT types
+   - DECIMAL types
+   - BOOLEAN types
+   - DATE types
+   - DATETIME types
+   - TIMESTAMP types
+   - TEXT types
+   - BLOB types
+
+ESTIMATED CODE ADDITIONS:
+-------------------------
+- Frontend: ~300 lines of JavaScript code
+- Frontend: ~50 lines of CSS
+- Frontend: ~30 lines of HTML modifications
+- Backend: ~250 lines of PHP code
+- Total: ~630 lines of new/modified code
+
+═══════════════════════════════════════════════════════════════
+END OF PHASE 3 SPECIFICATION
+═══════════════════════════════════════════════════════════════
+
+Last Updated: October 10, 2025
+Version: 1.0
+Purpose: Add Column Validation Enhancement
+Target: Database Control Panel - Table Operations
+Files Modified: index.html, api.php
+
+This specification provides complete instructions for implementing
+comprehensive type-based validation for the "Add Column" feature in
+database table operations, ensuring data integrity and excellent UX.
+
