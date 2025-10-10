@@ -1,0 +1,2377 @@
+<!--
+CONTROL PANEL METADATA (Phase 1)
+LAYOUT: sidebar
+THEME: gradient-sunset
+CSS_FRAMEWORK: tailwind
+LANGUAGE: english
+SERVER: localhost
+DATABASE_OPERATIONS: list_databases, create_database, delete_database, rename_database, connect_database, set_database_credentials
+TABLE_OPERATIONS: list_tables, create_table, edit_table, delete_table, rename_table
+PHASE: 2 (Enhanced with Table Operations)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Control Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #991b1b 100%);
+            min-height: 100vh;
+            color: #fef3c7;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            border-right: 1px solid rgba(251, 191, 36, 0.2);
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-260px);
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .sidebar-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fbbf24;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            color: #fbbf24;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 5px;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 10px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: #fef3c7;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            transform: translateX(5px);
+        }
+
+        .nav-link.active {
+            background: rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .nav-icon {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            transition: margin-left 0.3s ease;
+            min-height: 100vh;
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #fbbf24;
+        }
+
+        .toggle-sidebar-btn {
+            display: none;
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid #fbbf24;
+            color: #fbbf24;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-sidebar-btn:hover {
+            background: rgba(251, 191, 36, 0.3);
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fbbf24;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-title-icon {
+            margin-right: 10px;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #fef3c7;
+            font-weight: 500;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 8px;
+            color: #fef3c7;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #fbbf24;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .form-input::placeholder {
+            color: rgba(254, 243, 199, 0.5);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #fbbf24;
+            color: #1e3a8a;
+        }
+
+        .btn-primary:hover {
+            background: #f59e0b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(251, 191, 36, 0.4);
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fef3c7;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Database List */
+        .database-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .database-item {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .database-item:hover {
+            background: rgba(251, 191, 36, 0.15);
+            border-color: #fbbf24;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(251, 191, 36, 0.3);
+        }
+
+        .database-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fef3c7;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .database-icon {
+            font-size: 24px;
+        }
+
+        .lock-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #fbbf24;
+            font-size: 16px;
+        }
+
+        /* Messages */
+        .message {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+            color: #86efac;
+        }
+
+        .message.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+        }
+
+        .message.info {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid #3b82f6;
+            color: #93c5fd;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.95) 0%, rgba(153, 27, 27, 0.95) 100%);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #fbbf24;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #fef3c7;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+
+        .modal-close:hover {
+            color: #fbbf24;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid rgba(251, 191, 36, 0.3);
+            border-top: 3px solid #fbbf24;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Expandable Section */
+        .expandable-section {
+            margin-top: 15px;
+        }
+
+        .expandable-header {
+            cursor: pointer;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+        }
+
+        .expandable-header:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .expandable-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .expandable-content.expanded {
+            max-height: 500px;
+            margin-top: 15px;
+        }
+
+        .helper-text {
+            font-size: 12px;
+            color: rgba(254, 243, 199, 0.7);
+            margin-top: 5px;
+        }
+
+        .security-notice {
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-260px);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .toggle-sidebar-btn {
+                display: block;
+            }
+
+            .database-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Datalist styling hint */
+        .datalist-wrapper {
+            position: relative;
+        }
+
+        .saved-credentials-badge {
+            display: inline-block;
+            background: rgba(34, 197, 94, 0.2);
+            color: #86efac;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+        }
+
+        /* Table Operations Styles */
+        .connection-status {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+            color: #86efac;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .connection-status.active {
+            display: block;
+        }
+
+        .column-builder {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .column-row {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: end;
+        }
+
+        .column-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+            color: #fef3c7;
+            font-size: 13px;
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .sql-preview {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #86efac;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .template-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(251, 191, 36, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .template-card:hover {
+            border-color: #fbbf24;
+            background: rgba(251, 191, 36, 0.15);
+            transform: translateY(-3px);
+        }
+
+        .template-card.selected {
+            border-color: #fbbf24;
+            background: rgba(251, 191, 36, 0.2);
+        }
+
+        .template-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .template-name {
+            font-weight: bold;
+            color: #fef3c7;
+            margin-bottom: 5px;
+        }
+
+        .template-desc {
+            font-size: 11px;
+            color: rgba(254, 243, 199, 0.6);
+        }
+
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .table-item {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .table-item:hover {
+            background: rgba(251, 191, 36, 0.15);
+            border-color: #fbbf24;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(251, 191, 36, 0.3);
+        }
+
+        .table-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #fef3c7;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-icon {
+            font-size: 24px;
+        }
+
+        /* Tab styles for create table */
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(251, 191, 36, 0.2);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #fef3c7;
+            padding: 12px 24px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .tab-btn:hover {
+            color: #fbbf24;
+        }
+
+        .tab-btn.active {
+            color: #fbbf24;
+            border-bottom-color: #fbbf24;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .column-row {
+                grid-template-columns: 1fr;
+            }
+
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">🗄️ DB Manager</div>
+            <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a class="nav-link active" onclick="showSection('dashboard')">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="showSection('list')">
+                    <span class="nav-icon">📋</span>
+                    <span>List Databases</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="showSection('create')">
+                    <span class="nav-icon">➕</span>
+                    <span>Create Database</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="showSection('delete')">
+                    <span class="nav-icon">🗑️</span>
+                    <span>Delete Database</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="showSection('rename')">
+                    <span class="nav-icon">✏️</span>
+                    <span>Rename Database</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="showSection('credentials')">
+                    <span class="nav-icon">🔐</span>
+                    <span>Set Credentials</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="showSection('settings')">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li class="nav-item" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(251, 191, 36, 0.3);">
+                <div style="color: rgba(251, 191, 36, 0.7); font-size: 12px; padding: 0 15px; margin-bottom: 10px;">TABLE OPERATIONS</div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="showSection('listTables')">
+                    <span class="nav-icon">📄</span>
+                    <span>List Tables</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="showSection('createTable')">
+                    <span class="nav-icon">➕</span>
+                    <span>Create Table</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="showSection('editTable')">
+                    <span class="nav-icon">✏️</span>
+                    <span>Edit Table</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="showSection('deleteTable')">
+                    <span class="nav-icon">🗑️</span>
+                    <span>Delete Table</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="showSection('renameTable')">
+                    <span class="nav-icon">✏️</span>
+                    <span>Rename Table</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <div class="content-header">
+            <h1 class="page-title">Database Control Panel</h1>
+            <button class="toggle-sidebar-btn" onclick="toggleSidebar()">☰ Menu</button>
+        </div>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">🌐</span>
+                    Server Connection Status
+                </h2>
+                <div id="connectionMessage"></div>
+                <button class="btn btn-primary" onclick="checkConnection()">
+                    <span>🔄</span> Test Connection
+                </button>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">📊</span>
+                    Quick Overview
+                </h2>
+                <p>Welcome to the Database Control Panel. Use the sidebar to navigate between different database operations.</p>
+                <ul style="margin-top: 15px; line-height: 1.8;">
+                    <li>✅ List and connect to databases</li>
+                    <li>✅ Create new databases with optional credentials</li>
+                    <li>✅ Delete existing databases</li>
+                    <li>✅ Rename databases</li>
+                    <li>✅ Set security credentials for databases</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- List Databases Section -->
+        <section id="list" class="section">
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">📋</span>
+                    Available Databases
+                </h2>
+                <div id="listMessage"></div>
+                <button class="btn btn-primary" onclick="loadDatabases()">
+                    <span>🔄</span> Refresh List
+                </button>
+                <div id="databaseList" class="database-grid"></div>
+            </div>
+        </section>
+
+        <!-- Create Database Section -->
+        <section id="create" class="section">
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">➕</span>
+                    Create New Database
+                </h2>
+                <div id="createMessage"></div>
+                <form onsubmit="createDatabase(event)">
+                    <div class="form-group">
+                        <label class="form-label">Database Name *</label>
+                        <input type="text" id="newDbName" class="form-input" placeholder="Enter database name" required>
+                        <div class="helper-text">Use alphanumeric characters and underscores only</div>
+                    </div>
+
+                    <div class="expandable-section">
+                        <div class="expandable-header" onclick="toggleExpandable('createCredentials')">
+                            <span>🔐 Set Database Credentials (Optional)</span>
+                            <span id="createCredentialsToggle">▼</span>
+                        </div>
+                        <div id="createCredentials" class="expandable-content">
+                            <div class="helper-text" style="margin-bottom: 15px;">
+                                Set specific username/password for this database (optional). Leave empty to use default credentials. Credentials will be saved for future use.
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Database Username</label>
+                                <input type="text" id="newDbUsername" class="form-input" placeholder="Enter username (optional)">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Database Password</label>
+                                <input type="password" id="newDbPassword" class="form-input" placeholder="Enter password (optional)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <span>➕</span> Create Database
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Delete Database Section -->
+        <section id="delete" class="section">
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">🗑️</span>
+                    Delete Database
+                </h2>
+                <div id="deleteMessage"></div>
+                <form onsubmit="deleteDatabase(event)">
+                    <div class="form-group">
+                        <label class="form-label">Select Database to Delete *</label>
+                        <select id="deleteDbSelect" class="form-select" required>
+                            <option value="">-- Select Database --</option>
+                        </select>
+                        <div class="helper-text">⚠️ This action cannot be undone!</div>
+                    </div>
+                    <button type="submit" class="btn btn-danger">
+                        <span>🗑️</span> Delete Database
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Rename Database Section -->
+        <section id="rename" class="section">
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">✏️</span>
+                    Rename Database
+                </h2>
+                <div id="renameMessage"></div>
+                <form onsubmit="renameDatabase(event)">
+                    <div class="form-group">
+                        <label class="form-label">Select Database to Rename *</label>
+                        <select id="renameOldSelect" class="form-select" required>
+                            <option value="">-- Select Database --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Database Name *</label>
+                        <input type="text" id="renameNewName" class="form-input" placeholder="Enter new name" required>
+                        <div class="helper-text">Use alphanumeric characters and underscores only</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span>✏️</span> Rename Database
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Set Credentials Section -->
+        <section id="credentials" class="section">
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">🔐</span>
+                    Set Database Credentials
+                </h2>
+                <div id="credentialsMessage"></div>
+                <p style="margin-bottom: 20px;">Add username and password authentication to secure your database. This creates a database user with specific credentials.</p>
+                <form onsubmit="setDatabaseCredentials(event)">
+                    <div class="form-group">
+                        <label class="form-label">Select Database *</label>
+                        <select id="credentialsDbSelect" class="form-select" required onchange="checkExistingCredentials()">
+                            <option value="">-- Select Database --</option>
+                        </select>
+                    </div>
+                    <div id="credentialStatus" style="margin-bottom: 15px;"></div>
+                    <div class="form-group">
+                        <label class="form-label">Username *</label>
+                        <input type="text" id="credentialsUsername" class="form-input" placeholder="Enter username" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password *</label>
+                        <input type="password" id="credentialsPassword" class="form-input" placeholder="Enter password" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password *</label>
+                        <input type="password" id="credentialsConfirmPassword" class="form-input" placeholder="Confirm password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span>🔐</span> Set Credentials
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="settings" class="section">
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">⚙️</span>
+                    Settings & Security
+                </h2>
+                <div class="security-notice">
+                    <strong>⚠️ Security Notice:</strong> Database credentials are stored in your browser's localStorage for convenience. This data is only accessible from this browser on this device. Clear saved credentials if you're using a shared computer.
+                </div>
+                <div id="settingsMessage"></div>
+                <button class="btn btn-danger" onclick="clearSavedCredentials()">
+                    <span>🗑️</span> Clear All Saved Credentials
+                </button>
+                <div style="margin-top: 20px;">
+                    <h3 style="color: #fbbf24; margin-bottom: 10px;">Saved Credentials:</h3>
+                    <div id="savedCredentialsList"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- List Tables Section -->
+        <section id="listTables" class="section">
+            <div id="tableConnectionStatus" class="connection-status"></div>
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">📄</span>
+                    Tables in Database
+                </h2>
+                <div id="listTablesMessage"></div>
+                <button class="btn btn-primary" onclick="loadTables()">
+                    <span>🔄</span> Refresh Tables
+                </button>
+                <div id="tableList" class="table-grid"></div>
+            </div>
+        </section>
+
+        <!-- Create Table Section -->
+        <section id="createTable" class="section">
+            <div id="createTableConnectionStatus" class="connection-status"></div>
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">➕</span>
+                    Create New Table
+                </h2>
+                <div id="createTableMessage"></div>
+
+                <!-- Tab Navigation -->
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchTab('manual')">Manual Definition</button>
+                    <button class="tab-btn" onclick="switchTab('template')">Use Template</button>
+                </div>
+
+                <!-- Manual Tab -->
+                <div id="manualTab" class="tab-content active">
+                    <form onsubmit="createTableManual(event)">
+                        <div class="form-group">
+                            <label class="form-label">Table Name *</label>
+                            <input type="text" id="newTableName" class="form-input" placeholder="Enter table name" required>
+                            <div class="helper-text">Use alphanumeric characters and underscores only</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Table Columns</label>
+                            <div id="columnBuilder" class="column-builder"></div>
+                            <button type="button" class="btn btn-secondary" onclick="addColumnRow()">
+                                <span>➕</span> Add Column
+                            </button>
+                        </div>
+
+                        <div id="sqlPreview" class="sql-preview" style="display: none;"></div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="button" class="btn btn-secondary" onclick="previewSQL()">
+                                <span>👁️</span> Preview SQL
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <span>➕</span> Create Table
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Template Tab -->
+                <div id="templateTab" class="tab-content">
+                    <form onsubmit="createTableFromTemplate(event)">
+                        <div class="form-group">
+                            <label class="form-label">Table Name *</label>
+                            <input type="text" id="templateTableName" class="form-input" placeholder="Enter table name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Select Template</label>
+                            <div class="template-grid" id="templateGrid"></div>
+                        </div>
+
+                        <div id="templateColumnBuilder" class="column-builder" style="display: none; margin-top: 20px;">
+                            <h4 style="color: #fbbf24; margin-bottom: 15px;">Template Columns (You can modify)</h4>
+                            <div id="templateColumns"></div>
+                        </div>
+
+                        <div id="templateSqlPreview" class="sql-preview" style="display: none;"></div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="button" class="btn btn-secondary" onclick="previewTemplateSQL()">
+                                <span>👁️</span> Preview SQL
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <span>➕</span> Create Table from Template
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Edit Table Section -->
+        <section id="editTable" class="section">
+            <div id="editTableConnectionStatus" class="connection-status"></div>
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">✏️</span>
+                    Edit Table Structure
+                </h2>
+                <div id="editTableMessage"></div>
+                
+                <div class="form-group">
+                    <label class="form-label">Select Table *</label>
+                    <select id="editTableSelect" class="form-select" onchange="loadTableStructure()" required>
+                        <option value="">-- Select Table --</option>
+                    </select>
+                </div>
+
+                <div id="currentStructure" style="display: none;">
+                    <h3 style="color: #fbbf24; margin: 20px 0 10px;">Current Columns</h3>
+                    <div id="currentColumns"></div>
+
+                    <h3 style="color: #fbbf24; margin: 20px 0 10px;">Add New Column</h3>
+                    <div class="column-builder">
+                        <div class="column-row">
+                            <div class="form-group" style="margin: 0;">
+                                <input type="text" id="newColName" class="form-input" placeholder="Column name">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <select id="newColType" class="form-select">
+                                    <option value="INT">INT</option>
+                                    <option value="VARCHAR">VARCHAR</option>
+                                    <option value="TEXT">TEXT</option>
+                                    <option value="DATE">DATE</option>
+                                    <option value="DATETIME">DATETIME</option>
+                                    <option value="TIMESTAMP">TIMESTAMP</option>
+                                    <option value="BOOLEAN">BOOLEAN</option>
+                                    <option value="DECIMAL">DECIMAL</option>
+                                    <option value="FLOAT">FLOAT</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <input type="text" id="newColLength" class="form-input" placeholder="Length">
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <select id="newColNullable" class="form-select">
+                                    <option value="yes">NULL</option>
+                                    <option value="no">NOT NULL</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <input type="text" id="newColDefault" class="form-input" placeholder="Default">
+                            </div>
+                            <button type="button" class="btn btn-primary btn-icon" onclick="addColumn()">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Delete Table Section -->
+        <section id="deleteTable" class="section">
+            <div id="deleteTableConnectionStatus" class="connection-status"></div>
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">🗑️</span>
+                    Delete Table
+                </h2>
+                <div id="deleteTableMessage"></div>
+                <form onsubmit="deleteTableAction(event)">
+                    <div class="form-group">
+                        <label class="form-label">Select Table to Delete *</label>
+                        <select id="deleteTableSelect" class="form-select" required>
+                            <option value="">-- Select Table --</option>
+                        </select>
+                        <div class="helper-text">⚠️ This action cannot be undone!</div>
+                    </div>
+                    <button type="submit" class="btn btn-danger">
+                        <span>🗑️</span> Delete Table
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Rename Table Section -->
+        <section id="renameTable" class="section">
+            <div id="renameTableConnectionStatus" class="connection-status"></div>
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">✏️</span>
+                    Rename Table
+                </h2>
+                <div id="renameTableMessage"></div>
+                <form onsubmit="renameTableAction(event)">
+                    <div class="form-group">
+                        <label class="form-label">Select Table to Rename *</label>
+                        <select id="renameTableOldSelect" class="form-select" required>
+                            <option value="">-- Select Table --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Table Name *</label>
+                        <input type="text" id="renameTableNewName" class="form-input" placeholder="Enter new name" required>
+                        <div class="helper-text">Use alphanumeric characters and underscores only</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <span>✏️</span> Rename Table
+                    </button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- Connection Modal -->
+    <div id="connectionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Database Connection</h3>
+                <button class="modal-close" onclick="closeConnectionModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalMessage"></div>
+                <div class="form-group">
+                    <label class="form-label">Database Username</label>
+                    <div class="datalist-wrapper">
+                        <input type="text" id="modalUsername" class="form-input" placeholder="Enter username" list="savedUsernames">
+                        <datalist id="savedUsernames"></datalist>
+                    </div>
+                    <div class="helper-text">Select a previously saved username or enter a new one</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Database Password</label>
+                    <input type="password" id="modalPassword" class="form-input" placeholder="Enter password">
+                </div>
+                <div class="helper-text">✅ Credentials will be saved locally for future use</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeConnectionModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitConnection()">
+                    <span>🔌</span> Connect
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_URL = 'http://localhost/backend.php';
+        const CREDENTIALS_KEY = 'db_credentials';
+        let currentDatabase = null;
+        let columnCounter = 0;
+        let selectedTemplate = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnection();
+            loadDatabasesForDropdowns();
+            updateSavedCredentialsList();
+        });
+
+        // Sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            sidebar.classList.toggle('show');
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+        }
+
+        // Section navigation
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Update active nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.closest('.nav-link').classList.add('active');
+
+            // Close sidebar on mobile
+            if (window.innerWidth <= 768) {
+                toggleSidebar();
+            }
+
+            // Load data when entering certain sections
+            if (sectionId === 'list') {
+                loadDatabases();
+            } else if (sectionId === 'settings') {
+                updateSavedCredentialsList();
+            }
+        }
+
+        // Expandable section toggle
+        function toggleExpandable(id) {
+            const content = document.getElementById(id);
+            const toggle = document.getElementById(id + 'Toggle');
+            content.classList.toggle('expanded');
+            toggle.textContent = content.classList.contains('expanded') ? '▲' : '▼';
+        }
+
+        // Show message
+        function showMessage(elementId, message, type) {
+            const messageEl = document.getElementById(elementId);
+            messageEl.className = `message ${type}`;
+            messageEl.textContent = message;
+            messageEl.style.display = 'block';
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 5000);
+        }
+
+        // API request helper
+        async function apiRequest(action, data = {}) {
+            try {
+                const formData = new FormData();
+                formData.append('action', action);
+                for (const key in data) {
+                    formData.append(key, data[key]);
+                }
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                return await response.json();
+            } catch (error) {
+                return { success: false, message: 'Network error: ' + error.message };
+            }
+        }
+
+        // Check connection
+        async function checkConnection() {
+            const messageEl = document.getElementById('connectionMessage');
+            messageEl.innerHTML = '<div class="spinner"></div> Checking connection...';
+            
+            const result = await apiRequest('check_connection');
+            
+            if (result.success) {
+                showMessage('connectionMessage', '✅ ' + result.message, 'success');
+            } else {
+                showMessage('connectionMessage', '❌ ' + result.message, 'error');
+            }
+        }
+
+        // LocalStorage helpers
+        function getSavedCredentials() {
+            const saved = localStorage.getItem(CREDENTIALS_KEY);
+            return saved ? JSON.parse(saved) : [];
+        }
+
+        function saveCredentials(dbName, username, password) {
+            let credentials = getSavedCredentials();
+            // Remove existing entry for this database
+            credentials = credentials.filter(c => c.dbName !== dbName);
+            // Add new entry
+            credentials.push({ dbName, username, password });
+            localStorage.setItem(CREDENTIALS_KEY, JSON.stringify(credentials));
+        }
+
+        function getCredentialsForDatabase(dbName) {
+            const credentials = getSavedCredentials();
+            return credentials.find(c => c.dbName === dbName);
+        }
+
+        function clearSavedCredentials() {
+            if (confirm('Are you sure you want to clear all saved credentials? You will need to re-enter them when connecting to databases.')) {
+                localStorage.removeItem(CREDENTIALS_KEY);
+                showMessage('settingsMessage', '✅ All saved credentials have been cleared', 'success');
+                updateSavedCredentialsList();
+                loadDatabases(); // Refresh to remove lock icons
+            }
+        }
+
+        function updateSavedCredentialsList() {
+            const listEl = document.getElementById('savedCredentialsList');
+            const credentials = getSavedCredentials();
+            
+            if (credentials.length === 0) {
+                listEl.innerHTML = '<p style="color: rgba(254, 243, 199, 0.6);">No saved credentials</p>';
+            } else {
+                listEl.innerHTML = credentials.map(c => 
+                    `<div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+                        <strong>${c.dbName}</strong> - User: ${c.username}
+                    </div>`
+                ).join('');
+            }
+        }
+
+        function populateSavedUsernames() {
+            const datalist = document.getElementById('savedUsernames');
+            const credentials = getSavedCredentials();
+            const usernames = [...new Set(credentials.map(c => c.username))];
+            
+            datalist.innerHTML = usernames.map(u => `<option value="${u}">`).join('');
+        }
+
+        // Auto-fill password when username is selected
+        document.addEventListener('input', function(e) {
+            if (e.target.id === 'modalUsername' && currentDatabase) {
+                const credentials = getSavedCredentials();
+                const match = credentials.find(c => c.dbName === currentDatabase && c.username === e.target.value);
+                if (match) {
+                    document.getElementById('modalPassword').value = match.password;
+                }
+            }
+        });
+
+        // Load databases
+        async function loadDatabases() {
+            const listEl = document.getElementById('databaseList');
+            listEl.innerHTML = '<div class="spinner"></div> Loading databases...';
+            
+            const result = await apiRequest('list_databases');
+            
+            if (result.success) {
+                const credentials = getSavedCredentials();
+                if (result.databases.length === 0) {
+                    listEl.innerHTML = '<p style="color: rgba(254, 243, 199, 0.6); text-align: center; padding: 20px;">No databases found</p>';
+                } else {
+                    listEl.innerHTML = result.databases.map(db => {
+                        const hasCredentials = credentials.some(c => c.dbName === db);
+                        return `
+                            <div class="database-item" onclick="connectToDatabase('${db}')">
+                                ${hasCredentials ? '<span class="lock-icon">🔒</span>' : ''}
+                                <div class="database-name">
+                                    <span class="database-icon">🗄️</span>
+                                    <span>${db}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+                showMessage('listMessage', `✅ Found ${result.databases.length} database(s)`, 'success');
+            } else {
+                listEl.innerHTML = '';
+                showMessage('listMessage', '❌ ' + result.message, 'error');
+            }
+        }
+
+        // Load databases for dropdowns
+        async function loadDatabasesForDropdowns() {
+            const result = await apiRequest('list_databases');
+            
+            if (result.success) {
+                const options = result.databases.map(db => 
+                    `<option value="${db}">${db}</option>`
+                ).join('');
+                
+                document.getElementById('deleteDbSelect').innerHTML = '<option value="">-- Select Database --</option>' + options;
+                document.getElementById('renameOldSelect').innerHTML = '<option value="">-- Select Database --</option>' + options;
+                document.getElementById('credentialsDbSelect').innerHTML = '<option value="">-- Select Database --</option>' + options;
+            }
+        }
+
+        // Connect to database
+        async function connectToDatabase(dbName) {
+            currentDatabase = dbName;
+            const savedCreds = getCredentialsForDatabase(dbName);
+            
+            // Try connection with saved credentials first
+            let username = savedCreds ? savedCreds.username : '';
+            let password = savedCreds ? savedCreds.password : '';
+            
+            showMessage('listMessage', `🔄 Connecting to ${dbName}...`, 'info');
+            
+            const result = await apiRequest('connect_database', {
+                db_name: dbName,
+                db_username: username,
+                db_password: password
+            });
+            
+            if (result.success) {
+                showMessage('listMessage', `✅ ${result.message}`, 'success');
+                updateConnectionStatus(dbName);
+            } else if (result.requiresCredentials) {
+                // Show credentials modal
+                openConnectionModal(dbName, result.message);
+            } else {
+                showMessage('listMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Open connection modal
+        function openConnectionModal(dbName, message) {
+            document.getElementById('modalTitle').textContent = `Connect to ${dbName}`;
+            document.getElementById('modalMessage').textContent = message || 'This database requires authentication';
+            document.getElementById('modalUsername').value = '';
+            document.getElementById('modalPassword').value = '';
+            populateSavedUsernames();
+            document.getElementById('connectionModal').classList.add('active');
+        }
+
+        // Close connection modal
+        function closeConnectionModal() {
+            document.getElementById('connectionModal').classList.remove('active');
+            currentDatabase = null;
+        }
+
+        // Submit connection
+        async function submitConnection() {
+            const username = document.getElementById('modalUsername').value;
+            const password = document.getElementById('modalPassword').value;
+            
+            if (!username || !password) {
+                alert('Please enter both username and password');
+                return;
+            }
+            
+            const result = await apiRequest('connect_database', {
+                db_name: currentDatabase,
+                db_username: username,
+                db_password: password
+            });
+            
+            if (result.success) {
+                // Save credentials
+                saveCredentials(currentDatabase, username, password);
+                showMessage('listMessage', `✅ ${result.message} (Credentials saved)`, 'success');
+                closeConnectionModal();
+                loadDatabases(); // Refresh to show lock icon
+                updateConnectionStatus(currentDatabase);
+            } else {
+                document.getElementById('modalMessage').textContent = '❌ ' + result.message;
+            }
+        }
+
+        // Create database
+        async function createDatabase(event) {
+            event.preventDefault();
+            
+            const dbName = document.getElementById('newDbName').value.trim();
+            const username = document.getElementById('newDbUsername').value.trim();
+            const password = document.getElementById('newDbPassword').value.trim();
+            
+            if (!dbName) {
+                showMessage('createMessage', '❌ Please enter a database name', 'error');
+                return;
+            }
+            
+            showMessage('createMessage', '🔄 Creating database...', 'info');
+            
+            const result = await apiRequest('create_database', {
+                db_name: dbName,
+                db_username: username,
+                db_password: password
+            });
+            
+            if (result.success) {
+                showMessage('createMessage', `✅ ${result.message}`, 'success');
+                document.getElementById('newDbName').value = '';
+                document.getElementById('newDbUsername').value = '';
+                document.getElementById('newDbPassword').value = '';
+                
+                // Save credentials if provided
+                if (username && password) {
+                    saveCredentials(dbName, username, password);
+                    showMessage('createMessage', `✅ ${result.message} (Credentials saved for future use)`, 'success');
+                }
+                
+                loadDatabasesForDropdowns();
+                loadDatabases();
+            } else {
+                showMessage('createMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Delete database
+        async function deleteDatabase(event) {
+            event.preventDefault();
+            
+            const dbName = document.getElementById('deleteDbSelect').value;
+            
+            if (!dbName) {
+                showMessage('deleteMessage', '❌ Please select a database', 'error');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete the database "${dbName}"?\n\nThis action cannot be undone!`)) {
+                return;
+            }
+            
+            showMessage('deleteMessage', '🔄 Deleting database...', 'info');
+            
+            const result = await apiRequest('delete_database', { db_name: dbName });
+            
+            if (result.success) {
+                showMessage('deleteMessage', `✅ ${result.message}`, 'success');
+                document.getElementById('deleteDbSelect').value = '';
+                loadDatabasesForDropdowns();
+                loadDatabases();
+                
+                // Remove saved credentials
+                let credentials = getSavedCredentials();
+                credentials = credentials.filter(c => c.dbName !== dbName);
+                localStorage.setItem(CREDENTIALS_KEY, JSON.stringify(credentials));
+            } else {
+                showMessage('deleteMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Rename database
+        async function renameDatabase(event) {
+            event.preventDefault();
+            
+            const oldName = document.getElementById('renameOldSelect').value;
+            const newName = document.getElementById('renameNewName').value.trim();
+            
+            if (!oldName || !newName) {
+                showMessage('renameMessage', '❌ Please provide both old and new database names', 'error');
+                return;
+            }
+            
+            if (oldName === newName) {
+                showMessage('renameMessage', '❌ New name must be different from old name', 'error');
+                return;
+            }
+            
+            showMessage('renameMessage', '🔄 Renaming database...', 'info');
+            
+            const result = await apiRequest('rename_database', {
+                old_name: oldName,
+                new_name: newName
+            });
+            
+            if (result.success) {
+                showMessage('renameMessage', `✅ ${result.message}`, 'success');
+                document.getElementById('renameOldSelect').value = '';
+                document.getElementById('renameNewName').value = '';
+                loadDatabasesForDropdowns();
+                loadDatabases();
+                
+                // Update saved credentials
+                let credentials = getSavedCredentials();
+                const cred = credentials.find(c => c.dbName === oldName);
+                if (cred) {
+                    cred.dbName = newName;
+                    localStorage.setItem(CREDENTIALS_KEY, JSON.stringify(credentials));
+                }
+            } else {
+                showMessage('renameMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Check existing credentials
+        function checkExistingCredentials() {
+            const dbName = document.getElementById('credentialsDbSelect').value;
+            const statusEl = document.getElementById('credentialStatus');
+            
+            if (!dbName) {
+                statusEl.innerHTML = '';
+                return;
+            }
+            
+            const savedCreds = getCredentialsForDatabase(dbName);
+            
+            if (savedCreds) {
+                statusEl.innerHTML = `<div class="message info" style="display: block;">ℹ️ This database already has saved credentials (User: ${savedCreds.username}). You can update them below.</div>`;
+            } else {
+                statusEl.innerHTML = `<div class="message info" style="display: block;">ℹ️ This database has no saved credentials. Add username and password to secure it.</div>`;
+            }
+        }
+
+        // Set database credentials
+        async function setDatabaseCredentials(event) {
+            event.preventDefault();
+            
+            const dbName = document.getElementById('credentialsDbSelect').value;
+            const username = document.getElementById('credentialsUsername').value.trim();
+            const password = document.getElementById('credentialsPassword').value;
+            const confirmPassword = document.getElementById('credentialsConfirmPassword').value;
+            
+            if (!dbName || !username || !password) {
+                showMessage('credentialsMessage', '❌ Please fill in all fields', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showMessage('credentialsMessage', '❌ Passwords do not match', 'error');
+                return;
+            }
+            
+            showMessage('credentialsMessage', '🔄 Setting credentials...', 'info');
+            
+            const result = await apiRequest('set_database_credentials', {
+                db_name: dbName,
+                db_username: username,
+                db_password: password
+            });
+            
+            if (result.success) {
+                showMessage('credentialsMessage', `✅ ${result.message}`, 'success');
+                
+                // Save credentials
+                saveCredentials(dbName, username, password);
+                
+                // Reset form
+                document.getElementById('credentialsDbSelect').value = '';
+                document.getElementById('credentialsUsername').value = '';
+                document.getElementById('credentialsPassword').value = '';
+                document.getElementById('credentialsConfirmPassword').value = '';
+                document.getElementById('credentialStatus').innerHTML = '';
+                
+                loadDatabases(); // Refresh to show lock icon
+            } else {
+                showMessage('credentialsMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // ========================================
+        // TABLE OPERATIONS FUNCTIONS
+        // ========================================
+
+        // Update connection status display
+        function updateConnectionStatus(dbName) {
+            const statusElements = [
+                'tableConnectionStatus',
+                'createTableConnectionStatus',
+                'editTableConnectionStatus',
+                'deleteTableConnectionStatus',
+                'renameTableConnectionStatus'
+            ];
+            
+            statusElements.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.textContent = `✅ Connected to database: ${dbName}`;
+                    el.classList.add('active');
+                }
+            });
+
+            // Load tables for dropdowns when database is connected
+            loadTablesForDropdowns();
+        }
+
+        // Tab switching for create table
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            if (tabName === 'manual') {
+                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+                document.getElementById('manualTab').classList.add('active');
+            } else {
+                document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+                document.getElementById('templateTab').classList.add('active');
+                loadTemplates();
+            }
+        }
+
+        // Load table templates
+        function loadTemplates() {
+            const templates = [
+                { name: 'Users', icon: '👤', desc: 'User accounts', columns: [
+                    { name: 'id', type: 'INT', length: '11', nullable: 'no', autoIncrement: 'yes', primaryKey: 'yes' },
+                    { name: 'username', type: 'VARCHAR', length: '50', nullable: 'no', unique: 'yes' },
+                    { name: 'email', type: 'VARCHAR', length: '100', nullable: 'no', unique: 'yes' },
+                    { name: 'password', type: 'VARCHAR', length: '255', nullable: 'no' },
+                    { name: 'created_at', type: 'TIMESTAMP', defaultValue: 'CURRENT_TIMESTAMP', nullable: 'no' }
+                ]},
+                { name: 'Products', icon: '📦', desc: 'Product catalog', columns: [
+                    { name: 'id', type: 'INT', length: '11', nullable: 'no', autoIncrement: 'yes', primaryKey: 'yes' },
+                    { name: 'name', type: 'VARCHAR', length: '200', nullable: 'no' },
+                    { name: 'description', type: 'TEXT', nullable: 'yes' },
+                    { name: 'price', type: 'DECIMAL', length: '10,2', nullable: 'no' },
+                    { name: 'stock', type: 'INT', length: '11', nullable: 'no', defaultValue: '0' },
+                    { name: 'created_at', type: 'TIMESTAMP', defaultValue: 'CURRENT_TIMESTAMP', nullable: 'no' }
+                ]},
+                { name: 'Blog Posts', icon: '📝', desc: 'Blog articles', columns: [
+                    { name: 'id', type: 'INT', length: '11', nullable: 'no', autoIncrement: 'yes', primaryKey: 'yes' },
+                    { name: 'title', type: 'VARCHAR', length: '255', nullable: 'no' },
+                    { name: 'slug', type: 'VARCHAR', length: '255', nullable: 'no', unique: 'yes' },
+                    { name: 'content', type: 'TEXT', nullable: 'no' },
+                    { name: 'author_id', type: 'INT', length: '11', nullable: 'no' },
+                    { name: 'published_at', type: 'DATETIME', nullable: 'yes' },
+                    { name: 'created_at', type: 'TIMESTAMP', defaultValue: 'CURRENT_TIMESTAMP', nullable: 'no' }
+                ]},
+                { name: 'Orders', icon: '🛒', desc: 'Customer orders', columns: [
+                    { name: 'id', type: 'INT', length: '11', nullable: 'no', autoIncrement: 'yes', primaryKey: 'yes' },
+                    { name: 'user_id', type: 'INT', length: '11', nullable: 'no' },
+                    { name: 'total_amount', type: 'DECIMAL', length: '10,2', nullable: 'no' },
+                    { name: 'status', type: 'VARCHAR', length: '50', nullable: 'no', defaultValue: 'pending' },
+                    { name: 'created_at', type: 'TIMESTAMP', defaultValue: 'CURRENT_TIMESTAMP', nullable: 'no' }
+                ]},
+                { name: 'Categories', icon: '📁', desc: 'Content categories', columns: [
+                    { name: 'id', type: 'INT', length: '11', nullable: 'no', autoIncrement: 'yes', primaryKey: 'yes' },
+                    { name: 'name', type: 'VARCHAR', length: '100', nullable: 'no' },
+                    { name: 'slug', type: 'VARCHAR', length: '100', nullable: 'no', unique: 'yes' },
+                    { name: 'parent_id', type: 'INT', length: '11', nullable: 'yes' },
+                    { name: 'created_at', type: 'TIMESTAMP', defaultValue: 'CURRENT_TIMESTAMP', nullable: 'no' }
+                ]},
+                { name: 'Comments', icon: '💬', desc: 'User comments', columns: [
+                    { name: 'id', type: 'INT', length: '11', nullable: 'no', autoIncrement: 'yes', primaryKey: 'yes' },
+                    { name: 'user_id', type: 'INT', length: '11', nullable: 'no' },
+                    { name: 'post_id', type: 'INT', length: '11', nullable: 'no' },
+                    { name: 'content', type: 'TEXT', nullable: 'no' },
+                    { name: 'created_at', type: 'TIMESTAMP', defaultValue: 'CURRENT_TIMESTAMP', nullable: 'no' }
+                ]},
+                { name: 'Media', icon: '🖼️', desc: 'Media files', columns: [
+                    { name: 'id', type: 'INT', length: '11', nullable: 'no', autoIncrement: 'yes', primaryKey: 'yes' },
+                    { name: 'filename', type: 'VARCHAR', length: '255', nullable: 'no' },
+                    { name: 'filepath', type: 'VARCHAR', length: '500', nullable: 'no' },
+                    { name: 'filetype', type: 'VARCHAR', length: '50', nullable: 'no' },
+                    { name: 'filesize', type: 'INT', length: '11', nullable: 'no' },
+                    { name: 'uploaded_at', type: 'TIMESTAMP', defaultValue: 'CURRENT_TIMESTAMP', nullable: 'no' }
+                ]},
+                { name: 'Settings', icon: '⚙️', desc: 'App settings', columns: [
+                    { name: 'id', type: 'INT', length: '11', nullable: 'no', autoIncrement: 'yes', primaryKey: 'yes' },
+                    { name: 'key', type: 'VARCHAR', length: '100', nullable: 'no', unique: 'yes' },
+                    { name: 'value', type: 'TEXT', nullable: 'yes' },
+                    { name: 'updated_at', type: 'TIMESTAMP', defaultValue: 'CURRENT_TIMESTAMP', nullable: 'no' }
+                ]},
+                { name: 'Logs', icon: '📋', desc: 'Activity logs', columns: [
+                    { name: 'id', type: 'INT', length: '11', nullable: 'no', autoIncrement: 'yes', primaryKey: 'yes' },
+                    { name: 'user_id', type: 'INT', length: '11', nullable: 'yes' },
+                    { name: 'action', type: 'VARCHAR', length: '100', nullable: 'no' },
+                    { name: 'description', type: 'TEXT', nullable: 'yes' },
+                    { name: 'ip_address', type: 'VARCHAR', length: '45', nullable: 'yes' },
+                    { name: 'created_at', type: 'TIMESTAMP', defaultValue: 'CURRENT_TIMESTAMP', nullable: 'no' }
+                ]},
+                { name: 'Sessions', icon: '🔐', desc: 'User sessions', columns: [
+                    { name: 'id', type: 'INT', length: '11', nullable: 'no', autoIncrement: 'yes', primaryKey: 'yes' },
+                    { name: 'user_id', type: 'INT', length: '11', nullable: 'no' },
+                    { name: 'token', type: 'VARCHAR', length: '255', nullable: 'no', unique: 'yes' },
+                    { name: 'ip_address', type: 'VARCHAR', length: '45', nullable: 'yes' },
+                    { name: 'user_agent', type: 'TEXT', nullable: 'yes' },
+                    { name: 'expires_at', type: 'DATETIME', nullable: 'no' },
+                    { name: 'created_at', type: 'TIMESTAMP', defaultValue: 'CURRENT_TIMESTAMP', nullable: 'no' }
+                ]}
+            ];
+
+            const grid = document.getElementById('templateGrid');
+            grid.innerHTML = templates.map(t => `
+                <div class="template-card" onclick="selectTemplate('${t.name}')">
+                    <div class="template-icon">${t.icon}</div>
+                    <div class="template-name">${t.name}</div>
+                    <div class="template-desc">${t.desc}</div>
+                </div>
+            `).join('');
+
+            window.tableTemplates = templates;
+        }
+
+        // Select template
+        function selectTemplate(templateName) {
+            selectedTemplate = window.tableTemplates.find(t => t.name === templateName);
+            
+            // Update UI
+            document.querySelectorAll('.template-card').forEach(card => card.classList.remove('selected'));
+            event.target.closest('.template-card').classList.add('selected');
+            
+            // Show template columns
+            const container = document.getElementById('templateColumns');
+            container.innerHTML = '';
+            
+            selectedTemplate.columns.forEach((col, index) => {
+                container.innerHTML += createColumnRow(col, index, true);
+            });
+            
+            document.getElementById('templateColumnBuilder').style.display = 'block';
+        }
+
+        // Create column row HTML
+        function createColumnRow(col = {}, index = columnCounter++, isTemplate = false) {
+            const prefix = isTemplate ? 'template' : 'col';
+            const id = `${prefix}_${index}`;
+            
+            return `
+                <div class="column-row" id="${id}">
+                    <div class="form-group" style="margin: 0;">
+                        <input type="text" class="form-input col-name" placeholder="Column name" value="${col.name || ''}" required>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <select class="form-select col-type">
+                            <option value="INT" ${col.type === 'INT' ? 'selected' : ''}>INT</option>
+                            <option value="VARCHAR" ${col.type === 'VARCHAR' ? 'selected' : ''}>VARCHAR</option>
+                            <option value="TEXT" ${col.type === 'TEXT' ? 'selected' : ''}>TEXT</option>
+                            <option value="DATE" ${col.type === 'DATE' ? 'selected' : ''}>DATE</option>
+                            <option value="DATETIME" ${col.type === 'DATETIME' ? 'selected' : ''}>DATETIME</option>
+                            <option value="TIMESTAMP" ${col.type === 'TIMESTAMP' ? 'selected' : ''}>TIMESTAMP</option>
+                            <option value="BOOLEAN" ${col.type === 'BOOLEAN' ? 'selected' : ''}>BOOLEAN</option>
+                            <option value="DECIMAL" ${col.type === 'DECIMAL' ? 'selected' : ''}>DECIMAL</option>
+                            <option value="FLOAT" ${col.type === 'FLOAT' ? 'selected' : ''}>FLOAT</option>
+                            <option value="DOUBLE" ${col.type === 'DOUBLE' ? 'selected' : ''}>DOUBLE</option>
+                            <option value="BLOB" ${col.type === 'BLOB' ? 'selected' : ''}>BLOB</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <input type="text" class="form-input col-length" placeholder="Length" value="${col.length || ''}">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <select class="form-select col-nullable">
+                            <option value="yes" ${col.nullable === 'yes' ? 'selected' : ''}>NULL</option>
+                            <option value="no" ${col.nullable === 'no' ? 'selected' : ''}>NOT NULL</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <input type="text" class="form-input col-default" placeholder="Default" value="${col.defaultValue || ''}">
+                    </div>
+                    <button type="button" class="btn btn-danger btn-icon" onclick="removeColumnRow('${id}')">×</button>
+                </div>
+                <div class="column-options">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="${id}_auto" class="col-auto" ${col.autoIncrement === 'yes' ? 'checked' : ''}>
+                        <label for="${id}_auto">Auto Increment</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="${id}_pk" class="col-pk" ${col.primaryKey === 'yes' ? 'checked' : ''}>
+                        <label for="${id}_pk">Primary Key</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="${id}_unique" class="col-unique" ${col.unique === 'yes' ? 'checked' : ''}>
+                        <label for="${id}_unique">Unique</label>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Add column row
+        function addColumnRow() {
+            const builder = document.getElementById('columnBuilder');
+            const div = document.createElement('div');
+            div.innerHTML = createColumnRow();
+            builder.appendChild(div);
+        }
+
+        // Remove column row
+        function removeColumnRow(id) {
+            document.getElementById(id).nextElementSibling.remove();
+            document.getElementById(id).remove();
+        }
+
+        // Get columns data from form
+        function getColumnsData(containerId) {
+            const container = document.getElementById(containerId);
+            const rows = container.querySelectorAll('.column-row');
+            const columns = [];
+            
+            rows.forEach(row => {
+                const col = {
+                    name: row.querySelector('.col-name').value.trim(),
+                    type: row.querySelector('.col-type').value,
+                    length: row.querySelector('.col-length').value.trim(),
+                    nullable: row.querySelector('.col-nullable').value,
+                    defaultValue: row.querySelector('.col-default').value.trim(),
+                    autoIncrement: row.querySelector('.col-auto')?.checked ? 'yes' : 'no',
+                    primaryKey: row.querySelector('.col-pk')?.checked ? 'yes' : 'no',
+                    unique: row.querySelector('.col-unique')?.checked ? 'yes' : 'no'
+                };
+                
+                if (col.name) {
+                    columns.push(col);
+                }
+            });
+            
+            return columns;
+        }
+
+        // Preview SQL
+        function previewSQL() {
+            const tableName = document.getElementById('newTableName').value.trim();
+            const columns = getColumnsData('columnBuilder');
+            
+            if (!tableName || columns.length === 0) {
+                alert('Please enter table name and add at least one column');
+                return;
+            }
+            
+            const sql = generateCreateTableSQL(tableName, columns);
+            document.getElementById('sqlPreview').textContent = sql;
+            document.getElementById('sqlPreview').style.display = 'block';
+        }
+
+        // Preview template SQL
+        function previewTemplateSQL() {
+            const tableName = document.getElementById('templateTableName').value.trim();
+            const columns = getColumnsData('templateColumns');
+            
+            if (!tableName || columns.length === 0) {
+                alert('Please enter table name and select a template');
+                return;
+            }
+            
+            const sql = generateCreateTableSQL(tableName, columns);
+            document.getElementById('templateSqlPreview').textContent = sql;
+            document.getElementById('templateSqlPreview').style.display = 'block';
+        }
+
+        // Generate CREATE TABLE SQL
+        function generateCreateTableSQL(tableName, columns) {
+            let sql = `CREATE TABLE \`${tableName}\` (\n`;
+            const columnDefs = [];
+            const primaryKeys = [];
+            
+            columns.forEach(col => {
+                let def = `  \`${col.name}\` ${col.type}`;
+                
+                if (col.length && ['VARCHAR', 'CHAR', 'INT', 'DECIMAL', 'FLOAT', 'DOUBLE'].includes(col.type)) {
+                    def += `(${col.length})`;
+                }
+                
+                if (col.nullable === 'no') {
+                    def += ' NOT NULL';
+                }
+                
+                if (col.autoIncrement === 'yes') {
+                    def += ' AUTO_INCREMENT';
+                }
+                
+                if (col.defaultValue) {
+                    if (col.defaultValue.toUpperCase() === 'NULL') {
+                        def += ' DEFAULT NULL';
+                    } else if (col.defaultValue.toUpperCase() === 'CURRENT_TIMESTAMP') {
+                        def += ' DEFAULT CURRENT_TIMESTAMP';
+                    } else {
+                        def += ` DEFAULT '${col.defaultValue}'`;
+                    }
+                }
+                
+                if (col.unique === 'yes') {
+                    def += ' UNIQUE';
+                }
+                
+                columnDefs.push(def);
+                
+                if (col.primaryKey === 'yes') {
+                    primaryKeys.push(`\`${col.name}\``);
+                }
+            });
+            
+            sql += columnDefs.join(',\n');
+            
+            if (primaryKeys.length > 0) {
+                sql += ',\n  PRIMARY KEY (' + primaryKeys.join(', ') + ')';
+            }
+            
+            sql += '\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;';
+            
+            return sql;
+        }
+
+        // Create table (manual)
+        async function createTableManual(event) {
+            event.preventDefault();
+            
+            if (!currentDatabase) {
+                showMessage('createTableMessage', '❌ Please connect to a database first', 'error');
+                return;
+            }
+            
+            const tableName = document.getElementById('newTableName').value.trim();
+            const columns = getColumnsData('columnBuilder');
+            
+            if (!tableName) {
+                showMessage('createTableMessage', '❌ Please enter a table name', 'error');
+                return;
+            }
+            
+            if (columns.length === 0) {
+                showMessage('createTableMessage', '❌ Please add at least one column', 'error');
+                return;
+            }
+            
+            showMessage('createTableMessage', '🔄 Creating table...', 'info');
+            
+            const result = await apiRequest('create_table', {
+                db_name: currentDatabase,
+                table_name: tableName,
+                columns: JSON.stringify(columns)
+            });
+            
+            if (result.success) {
+                showMessage('createTableMessage', `✅ ${result.message}`, 'success');
+                document.getElementById('newTableName').value = '';
+                document.getElementById('columnBuilder').innerHTML = '';
+                document.getElementById('sqlPreview').style.display = 'none';
+                loadTablesForDropdowns();
+            } else {
+                showMessage('createTableMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Create table from template
+        async function createTableFromTemplate(event) {
+            event.preventDefault();
+            
+            if (!currentDatabase) {
+                showMessage('createTableMessage', '❌ Please connect to a database first', 'error');
+                return;
+            }
+            
+            const tableName = document.getElementById('templateTableName').value.trim();
+            const columns = getColumnsData('templateColumns');
+            
+            if (!tableName) {
+                showMessage('createTableMessage', '❌ Please enter a table name', 'error');
+                return;
+            }
+            
+            if (columns.length === 0) {
+                showMessage('createTableMessage', '❌ Please select a template', 'error');
+                return;
+            }
+            
+            showMessage('createTableMessage', '🔄 Creating table from template...', 'info');
+            
+            const result = await apiRequest('create_table', {
+                db_name: currentDatabase,
+                table_name: tableName,
+                columns: JSON.stringify(columns)
+            });
+            
+            if (result.success) {
+                showMessage('createTableMessage', `✅ ${result.message}`, 'success');
+                document.getElementById('templateTableName').value = '';
+                document.getElementById('templateColumns').innerHTML = '';
+                document.getElementById('templateColumnBuilder').style.display = 'none';
+                document.getElementById('templateSqlPreview').style.display = 'none';
+                selectedTemplate = null;
+                document.querySelectorAll('.template-card').forEach(card => card.classList.remove('selected'));
+                loadTablesForDropdowns();
+            } else {
+                showMessage('createTableMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Load tables
+        async function loadTables() {
+            if (!currentDatabase) {
+                showMessage('listTablesMessage', '❌ Please connect to a database first', 'error');
+                return;
+            }
+            
+            const listEl = document.getElementById('tableList');
+            listEl.innerHTML = '<div class="spinner"></div> Loading tables...';
+            
+            const result = await apiRequest('list_tables', { db_name: currentDatabase });
+            
+            if (result.success) {
+                if (result.tables.length === 0) {
+                    listEl.innerHTML = '<p style="color: rgba(254, 243, 199, 0.6); text-align: center; padding: 20px;">No tables found in this database</p>';
+                } else {
+                    listEl.innerHTML = result.tables.map(table => `
+                        <div class="table-item">
+                            <div class="table-name">
+                                <span class="table-icon">📄</span>
+                                <span>${table}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                showMessage('listTablesMessage', `✅ Found ${result.tables.length} table(s)`, 'success');
+            } else {
+                listEl.innerHTML = '';
+                showMessage('listTablesMessage', '❌ ' + result.message, 'error');
+            }
+        }
+
+        // Load tables for dropdowns
+        async function loadTablesForDropdowns() {
+            if (!currentDatabase) return;
+            
+            const result = await apiRequest('list_tables', { db_name: currentDatabase });
+            
+            if (result.success) {
+                const options = result.tables.map(table => 
+                    `<option value="${table}">${table}</option>`
+                ).join('');
+                
+                document.getElementById('editTableSelect').innerHTML = '<option value="">-- Select Table --</option>' + options;
+                document.getElementById('deleteTableSelect').innerHTML = '<option value="">-- Select Table --</option>' + options;
+                document.getElementById('renameTableOldSelect').innerHTML = '<option value="">-- Select Table --</option>' + options;
+            }
+        }
+
+        // Delete table
+        async function deleteTableAction(event) {
+            event.preventDefault();
+            
+            if (!currentDatabase) {
+                showMessage('deleteTableMessage', '❌ Please connect to a database first', 'error');
+                return;
+            }
+            
+            const tableName = document.getElementById('deleteTableSelect').value;
+            
+            if (!tableName) {
+                showMessage('deleteTableMessage', '❌ Please select a table', 'error');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete the table "${tableName}"?\n\nThis action cannot be undone!`)) {
+                return;
+            }
+            
+            showMessage('deleteTableMessage', '🔄 Deleting table...', 'info');
+            
+            const result = await apiRequest('delete_table', {
+                db_name: currentDatabase,
+                table_name: tableName
+            });
+            
+            if (result.success) {
+                showMessage('deleteTableMessage', `✅ ${result.message}`, 'success');
+                document.getElementById('deleteTableSelect').value = '';
+                loadTablesForDropdowns();
+                loadTables();
+            } else {
+                showMessage('deleteTableMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Rename table
+        async function renameTableAction(event) {
+            event.preventDefault();
+            
+            if (!currentDatabase) {
+                showMessage('renameTableMessage', '❌ Please connect to a database first', 'error');
+                return;
+            }
+            
+            const oldName = document.getElementById('renameTableOldSelect').value;
+            const newName = document.getElementById('renameTableNewName').value.trim();
+            
+            if (!oldName || !newName) {
+                showMessage('renameTableMessage', '❌ Please provide both old and new table names', 'error');
+                return;
+            }
+            
+            if (oldName === newName) {
+                showMessage('renameTableMessage', '❌ New name must be different from old name', 'error');
+                return;
+            }
+            
+            showMessage('renameTableMessage', '🔄 Renaming table...', 'info');
+            
+            const result = await apiRequest('rename_table', {
+                db_name: currentDatabase,
+                old_table_name: oldName,
+                new_table_name: newName
+            });
+            
+            if (result.success) {
+                showMessage('renameTableMessage', `✅ ${result.message}`, 'success');
+                document.getElementById('renameTableOldSelect').value = '';
+                document.getElementById('renameTableNewName').value = '';
+                loadTablesForDropdowns();
+                loadTables();
+            } else {
+                showMessage('renameTableMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Load table structure for editing
+        async function loadTableStructure() {
+            const tableName = document.getElementById('editTableSelect').value;
+            
+            if (!tableName || !currentDatabase) {
+                document.getElementById('currentStructure').style.display = 'none';
+                return;
+            }
+            
+            const result = await apiRequest('get_table_structure', {
+                db_name: currentDatabase,
+                table_name: tableName
+            });
+            
+            if (result.success) {
+                const container = document.getElementById('currentColumns');
+                container.innerHTML = result.columns.map(col => `
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong style="color: #fbbf24;">${col.Field}</strong>
+                                <span style="color: rgba(254,243,199,0.7); margin-left: 15px;">${col.Type}</span>
+                                ${col.Null === 'NO' ? '<span style="color: #ef4444; margin-left: 10px;">NOT NULL</span>' : ''}
+                                ${col.Key === 'PRI' ? '<span style="color: #fbbf24; margin-left: 10px;">PRIMARY KEY</span>' : ''}
+                                ${col.Key === 'UNI' ? '<span style="color: #3b82f6; margin-left: 10px;">UNIQUE</span>' : ''}
+                                ${col.Extra ? `<span style="color: #86efac; margin-left: 10px;">${col.Extra}</span>` : ''}
+                            </div>
+                            <button type="button" class="btn btn-danger btn-icon" onclick="dropColumn('${tableName}', '${col.Field}')">×</button>
+                        </div>
+                        ${col.Default !== null ? `<div style="color: rgba(254,243,199,0.6); margin-top: 5px; font-size: 12px;">Default: ${col.Default}</div>` : ''}
+                    </div>
+                `).join('');
+                
+                document.getElementById('currentStructure').style.display = 'block';
+                showMessage('editTableMessage', `✅ Loaded structure for table: ${tableName}`, 'success');
+            } else {
+                showMessage('editTableMessage', '❌ ' + result.message, 'error');
+            }
+        }
+
+        // Add column to existing table
+        async function addColumn() {
+            const tableName = document.getElementById('editTableSelect').value;
+            
+            if (!tableName || !currentDatabase) {
+                showMessage('editTableMessage', '❌ Please select a table first', 'error');
+                return;
+            }
+            
+            const columnData = {
+                name: document.getElementById('newColName').value.trim(),
+                type: document.getElementById('newColType').value,
+                length: document.getElementById('newColLength').value.trim(),
+                nullable: document.getElementById('newColNullable').value,
+                defaultValue: document.getElementById('newColDefault').value.trim()
+            };
+            
+            if (!columnData.name) {
+                showMessage('editTableMessage', '❌ Please enter a column name', 'error');
+                return;
+            }
+            
+            showMessage('editTableMessage', '🔄 Adding column...', 'info');
+            
+            const result = await apiRequest('alter_table', {
+                db_name: currentDatabase,
+                table_name: tableName,
+                alter_action: 'add',
+                column_data: JSON.stringify(columnData)
+            });
+            
+            if (result.success) {
+                showMessage('editTableMessage', `✅ ${result.message}`, 'success');
+                document.getElementById('newColName').value = '';
+                document.getElementById('newColLength').value = '';
+                document.getElementById('newColDefault').value = '';
+                loadTableStructure();
+            } else {
+                showMessage('editTableMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Drop column from table
+        async function dropColumn(tableName, columnName) {
+            if (!confirm(`Are you sure you want to drop column "${columnName}" from table "${tableName}"?\n\nThis action cannot be undone!`)) {
+                return;
+            }
+            
+            showMessage('editTableMessage', '🔄 Dropping column...', 'info');
+            
+            const result = await apiRequest('alter_table', {
+                db_name: currentDatabase,
+                table_name: tableName,
+                alter_action: 'drop',
+                column_data: JSON.stringify({ name: columnName })
+            });
+            
+            if (result.success) {
+                showMessage('editTableMessage', `✅ ${result.message}`, 'success');
+                loadTableStructure();
+            } else {
+                showMessage('editTableMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Initialize column builder on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add initial column row
+            addColumnRow();
+        });
+    </script>
+</body>
+</html>
