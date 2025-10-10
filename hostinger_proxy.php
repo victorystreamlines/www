@@ -1,21 +1,32 @@
 <?php
 /*
-CONTROL PANEL METADATA (Phase 1)
-SERVER: localhost
-DATABASE_OPERATIONS: list_databases, create_database, delete_database, rename_database, connect_database, set_database_credentials
-TABLE_OPERATIONS: list_tables, create_table, delete_table, rename_table, alter_table, get_table_structure
-PHASE: 2 (Enhanced with Table Operations)
+HOSTINGER PROXY API
+This file handles database operations on Hostinger server
+Upload this file along with hostinger_config.php to your Hostinger server
 */
 
-// Enable error reporting for debugging
+// Load configuration
+if (!file_exists('hostinger_config.php')) {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false, 
+        'message' => 'Configuration file not found. Please create hostinger_config.php from template.'
+    ]);
+    exit;
+}
+
+require_once 'hostinger_config.php';
+
+// Enable error reporting for debugging (disable in production)
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // Don't display errors in production
+ini_set('display_errors', 0);
 
 // Set headers for JSON response and CORS
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-API-Key');
 
 // Handle preflight OPTIONS request
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -23,67 +34,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// Database configuration
-define('DB_HOST', '127.0.0.1');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-
-// Server Mode Configuration
-// Check if request should be forwarded to Hostinger
-$serverMode = $_POST['server_mode'] ?? $_GET['server_mode'] ?? 'LOCAL';
-$hostingerApiUrl = $_POST['hostinger_api_url'] ?? $_GET['hostinger_api_url'] ?? '';
-$hostingerApiKey = $_POST['hostinger_api_key'] ?? $_GET['hostinger_api_key'] ?? '';
-
-// If Hostinger mode and has config, forward request
-if ($serverMode === 'HOSTINGER' && !empty($hostingerApiUrl) && !empty($hostingerApiKey)) {
-    forwardToHostinger($hostingerApiUrl, $hostingerApiKey);
-    exit;
-}
-
-/**
- * Forward request to Hostinger API
- */
-function forwardToHostinger($apiUrl, $apiKey) {
-    // Prepare data to forward
-    $postData = $_POST;
-    unset($postData['server_mode']);
-    unset($postData['hostinger_api_url']);
-    unset($postData['hostinger_api_key']);
+// ===========================
+// SECURITY: API KEY VALIDATION
+// ===========================
+function validateApiKey() {
+    $headers = getallheaders();
+    $apiKey = $headers['X-API-Key'] ?? $_SERVER['HTTP_X_API_KEY'] ?? '';
     
-    // Initialize cURL
-    $ch = curl_init($apiUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'X-API-Key: ' . $apiKey,
-        'Content-Type: application/x-www-form-urlencoded'
-    ]);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    
-    // Execute request
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
-    
-    // Handle errors
-    if ($response === false) {
-        http_response_code(500);
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => false,
-            'message' => 'Failed to connect to Hostinger API: ' . $curlError
-        ]);
-        return;
+    if (empty($apiKey)) {
+        http_response_code(401);
+        sendResponse(false, 'API key is required');
     }
     
-    // Forward response with same HTTP code
-    http_response_code($httpCode);
-    header('Content-Type: application/json');
-    echo $response;
+    if ($apiKey !== HOSTINGER_API_KEY) {
+        http_response_code(403);
+        sendResponse(false, 'Invalid API key');
+    }
 }
+
+// ===========================
+// SECURITY: IP WHITELIST
+// ===========================
+function checkIpWhitelist() {
+    if (empty(HOSTINGER_IP_WHITELIST)) {
+        return; // No whitelist, allow all
+    }
+    
+    $clientIp = $_SERVER['REMOTE_ADDR'];
+    if (!in_array($clientIp, HOSTINGER_IP_WHITELIST)) {
+        http_response_code(403);
+        sendResponse(false, 'Access denied from your IP address');
+    }
+}
+
+// ===========================
+// SECURITY: RATE LIMITING
+// ===========================
+function checkRateLimit() {
+    if (HOSTINGER_RATE_LIMIT <= 0) {
+        return; // Rate limiting disabled
+    }
+    
+    $clientIp = $_SERVER['REMOTE_ADDR'];
+    $cacheFile = sys_get_temp_dir() . '/ratelimit_' . md5($clientIp) . '.txt';
+    
+    $now = time();
+    $requests = [];
+    
+    if (file_exists($cacheFile)) {
+        $data = file_get_contents($cacheFile);
+        $requests = json_decode($data, true) ?? [];
+    }
+    
+    // Remove requests older than 1 minute
+    $requests = array_filter($requests, function($timestamp) use ($now) {
+        return ($now - $timestamp) < 60;
+    });
+    
+    // Check if limit exceeded
+    if (count($requests) >= HOSTINGER_RATE_LIMIT) {
+        http_response_code(429);
+        sendResponse(false, 'Rate limit exceeded. Please try again later.');
+    }
+    
+    // Add current request
+    $requests[] = $now;
+    file_put_contents($cacheFile, json_encode($requests));
+}
+
+// Apply security checks
+validateApiKey();
+checkIpWhitelist();
+checkRateLimit();
+
+// ===========================
+// DATABASE FUNCTIONS
+// ===========================
 
 /**
  * Send JSON response
@@ -101,11 +127,9 @@ function validateDatabaseName($name) {
     if (empty($name)) {
         return false;
     }
-    // Allow alphanumeric characters, underscores, and hyphens
     if (!preg_match('/^[a-zA-Z0-9_-]+$/', $name)) {
         return false;
     }
-    // Check length (MySQL max is 64 characters)
     if (strlen($name) > 64) {
         return false;
     }
@@ -124,25 +148,11 @@ function sanitizeDatabaseName($name) {
  */
 function getConnection($dbName = null) {
     try {
-        $dsn = 'mysql:host=' . DB_HOST;
+        $dsn = 'mysql:host=' . HOSTINGER_DB_HOST;
         if ($dbName) {
             $dsn .= ';dbname=' . $dbName;
         }
-        $conn = new PDO($dsn, DB_USER, DB_PASS);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        return $conn;
-    } catch (PDOException $e) {
-        return null;
-    }
-}
-
-/**
- * Get database connection with custom credentials
- */
-function getConnectionWithCredentials($dbName, $username, $password) {
-    try {
-        $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . $dbName;
-        $conn = new PDO($dsn, $username, $password);
+        $conn = new PDO($dsn, HOSTINGER_DB_USER, HOSTINGER_DB_PASS);
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         return $conn;
     } catch (PDOException $e) {
@@ -156,10 +166,10 @@ function getConnectionWithCredentials($dbName, $username, $password) {
 function checkConnection() {
     $conn = getConnection();
     if ($conn) {
-        sendResponse(true, 'Successfully connected to database server');
+        sendResponse(true, 'Successfully connected to Hostinger database server');
     } else {
         http_response_code(500);
-        sendResponse(false, 'Failed to connect to database server. Please check your database configuration.');
+        sendResponse(false, 'Failed to connect to Hostinger database server');
     }
 }
 
@@ -191,13 +201,12 @@ function listDatabases() {
 /**
  * Connect to a specific database
  */
-function connectToDatabase($dbName, $username = '', $password = '') {
+function connectToDatabase($dbName) {
     if (!validateDatabaseName($dbName)) {
         http_response_code(400);
         sendResponse(false, 'Invalid database name');
     }
 
-    // First, check if database exists
     $conn = getConnection();
     if (!$conn) {
         http_response_code(500);
@@ -212,43 +221,27 @@ function connectToDatabase($dbName, $username = '', $password = '') {
             http_response_code(404);
             sendResponse(false, 'Database not found');
         }
-    } catch (PDOException $e) {
-        http_response_code(500);
-        sendResponse(false, 'Error checking database: ' . $e->getMessage());
-    }
-
-    // Try to connect with provided credentials or default
-    if (!empty($username) && !empty($password)) {
-        // Connect with custom credentials
-        $dbConn = getConnectionWithCredentials($dbName, $username, $password);
-        if ($dbConn) {
-            sendResponse(true, "Successfully connected to database: $dbName", [
-                'databaseInfo' => ['name' => $dbName, 'authenticated' => true]
-            ]);
-        } else {
-            http_response_code(401);
-            sendResponse(false, 'Authentication failed. Invalid username or password.');
-        }
-    } else {
-        // Try default credentials
+        
+        // Try to connect
         $dbConn = getConnection($dbName);
         if ($dbConn) {
             sendResponse(true, "Successfully connected to database: $dbName", [
-                'databaseInfo' => ['name' => $dbName, 'authenticated' => false]
+                'databaseInfo' => ['name' => $dbName]
             ]);
         } else {
-            // Connection failed, might need credentials
-            sendResponse(false, 'Connection failed. This database may require authentication.', [
-                'requiresCredentials' => true
-            ]);
+            http_response_code(500);
+            sendResponse(false, 'Failed to connect to database');
         }
+    } catch (PDOException $e) {
+        http_response_code(500);
+        sendResponse(false, 'Error checking database: ' . $e->getMessage());
     }
 }
 
 /**
  * Create a new database
  */
-function createDatabase($dbName, $username = '', $password = '') {
+function createDatabase($dbName) {
     if (!validateDatabaseName($dbName)) {
         http_response_code(400);
         sendResponse(false, 'Invalid database name. Use only alphanumeric characters, underscores, and hyphens.');
@@ -272,26 +265,7 @@ function createDatabase($dbName, $username = '', $password = '') {
         $safeName = sanitizeDatabaseName($dbName);
         $conn->exec("CREATE DATABASE $safeName CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
-        // If username and password provided, create user and grant privileges
-        if (!empty($username) && !empty($password)) {
-            try {
-                // Create user (or update if exists)
-                $userHost = 'localhost';
-                $stmt = $conn->prepare("CREATE USER IF NOT EXISTS ?@? IDENTIFIED BY ?");
-                $stmt->execute([$username, $userHost, $password]);
-
-                // Grant privileges
-                $conn->exec("GRANT ALL PRIVILEGES ON $safeName.* TO " . $conn->quote($username) . "@" . $conn->quote($userHost));
-                $conn->exec("FLUSH PRIVILEGES");
-
-                sendResponse(true, "Database '$dbName' created successfully with user credentials");
-            } catch (PDOException $e) {
-                // Database created but user creation failed
-                sendResponse(true, "Database '$dbName' created but failed to set credentials: " . $e->getMessage());
-            }
-        } else {
-            sendResponse(true, "Database '$dbName' created successfully");
-        }
+        sendResponse(true, "Database '$dbName' created successfully on Hostinger");
     } catch (PDOException $e) {
         http_response_code(500);
         sendResponse(false, 'Error creating database: ' . $e->getMessage());
@@ -334,7 +308,6 @@ function deleteDatabase($dbName) {
 
 /**
  * Rename a database
- * MySQL doesn't have RENAME DATABASE, so we create new, copy tables, drop old
  */
 function renameDatabase($oldName, $newName) {
     if (!validateDatabaseName($oldName) || !validateDatabaseName($newName)) {
@@ -390,62 +363,6 @@ function renameDatabase($oldName, $newName) {
     } catch (PDOException $e) {
         http_response_code(500);
         sendResponse(false, 'Error renaming database: ' . $e->getMessage());
-    }
-}
-
-/**
- * Set database credentials (create user and grant privileges)
- */
-function setDatabaseCredentials($dbName, $username, $password) {
-    if (!validateDatabaseName($dbName)) {
-        http_response_code(400);
-        sendResponse(false, 'Invalid database name');
-    }
-
-    if (empty($username) || empty($password)) {
-        http_response_code(400);
-        sendResponse(false, 'Username and password are required');
-    }
-
-    $conn = getConnection();
-    if (!$conn) {
-        http_response_code(500);
-        sendResponse(false, 'Failed to connect to database server');
-    }
-
-    try {
-        // Check if database exists
-        $stmt = $conn->query('SHOW DATABASES LIKE ' . $conn->quote($dbName));
-        if (!$stmt->fetch()) {
-            http_response_code(404);
-            sendResponse(false, 'Database not found');
-        }
-
-        // Create user or update password if exists
-        $userHost = 'localhost';
-        
-        // Check if user exists
-        $stmt = $conn->prepare("SELECT User FROM mysql.user WHERE User = ? AND Host = ?");
-        $stmt->execute([$username, $userHost]);
-        $userExists = $stmt->fetch();
-
-        if ($userExists) {
-            // Update password
-            $conn->exec("ALTER USER " . $conn->quote($username) . "@" . $conn->quote($userHost) . " IDENTIFIED BY " . $conn->quote($password));
-        } else {
-            // Create user
-            $conn->exec("CREATE USER " . $conn->quote($username) . "@" . $conn->quote($userHost) . " IDENTIFIED BY " . $conn->quote($password));
-        }
-
-        // Grant privileges
-        $safeName = sanitizeDatabaseName($dbName);
-        $conn->exec("GRANT ALL PRIVILEGES ON $safeName.* TO " . $conn->quote($username) . "@" . $conn->quote($userHost));
-        $conn->exec("FLUSH PRIVILEGES");
-
-        sendResponse(true, "Credentials set successfully for database '$dbName'");
-    } catch (PDOException $e) {
-        http_response_code(500);
-        sendResponse(false, 'Error setting credentials: ' . $e->getMessage());
     }
 }
 
@@ -792,7 +709,10 @@ function getTableStructure($dbName, $tableName) {
     }
 }
 
-// Main request handler
+// ===========================
+// MAIN REQUEST HANDLER
+// ===========================
+
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 switch ($action) {
@@ -806,16 +726,12 @@ switch ($action) {
 
     case 'connect_database':
         $dbName = $_POST['db_name'] ?? '';
-        $username = $_POST['db_username'] ?? '';
-        $password = $_POST['db_password'] ?? '';
-        connectToDatabase($dbName, $username, $password);
+        connectToDatabase($dbName);
         break;
 
     case 'create_database':
         $dbName = $_POST['db_name'] ?? '';
-        $username = $_POST['db_username'] ?? '';
-        $password = $_POST['db_password'] ?? '';
-        createDatabase($dbName, $username, $password);
+        createDatabase($dbName);
         break;
 
     case 'delete_database':
@@ -827,13 +743,6 @@ switch ($action) {
         $oldName = $_POST['old_name'] ?? '';
         $newName = $_POST['new_name'] ?? '';
         renameDatabase($oldName, $newName);
-        break;
-
-    case 'set_database_credentials':
-        $dbName = $_POST['db_name'] ?? '';
-        $username = $_POST['db_username'] ?? '';
-        $password = $_POST['db_password'] ?? '';
-        setDatabaseCredentials($dbName, $username, $password);
         break;
 
     case 'list_tables':
@@ -877,6 +786,7 @@ switch ($action) {
 
     default:
         http_response_code(400);
-        sendResponse(false, 'Invalid action specified. Supported actions: check_connection, list_databases, connect_database, create_database, delete_database, rename_database, set_database_credentials, list_tables, create_table, delete_table, rename_table, alter_table, get_table_structure');
+        sendResponse(false, 'Invalid action specified');
 }
 ?>
+

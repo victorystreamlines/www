@@ -1,0 +1,77 @@
+# ============================================
+# .HTACCESS SECURITY FOR HOSTINGER FILES
+# ============================================
+# 
+# Upload this file to the same directory as:
+# - hostinger_proxy.php
+# - hostinger_config.php
+#
+# Rename it to: .htaccess (remove .example)
+#
+# This prevents direct access to sensitive files
+# ============================================
+
+# Protect configuration files from direct access
+<Files "hostinger_config.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+<Files "hostinger_config_template.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Allow API proxy to be accessed (it has its own security)
+<Files "hostinger_proxy.php">
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+# ============================================
+# OPTIONAL: IP WHITELIST
+# ============================================
+# Uncomment and add your IP addresses to restrict access
+# to the proxy API from specific IPs only
+#
+# <Files "hostinger_proxy.php">
+#     Order Deny,Allow
+#     Deny from all
+#     Allow from 192.168.1.1
+#     Allow from 10.0.0.1
+# </Files>
+
+# ============================================
+# SECURITY HEADERS (Optional but Recommended)
+# ============================================
+
+# Prevent clickjacking
+Header always set X-Frame-Options "SAMEORIGIN"
+
+# XSS Protection
+Header always set X-XSS-Protection "1; mode=block"
+
+# Prevent MIME sniffing
+Header always set X-Content-Type-Options "nosniff"
+
+# Referrer Policy
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+# ============================================
+# DISABLE DIRECTORY LISTING
+# ============================================
+Options -Indexes
+
+# ============================================
+# ERROR PAGES (Optional)
+# ============================================
+# Uncomment to use custom error pages
+#
+# ErrorDocument 403 /error403.html
+# ErrorDocument 404 /error404.html
+# ErrorDocument 500 /error500.html
+
+# ============================================
+# END OF CONFIGURATION
+# ============================================
+
