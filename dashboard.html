@@ -731,16 +731,6 @@ PHASE: 2 (Enhanced with Table Operations)
             <div class="sidebar-title">🗄️ DB Manager</div>
             <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
         </div>
-        <div style="padding: 15px; background: rgba(0,0,0,0.2); margin: -20px -20px 20px -20px; border-bottom: 1px solid rgba(251, 191, 36, 0.3);">
-            <div style="font-size: 11px; color: rgba(254, 243, 199, 0.7); margin-bottom: 8px; text-transform: uppercase;">Server Connection</div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <button id="serverModeBtn" onclick="toggleServerModeUI()" style="flex: 1; padding: 8px 12px; background: rgba(251, 191, 36, 0.2); border: 1px solid #fbbf24; border-radius: 6px; color: #fef3c7; font-size: 12px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                    <span id="serverModeIcon">💻</span>
-                    <span id="serverModeText">Local</span>
-                </button>
-            </div>
-            <div id="serverModeStatus" style="font-size: 10px; color: #86efac; margin-top: 6px; text-align: center;">● Connected</div>
-        </div>
         <ul class="nav-menu">
             <li class="nav-item">
                 <a class="nav-link active" onclick="showSection('dashboard')">
@@ -1003,42 +993,8 @@ PHASE: 2 (Enhanced with Table Operations)
         <section id="settings" class="section">
             <div class="card">
                 <h2 class="card-title">
-                    <span class="card-title-icon">🌐</span>
-                    Hostinger Connection Settings
-                </h2>
-                <div id="hostingerSettingsMessage"></div>
-                <p style="margin-bottom: 20px;">Configure your Hostinger server connection to manage databases remotely.</p>
-                
-                <form onsubmit="saveHostingerConfig(event)">
-                    <div class="form-group">
-                        <label class="form-label">Hostinger API URL *</label>
-                        <input type="url" id="hostingerApiUrl" class="form-input" placeholder="https://yourdomain.com/hostinger_proxy.php" required>
-                        <div class="helper-text">Upload hostinger_proxy.php to your Hostinger server and enter its URL here</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">API Key *</label>
-                        <input type="password" id="hostingerApiKey" class="form-input" placeholder="Enter your API key from hostinger_config.php" required>
-                        <div class="helper-text">Find this in your hostinger_config.php file (HOSTINGER_API_KEY)</div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px;">
-                        <button type="submit" class="btn btn-primary">
-                            <span>💾</span> Save Configuration
-                        </button>
-                        <button type="button" class="btn btn-secondary" onclick="testHostingerConnection()">
-                            <span>🔌</span> Test Connection
-                        </button>
-                    </div>
-                </form>
-                
-                <div id="hostingerConnectionTest" style="display: none; margin-top: 20px; padding: 15px; border-radius: 8px;"></div>
-            </div>
-
-            <div class="card">
-                <h2 class="card-title">
                     <span class="card-title-icon">⚙️</span>
-                    Local Database Settings
+                    Settings & Security
                 </h2>
                 <div class="security-notice">
                     <strong>⚠️ Security Notice:</strong> Database credentials are stored in your browser's localStorage for convenience. This data is only accessible from this browser on this device. Clear saved credentials if you're using a shared computer.
@@ -1297,24 +1253,12 @@ PHASE: 2 (Enhanced with Table Operations)
         // Configuration
         const API_URL = 'http://localhost/backend.php';
         const CREDENTIALS_KEY = 'db_credentials';
-        const HOSTINGER_CONFIG_KEY = 'hostinger_config';
-        const SERVER_MODE_KEY = 'server_mode';
         let currentDatabase = null;
         let columnCounter = 0;
         let selectedTemplate = null;
-        
-        // Server mode configuration
-        let serverMode = 'LOCAL'; // LOCAL or HOSTINGER
-        let hostingerConfig = {
-            apiUrl: '',
-            apiKey: ''
-        };
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            loadHostingerConfig();
-            loadServerMode();
-            updateServerModeUI();
             checkConnection();
             loadDatabasesForDropdowns();
             updateSavedCredentialsList();
@@ -1381,14 +1325,6 @@ PHASE: 2 (Enhanced with Table Operations)
             try {
                 const formData = new FormData();
                 formData.append('action', action);
-                
-                // Add server mode configuration
-                formData.append('server_mode', serverMode);
-                if (serverMode === 'HOSTINGER') {
-                    formData.append('hostinger_api_url', hostingerConfig.apiUrl);
-                    formData.append('hostinger_api_key', hostingerConfig.apiKey);
-                }
-                
                 for (const key in data) {
                     formData.append(key, data[key]);
                 }
@@ -2428,170 +2364,6 @@ PHASE: 2 (Enhanced with Table Operations)
                 loadTableStructure();
             } else {
                 showMessage('editTableMessage', `❌ ${result.message}`, 'error');
-            }
-        }
-
-        // ===========================
-        // HOSTINGER & SERVER MODE FUNCTIONS
-        // ===========================
-
-        /**
-         * Load Hostinger configuration from localStorage
-         */
-        function loadHostingerConfig() {
-            const saved = localStorage.getItem(HOSTINGER_CONFIG_KEY);
-            if (saved) {
-                try {
-                    hostingerConfig = JSON.parse(saved);
-                    // Populate form if on settings page
-                    const urlInput = document.getElementById('hostingerApiUrl');
-                    const keyInput = document.getElementById('hostingerApiKey');
-                    if (urlInput && hostingerConfig.apiUrl) {
-                        urlInput.value = hostingerConfig.apiUrl;
-                    }
-                    if (keyInput && hostingerConfig.apiKey) {
-                        keyInput.value = hostingerConfig.apiKey;
-                    }
-                } catch (e) {
-                    console.error('Failed to load Hostinger config:', e);
-                }
-            }
-        }
-
-        /**
-         * Save Hostinger configuration
-         */
-        function saveHostingerConfig(event) {
-            event.preventDefault();
-            
-            const apiUrl = document.getElementById('hostingerApiUrl').value.trim();
-            const apiKey = document.getElementById('hostingerApiKey').value.trim();
-            
-            if (!apiUrl || !apiKey) {
-                showMessage('hostingerSettingsMessage', '❌ Please fill in all fields', 'error');
-                return;
-            }
-            
-            // Validate URL
-            try {
-                new URL(apiUrl);
-            } catch (e) {
-                showMessage('hostingerSettingsMessage', '❌ Invalid URL format', 'error');
-                return;
-            }
-            
-            hostingerConfig = { apiUrl, apiKey };
-            localStorage.setItem(HOSTINGER_CONFIG_KEY, JSON.stringify(hostingerConfig));
-            
-            showMessage('hostingerSettingsMessage', '✅ Hostinger configuration saved successfully', 'success');
-        }
-
-        /**
-         * Test Hostinger connection
-         */
-        async function testHostingerConnection() {
-            const apiUrl = document.getElementById('hostingerApiUrl').value.trim();
-            const apiKey = document.getElementById('hostingerApiKey').value.trim();
-            
-            if (!apiUrl || !apiKey) {
-                showMessage('hostingerSettingsMessage', '❌ Please fill in all fields first', 'error');
-                return;
-            }
-            
-            const testDiv = document.getElementById('hostingerConnectionTest');
-            testDiv.style.display = 'block';
-            testDiv.className = 'message info';
-            testDiv.textContent = '🔄 Testing connection to Hostinger...';
-            
-            // Temporarily set config for test
-            const originalMode = serverMode;
-            const originalConfig = { ...hostingerConfig };
-            
-            serverMode = 'HOSTINGER';
-            hostingerConfig = { apiUrl, apiKey };
-            
-            const result = await apiRequest('check_connection');
-            
-            // Restore original mode
-            serverMode = originalMode;
-            hostingerConfig = originalConfig;
-            
-            if (result.success) {
-                testDiv.className = 'message success';
-                testDiv.textContent = '✅ ' + result.message;
-            } else {
-                testDiv.className = 'message error';
-                testDiv.textContent = '❌ Connection failed: ' + result.message;
-            }
-        }
-
-        /**
-         * Load server mode from localStorage
-         */
-        function loadServerMode() {
-            const saved = localStorage.getItem(SERVER_MODE_KEY);
-            if (saved) {
-                serverMode = saved;
-            }
-        }
-
-        /**
-         * Save server mode to localStorage
-         */
-        function saveServerMode() {
-            localStorage.setItem(SERVER_MODE_KEY, serverMode);
-        }
-
-        /**
-         * Toggle server mode UI (button click)
-         */
-        function toggleServerModeUI() {
-            if (serverMode === 'LOCAL') {
-                // Check if Hostinger is configured
-                if (!hostingerConfig.apiUrl || !hostingerConfig.apiKey) {
-                    if (confirm('Hostinger is not configured yet. Would you like to go to Settings to configure it?')) {
-                        showSection('settings');
-                        document.querySelector('.nav-link:has(.nav-icon:contains("⚙️"))').click();
-                    }
-                    return;
-                }
-                serverMode = 'HOSTINGER';
-            } else {
-                serverMode = 'LOCAL';
-            }
-            
-            saveServerMode();
-            updateServerModeUI();
-            
-            // Reconnect to server
-            currentDatabase = null;
-            checkConnection();
-            loadDatabasesForDropdowns();
-        }
-
-        /**
-         * Update server mode UI elements
-         */
-        function updateServerModeUI() {
-            const btn = document.getElementById('serverModeBtn');
-            const icon = document.getElementById('serverModeIcon');
-            const text = document.getElementById('serverModeText');
-            const status = document.getElementById('serverModeStatus');
-            
-            if (serverMode === 'HOSTINGER') {
-                icon.textContent = '🌐';
-                text.textContent = 'Hostinger';
-                btn.style.background = 'rgba(59, 130, 246, 0.2)';
-                btn.style.borderColor = '#3b82f6';
-                status.style.color = '#93c5fd';
-                status.textContent = '● Remote Server';
-            } else {
-                icon.textContent = '💻';
-                text.textContent = 'Local';
-                btn.style.background = 'rgba(251, 191, 36, 0.2)';
-                btn.style.borderColor = '#fbbf24';
-                status.style.color = '#86efac';
-                status.textContent = '● Local Server';
             }
         }
 

@@ -28,63 +28,6 @@ define('DB_HOST', '127.0.0.1');
 define('DB_USER', 'root');
 define('DB_PASS', '');
 
-// Server Mode Configuration
-// Check if request should be forwarded to Hostinger
-$serverMode = $_POST['server_mode'] ?? $_GET['server_mode'] ?? 'LOCAL';
-$hostingerApiUrl = $_POST['hostinger_api_url'] ?? $_GET['hostinger_api_url'] ?? '';
-$hostingerApiKey = $_POST['hostinger_api_key'] ?? $_GET['hostinger_api_key'] ?? '';
-
-// If Hostinger mode and has config, forward request
-if ($serverMode === 'HOSTINGER' && !empty($hostingerApiUrl) && !empty($hostingerApiKey)) {
-    forwardToHostinger($hostingerApiUrl, $hostingerApiKey);
-    exit;
-}
-
-/**
- * Forward request to Hostinger API
- */
-function forwardToHostinger($apiUrl, $apiKey) {
-    // Prepare data to forward
-    $postData = $_POST;
-    unset($postData['server_mode']);
-    unset($postData['hostinger_api_url']);
-    unset($postData['hostinger_api_key']);
-    
-    // Initialize cURL
-    $ch = curl_init($apiUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postData));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'X-API-Key: ' . $apiKey,
-        'Content-Type: application/x-www-form-urlencoded'
-    ]);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-    
-    // Execute request
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
-    
-    // Handle errors
-    if ($response === false) {
-        http_response_code(500);
-        header('Content-Type: application/json');
-        echo json_encode([
-            'success' => false,
-            'message' => 'Failed to connect to Hostinger API: ' . $curlError
-        ]);
-        return;
-    }
-    
-    // Forward response with same HTTP code
-    http_response_code($httpCode);
-    header('Content-Type: application/json');
-    echo $response;
-}
-
 /**
  * Send JSON response
  */
