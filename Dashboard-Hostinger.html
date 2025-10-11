@@ -259,15 +259,18 @@ PHASE: Hostinger Edition
             gap: 15px;
             margin-top: 20px;
         }
-
         .database-item {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(251, 191, 36, 0.2);
             border-radius: 10px;
-            padding: 20px;
+            padding: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
+            overflow: hidden;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .database-item:hover {
@@ -284,6 +287,10 @@ PHASE: Hostinger Edition
             display: flex;
             align-items: center;
             gap: 10px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            flex-wrap: wrap;
         }
 
         .database-icon {
@@ -1686,14 +1693,14 @@ PHASE: Hostinger Edition
                 const typeIcon = conn.type === 'vps' ? '🖥️' : '🌐';
                 const connId = `conn_${conn.id}`;
                 html += `
-                    <div class="database-item" id="${connId}" style="position: relative;">
-                        <div class="database-name" style="margin-bottom: 10px;">
+                    <div class="database-item" id="${connId}" style="position: relative; overflow: hidden;">
+                        <div class="database-name" style="margin-bottom: 10px; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;">
                             <span class="database-icon">${typeIcon}</span>
-                            <span><strong>${conn.name}</strong></span>
+                            <span style="display: inline-block; max-width: calc(100% - 30px); word-wrap: break-word;"><strong>${conn.name}</strong></span>
                         </div>
-                        <div style="font-size: 12px; color: rgba(254, 243, 199, 0.6); margin-bottom: 10px;">
-                            <div>📁 ${conn.dbName}</div>
-                            <div>🖥️ ${conn.host}</div>
+                        <div style="font-size: 12px; color: rgba(254, 243, 199, 0.6); margin-bottom: 10px; word-wrap: break-word; overflow-wrap: break-word;">
+                            <div style="margin-bottom: 5px; word-wrap: break-word; overflow-wrap: break-word;">📁 ${conn.dbName}</div>
+                            <div style="word-wrap: break-word; overflow-wrap: break-word;">🖥️ ${conn.host}</div>
                         </div>
                         <div id="${connId}_status" style="padding: 8px; border-radius: 6px; background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #93c5fd; font-size: 12px; margin-bottom: 8px;">
                             <span class="spinner" style="display: inline-block; vertical-align: middle; margin-right: 5px;"></span> Testing connection...
