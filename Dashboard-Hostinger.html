@@ -273,6 +273,7 @@ PHASE: Hostinger Edition
             flex-direction: column;
             gap: 15px;
             min-height: 280px;
+            cursor: pointer;
         }
 
         .database-item:hover {
@@ -806,6 +807,62 @@ PHASE: Hostinger Edition
         .hidden-section {
             display: none !important;
         }
+
+        /* Selected database card - Shiny/Glowing effect */
+        .database-item.selected {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.25) 0%, rgba(245, 158, 11, 0.25) 100%);
+            border: 2px solid #fbbf24;
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.6), 0 8px 40px rgba(251, 191, 36, 0.4);
+            transform: translateY(-5px) scale(1.02);
+        }
+
+        .database-item.selected .database-icon {
+            animation: glow-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes glow-pulse {
+            0%, 100% {
+                filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
+            }
+            50% {
+                filter: drop-shadow(0 0 20px rgba(251, 191, 36, 1));
+            }
+        }
+
+        /* Deselect button */
+        .deselect-btn {
+            display: none;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            border: 1px solid #ef4444;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+        }
+
+        .deselect-btn:hover {
+            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
+        }
+
+        .deselect-btn.active {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Card header with button */
+        .card-header-with-action {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -905,10 +962,16 @@ PHASE: Hostinger Edition
         <!-- Dashboard Section -->
         <section id="dashboard" class="section active">
             <div class="card">
-                <h2 class="card-title">
-                    <span class="card-title-icon">🌐</span>
-                    Configured Hostinger Connections
-                </h2>
+                <div class="card-header-with-action">
+                    <h2 class="card-title" style="margin-bottom: 0;">
+                        <span class="card-title-icon">🌐</span>
+                        Configured Hostinger Connections
+                    </h2>
+                    <button id="deselectDatabaseBtn" class="deselect-btn" onclick="deselectAllDatabases()">
+                        <span>✖️</span>
+                        <span>Deselect Database</span>
+                    </button>
+                </div>
                 <div id="dashboardMessage"></div>
                 <div id="configuredConnectionsList" class="database-grid" style="margin-top: 20px;">
                     <p style="color: rgba(254, 243, 199, 0.6); text-align: center; padding: 40px;">
@@ -1515,6 +1578,92 @@ PHASE: Hostinger Edition
         }
 
         // ========================================
+        // DATABASE SELECTION & TABLE OPERATIONS
+        // ========================================
+        
+        let selectedDatabaseId = null;
+
+        // Select database
+        function selectDatabase(connId) {
+            // Deselect previous if any
+            if (selectedDatabaseId) {
+                const prevCard = document.getElementById(selectedDatabaseId);
+                if (prevCard) {
+                    prevCard.classList.remove('selected');
+                }
+            }
+
+            // Select new database
+            selectedDatabaseId = connId;
+            const card = document.getElementById(connId);
+            if (card) {
+                card.classList.add('selected');
+            }
+
+            // Show deselect button
+            const deselectBtn = document.getElementById('deselectDatabaseBtn');
+            deselectBtn.classList.add('active');
+
+            // Show TABLE OPERATIONS in sidebar
+            showTableOperations();
+        }
+
+        // Deselect all databases
+        function deselectAllDatabases() {
+            // Remove selection from card
+            if (selectedDatabaseId) {
+                const card = document.getElementById(selectedDatabaseId);
+                if (card) {
+                    card.classList.remove('selected');
+                }
+            }
+
+            selectedDatabaseId = null;
+
+            // Hide deselect button
+            const deselectBtn = document.getElementById('deselectDatabaseBtn');
+            deselectBtn.classList.remove('active');
+
+            // Hide TABLE OPERATIONS in sidebar
+            hideTableOperations();
+        }
+
+        // Show TABLE OPERATIONS in sidebar
+        function showTableOperations() {
+            const tableOpsSections = document.querySelectorAll('.nav-item.hidden-section, .section.hidden-section');
+            tableOpsSections.forEach(section => {
+                section.classList.remove('hidden-section');
+            });
+        }
+
+        // Hide TABLE OPERATIONS in sidebar
+        function hideTableOperations() {
+            // Get all TABLE OPERATIONS nav items
+            const navItems = document.querySelectorAll('.nav-item');
+            let foundTableOpsHeader = false;
+            
+            navItems.forEach(item => {
+                // Check if this is the TABLE OPERATIONS header or comes after it
+                const text = item.textContent.trim();
+                if (text.includes('TABLE OPERATIONS')) {
+                    foundTableOpsHeader = true;
+                    item.classList.add('hidden-section');
+                } else if (foundTableOpsHeader && (text.includes('List Tables') || text.includes('Create Table') || text.includes('Edit Table') || text.includes('Delete Table') || text.includes('Rename Table'))) {
+                    item.classList.add('hidden-section');
+                }
+            });
+
+            // Hide TABLE OPERATIONS sections
+            const sections = ['listTables', 'createTable', 'editTable', 'deleteTable', 'renameTable'];
+            sections.forEach(id => {
+                const section = document.getElementById(id);
+                if (section) {
+                    section.classList.add('hidden-section');
+                }
+            });
+        }
+
+        // ========================================
         // HOSTINGER CONNECTIONS MANAGEMENT
         // ========================================
 
@@ -1771,7 +1920,7 @@ PHASE: Hostinger Edition
                 const typeIcon = conn.type === 'vps' ? '🖥️' : '🌐';
                 const connId = `conn_${conn.id}`;
                 html += `
-                    <div class="database-item" id="${connId}">
+                    <div class="database-item" id="${connId}" onclick="selectDatabase('${connId}')">
                         <!-- Row 1: Logo/Icon -->
                         <div class="database-icon-row">
                             <span class="database-icon">${typeIcon}</span>
@@ -1790,7 +1939,7 @@ PHASE: Hostinger Edition
                                 <span class="spinner"></span>
                                 <span>Testing connection...</span>
                             </div>
-                            <button class="btn btn-primary database-button" onclick="testConnectionManual('${conn.id}')">
+                            <button class="btn btn-primary database-button" onclick="event.stopPropagation(); testConnectionManual('${conn.id}')">
                                 <span>🔄</span> Test Again
                             </button>
                         </div>
