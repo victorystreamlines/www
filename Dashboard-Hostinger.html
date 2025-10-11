@@ -1,20 +1,20 @@
 <!--
-CONTROL PANEL METADATA (Phase 1)
+HOSTINGER DATABASE CONTROL PANEL
 LAYOUT: sidebar
 THEME: gradient-sunset
 CSS_FRAMEWORK: tailwind
 LANGUAGE: english
-SERVER: localhost
-DATABASE_OPERATIONS: list_databases, create_database, delete_database, rename_database, connect_database, set_database_credentials
+SERVER: Hostinger (Shared/VPS)
+DATABASE_OPERATIONS: Manage Hostinger database connections
 TABLE_OPERATIONS: list_tables, create_table, edit_table, delete_table, rename_table
-PHASE: 2 (Enhanced with Table Operations)
+PHASE: Hostinger Edition
 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Database Control Panel</title>
+    <title>Hostinger Database Control Panel</title>
     <style>
         * {
             margin: 0;
@@ -728,7 +728,7 @@ PHASE: 2 (Enhanced with Table Operations)
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-title">🗄️ DB Manager</div>
+            <div class="sidebar-title">🌐 Hostinger DB</div>
             <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
         </div>
         <ul class="nav-menu">
@@ -771,7 +771,7 @@ PHASE: 2 (Enhanced with Table Operations)
             <li class="nav-item">
                 <a class="nav-link" onclick="showSection('settings')">
                     <span class="nav-icon">⚙️</span>
-                    <span>Settings</span>
+                    <span>Hostinger Connections</span>
                 </a>
             </li>
             <li class="nav-item" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(251, 191, 36, 0.3);">
@@ -813,7 +813,7 @@ PHASE: 2 (Enhanced with Table Operations)
     <!-- Main Content -->
     <main class="main-content" id="mainContent">
         <div class="content-header">
-            <h1 class="page-title">Database Control Panel</h1>
+            <h1 class="page-title">Hostinger Database Control Panel</h1>
             <button class="toggle-sidebar-btn" onclick="toggleSidebar()">☰ Menu</button>
         </div>
 
@@ -822,26 +822,48 @@ PHASE: 2 (Enhanced with Table Operations)
             <div class="card">
                 <h2 class="card-title">
                     <span class="card-title-icon">🌐</span>
-                    Server Connection Status
+                    Configured Hostinger Connections
                 </h2>
-                <div id="connectionMessage"></div>
-                <button class="btn btn-primary" onclick="checkConnection()">
-                    <span>🔄</span> Test Connection
-                </button>
+                <div id="dashboardMessage"></div>
+                <div id="configuredConnectionsList" class="database-grid" style="margin-top: 20px;">
+                    <p style="color: rgba(254, 243, 199, 0.6); text-align: center; padding: 40px;">
+                        No Hostinger connections configured.<br>
+                        <span style="font-size: 14px;">Go to <strong>Hostinger Connections</strong> in the sidebar to add your first connection.</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">💻</span>
+                    Your PC Information
+                </h2>
+                <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3); margin-bottom: 15px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <span style="font-size: 24px;">🖥️</span>
+                        <div>
+                            <strong style="color: #fbbf24; font-size: 16px;">Your PC IP Address:</strong>
+                            <div style="font-family: monospace; font-size: 18px; color: #3b82f6; margin-top: 5px;">192.168.8.4</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 13px; color: rgba(254, 243, 199, 0.7);">
+                        💡 Use this IP when connecting to databases on your local network or for external access to your PC's MySQL server
+                    </div>
+                </div>
             </div>
 
             <div class="card">
                 <h2 class="card-title">
                     <span class="card-title-icon">📊</span>
-                    Quick Overview
+                    Quick Guide
                 </h2>
-                <p>Welcome to the Database Control Panel. Use the sidebar to navigate between different database operations.</p>
+                <p>Welcome to the Hostinger Database Control Panel. Manage your Hostinger databases (Shared Hosting or VPS).</p>
                 <ul style="margin-top: 15px; line-height: 1.8;">
-                    <li>✅ List and connect to databases</li>
-                    <li>✅ Create new databases with optional credentials</li>
-                    <li>✅ Delete existing databases</li>
-                    <li>✅ Rename databases</li>
-                    <li>✅ Set security credentials for databases</li>
+                    <li>✅ Add multiple Hostinger database connections</li>
+                    <li>✅ Test connection status for each database</li>
+                    <li>✅ Manage tables, create, edit, delete operations</li>
+                    <li>✅ Supports both Shared Hosting and VPS databases</li>
+                    <li>✅ All credentials stored locally in your browser</li>
                 </ul>
             </div>
         </section>
@@ -989,23 +1011,78 @@ PHASE: 2 (Enhanced with Table Operations)
             </div>
         </section>
 
-        <!-- Settings Section -->
+        <!-- Settings Section - Hostinger Connections -->
         <section id="settings" class="section">
             <div class="card">
                 <h2 class="card-title">
                     <span class="card-title-icon">⚙️</span>
-                    Settings & Security
+                    Manage Hostinger Connections
                 </h2>
                 <div class="security-notice">
-                    <strong>⚠️ Security Notice:</strong> Database credentials are stored in your browser's localStorage for convenience. This data is only accessible from this browser on this device. Clear saved credentials if you're using a shared computer.
+                    <strong>🌐 Hostinger Database Connections:</strong> Add your Hostinger database credentials (Shared Hosting or VPS). All data is stored locally in your browser's localStorage.
                 </div>
                 <div id="settingsMessage"></div>
-                <button class="btn btn-danger" onclick="clearSavedCredentials()">
-                    <span>🗑️</span> Clear All Saved Credentials
-                </button>
-                <div style="margin-top: 20px;">
-                    <h3 style="color: #fbbf24; margin-bottom: 10px;">Saved Credentials:</h3>
-                    <div id="savedCredentialsList"></div>
+
+                <!-- Add New Connection Form -->
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="color: #fbbf24; margin-bottom: 15px;">➕ Add New Connection</h3>
+                    <form onsubmit="addHostingerConnection(event)">
+                        <div class="form-group">
+                            <label class="form-label">Connection Name *</label>
+                            <input type="text" id="connName" class="form-input" placeholder="e.g., My VPS, Shared Host 1" required>
+                            <div class="helper-text">Give a friendly name to identify this connection</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Connection Type *</label>
+                            <select id="connType" class="form-select" required>
+                                <option value="shared">Shared Hosting</option>
+                                <option value="vps">VPS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Database Host *</label>
+                            <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+                                <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; flex: 1;" onclick="document.getElementById('connHost').value='192.168.8.4'">🖥️ My PC (192.168.8.4)</button>
+                                <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; flex: 1;" onclick="document.getElementById('connHost').value='localhost'">📍 localhost</button>
+                                <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; flex: 1;" onclick="document.getElementById('connHost').value='127.0.0.1'">🔗 127.0.0.1</button>
+                            </div>
+                            <input type="text" id="connHost" class="form-input" placeholder="e.g., localhost, 192.168.8.4, or Hostinger host" value="192.168.8.4" required>
+                            <div class="helper-text">💡 Your PC IP: 192.168.8.4 | Use 'localhost' for shared hosting | Use Hostinger host for remote</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Database Name *</label>
+                            <input type="text" id="connDbName" class="form-input" placeholder="Database name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Database Username *</label>
+                            <input type="text" id="connUsername" class="form-input" placeholder="Username" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Database Password *</label>
+                            <input type="password" id="connPassword" class="form-input" placeholder="Password" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Port</label>
+                            <input type="text" id="connPort" class="form-input" placeholder="3306" value="3306">
+                            <div class="helper-text">Default MySQL port is 3306</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <span>➕</span> Add Connection
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Connections List Table -->
+                <div style="margin-top: 30px;">
+                    <h3 style="color: #fbbf24; margin-bottom: 15px;">📋 Saved Connections</h3>
+                    <div id="hostingerConnectionsTable"></div>
+                </div>
+
+                <!-- Clear All Button -->
+                <div style="margin-top: 30px;">
+                    <button class="btn btn-danger" onclick="clearAllHostingerConnections()">
+                        <span>🗑️</span> Clear All Connections
+                    </button>
                 </div>
             </div>
         </section>
@@ -1251,17 +1328,18 @@ PHASE: 2 (Enhanced with Table Operations)
 
     <script>
         // Configuration
-        const API_URL = 'http://localhost/backend.php';
-        const CREDENTIALS_KEY = 'db_credentials';
+        const API_URL = 'http://localhost/Backend-Hostinger.php';
+        const HOSTINGER_CONNECTIONS_KEY = 'hostinger_connections';
         let currentDatabase = null;
+        let currentConnection = null;
         let columnCounter = 0;
         let selectedTemplate = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            checkConnection();
-            loadDatabasesForDropdowns();
-            updateSavedCredentialsList();
+            loadDashboardConnections();
+            loadHostingerConnectionsTable();
+            addColumnRow(); // Add initial column row for table creation
         });
 
         // Sidebar toggle
@@ -1294,10 +1372,10 @@ PHASE: 2 (Enhanced with Table Operations)
             }
 
             // Load data when entering certain sections
-            if (sectionId === 'list') {
-                loadDatabases();
+            if (sectionId === 'dashboard') {
+                loadDashboardConnections();
             } else if (sectionId === 'settings') {
-                updateSavedCredentialsList();
+                loadHostingerConnectionsTable();
             }
         }
 
@@ -1340,82 +1418,255 @@ PHASE: 2 (Enhanced with Table Operations)
             }
         }
 
-        // Check connection
-        async function checkConnection() {
-            const messageEl = document.getElementById('connectionMessage');
-            messageEl.innerHTML = '<div class="spinner"></div> Checking connection...';
-            
-            const result = await apiRequest('check_connection');
-            
-            if (result.success) {
-                showMessage('connectionMessage', '✅ ' + result.message, 'success');
-            } else {
-                showMessage('connectionMessage', '❌ ' + result.message, 'error');
-            }
-        }
+        // ========================================
+        // HOSTINGER CONNECTIONS MANAGEMENT
+        // ========================================
 
-        // LocalStorage helpers
-        function getSavedCredentials() {
-            const saved = localStorage.getItem(CREDENTIALS_KEY);
+        // Get saved connections
+        function getHostingerConnections() {
+            const saved = localStorage.getItem(HOSTINGER_CONNECTIONS_KEY);
             return saved ? JSON.parse(saved) : [];
         }
 
-        function saveCredentials(dbName, username, password) {
-            let credentials = getSavedCredentials();
-            // Remove existing entry for this database
-            credentials = credentials.filter(c => c.dbName !== dbName);
-            // Add new entry
-            credentials.push({ dbName, username, password });
-            localStorage.setItem(CREDENTIALS_KEY, JSON.stringify(credentials));
+        // Save connections
+        function saveHostingerConnections(connections) {
+            localStorage.setItem(HOSTINGER_CONNECTIONS_KEY, JSON.stringify(connections));
         }
 
-        function getCredentialsForDatabase(dbName) {
-            const credentials = getSavedCredentials();
-            return credentials.find(c => c.dbName === dbName);
-        }
-
-        function clearSavedCredentials() {
-            if (confirm('Are you sure you want to clear all saved credentials? You will need to re-enter them when connecting to databases.')) {
-                localStorage.removeItem(CREDENTIALS_KEY);
-                showMessage('settingsMessage', '✅ All saved credentials have been cleared', 'success');
-                updateSavedCredentialsList();
-                loadDatabases(); // Refresh to remove lock icons
-            }
-        }
-
-        function updateSavedCredentialsList() {
-            const listEl = document.getElementById('savedCredentialsList');
-            const credentials = getSavedCredentials();
+        // Add new connection
+        function addHostingerConnection(event) {
+            event.preventDefault();
             
-            if (credentials.length === 0) {
-                listEl.innerHTML = '<p style="color: rgba(254, 243, 199, 0.6);">No saved credentials</p>';
-            } else {
-                listEl.innerHTML = credentials.map(c => 
-                    `<div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 8px;">
-                        <strong>${c.dbName}</strong> - User: ${c.username}
-                    </div>`
-                ).join('');
-            }
-        }
+            const connection = {
+                id: Date.now().toString(),
+                name: document.getElementById('connName').value.trim(),
+                type: document.getElementById('connType').value,
+                host: document.getElementById('connHost').value.trim(),
+                dbName: document.getElementById('connDbName').value.trim(),
+                username: document.getElementById('connUsername').value.trim(),
+                password: document.getElementById('connPassword').value,
+                port: document.getElementById('connPort').value.trim() || '3306',
+                createdAt: new Date().toISOString()
+            };
 
-        function populateSavedUsernames() {
-            const datalist = document.getElementById('savedUsernames');
-            const credentials = getSavedCredentials();
-            const usernames = [...new Set(credentials.map(c => c.username))];
+            const connections = getHostingerConnections();
+            connections.push(connection);
+            saveHostingerConnections(connections);
+
+            showMessage('settingsMessage', `✅ Connection "${connection.name}" added successfully!`, 'success');
             
-            datalist.innerHTML = usernames.map(u => `<option value="${u}">`).join('');
+            // Reset form
+            document.getElementById('connName').value = '';
+            document.getElementById('connHost').value = '';
+            document.getElementById('connDbName').value = '';
+            document.getElementById('connUsername').value = '';
+            document.getElementById('connPassword').value = '';
+            document.getElementById('connPort').value = '3306';
+            
+            loadHostingerConnectionsTable();
+            loadDashboardConnections();
         }
 
-        // Auto-fill password when username is selected
-        document.addEventListener('input', function(e) {
-            if (e.target.id === 'modalUsername' && currentDatabase) {
-                const credentials = getSavedCredentials();
-                const match = credentials.find(c => c.dbName === currentDatabase && c.username === e.target.value);
-                if (match) {
-                    document.getElementById('modalPassword').value = match.password;
+        // Edit connection
+        function editHostingerConnection(id) {
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === id);
+            
+            if (!conn) return;
+
+            // Fill form with connection data
+            document.getElementById('connName').value = conn.name;
+            document.getElementById('connType').value = conn.type;
+            document.getElementById('connHost').value = conn.host;
+            document.getElementById('connDbName').value = conn.dbName;
+            document.getElementById('connUsername').value = conn.username;
+            document.getElementById('connPassword').value = conn.password;
+            document.getElementById('connPort').value = conn.port;
+
+            // Delete old connection
+            deleteHostingerConnection(id, true);
+            
+            // Scroll to form
+            document.querySelector('#settings .card').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Delete connection
+        function deleteHostingerConnection(id, silent = false) {
+            if (!silent && !confirm('Are you sure you want to delete this connection?')) {
+                return;
+            }
+
+            let connections = getHostingerConnections();
+            connections = connections.filter(c => c.id !== id);
+            saveHostingerConnections(connections);
+
+            if (!silent) {
+                showMessage('settingsMessage', '✅ Connection deleted successfully!', 'success');
+            }
+            
+            loadHostingerConnectionsTable();
+            loadDashboardConnections();
+        }
+
+        // Clear all connections
+        function clearAllHostingerConnections() {
+            if (!confirm('Are you sure you want to delete ALL connections? This action cannot be undone!')) {
+                return;
+            }
+
+            localStorage.removeItem(HOSTINGER_CONNECTIONS_KEY);
+            showMessage('settingsMessage', '✅ All connections cleared!', 'success');
+            
+            loadHostingerConnectionsTable();
+            loadDashboardConnections();
+        }
+
+        // Load connections table in Settings
+        function loadHostingerConnectionsTable() {
+            const tableEl = document.getElementById('hostingerConnectionsTable');
+            const connections = getHostingerConnections();
+
+            if (connections.length === 0) {
+                tableEl.innerHTML = '<p style="color: rgba(254, 243, 199, 0.6); text-align: center; padding: 20px;">No connections saved yet.</p>';
+                return;
+            }
+
+            let html = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: rgba(251, 191, 36, 0.1); border-bottom: 2px solid rgba(251, 191, 36, 0.3);">
+                                <th style="padding: 12px; text-align: left; color: #fbbf24;">Name</th>
+                                <th style="padding: 12px; text-align: left; color: #fbbf24;">Type</th>
+                                <th style="padding: 12px; text-align: left; color: #fbbf24;">Host</th>
+                                <th style="padding: 12px; text-align: left; color: #fbbf24;">Database</th>
+                                <th style="padding: 12px; text-align: left; color: #fbbf24;">Username</th>
+                                <th style="padding: 12px; text-align: center; color: #fbbf24;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+            connections.forEach(conn => {
+                const typeIcon = conn.type === 'vps' ? '🖥️' : '🌐';
+                html += `
+                    <tr style="border-bottom: 1px solid rgba(251, 191, 36, 0.1);">
+                        <td style="padding: 12px; color: #fef3c7;"><strong>${conn.name}</strong></td>
+                        <td style="padding: 12px; color: rgba(254, 243, 199, 0.7);">${typeIcon} ${conn.type.toUpperCase()}</td>
+                        <td style="padding: 12px; color: rgba(254, 243, 199, 0.7); font-family: monospace; font-size: 13px;">${conn.host}</td>
+                        <td style="padding: 12px; color: rgba(254, 243, 199, 0.7); font-family: monospace; font-size: 13px;">${conn.dbName}</td>
+                        <td style="padding: 12px; color: rgba(254, 243, 199, 0.7);">${conn.username}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button class="btn btn-secondary" style="padding: 6px 12px; margin-right: 5px; font-size: 12px;" onclick="editHostingerConnection('${conn.id}')">✏️ Edit</button>
+                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteHostingerConnection('${conn.id}')">🗑️ Delete</button>
+                        </td>
+                    </tr>`;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>`;
+
+            tableEl.innerHTML = html;
+        }
+
+        // Load connections in Dashboard with Test Connection
+        async function loadDashboardConnections() {
+            const listEl = document.getElementById('configuredConnectionsList');
+            const connections = getHostingerConnections();
+
+            if (connections.length === 0) {
+                listEl.innerHTML = `
+                    <p style="color: rgba(254, 243, 199, 0.6); text-align: center; padding: 40px;">
+                        No Hostinger connections configured.<br>
+                        <span style="font-size: 14px;">Go to <strong>Hostinger Connections</strong> in the sidebar to add your first connection.</span>
+                    </p>`;
+                return;
+            }
+
+            let html = '';
+            connections.forEach(conn => {
+                const typeIcon = conn.type === 'vps' ? '🖥️' : '🌐';
+                const connId = `conn_${conn.id}`;
+                html += `
+                    <div class="database-item" id="${connId}" style="position: relative;">
+                        <div class="database-name" style="margin-bottom: 10px;">
+                            <span class="database-icon">${typeIcon}</span>
+                            <span><strong>${conn.name}</strong></span>
+                        </div>
+                        <div style="font-size: 12px; color: rgba(254, 243, 199, 0.6); margin-bottom: 10px;">
+                            <div>📁 ${conn.dbName}</div>
+                            <div>🖥️ ${conn.host}</div>
+                        </div>
+                        <div id="${connId}_status" style="padding: 8px; border-radius: 6px; background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #93c5fd; font-size: 12px; margin-bottom: 8px;">
+                            <span class="spinner" style="display: inline-block; vertical-align: middle; margin-right: 5px;"></span> Testing connection...
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%; padding: 8px; font-size: 13px;" onclick="testConnectionManual('${conn.id}')">
+                            <span>🔄</span> Test Again
+                        </button>
+                    </div>`;
+            });
+
+            listEl.innerHTML = html;
+
+            // Auto-test all connections
+            connections.forEach(conn => {
+                testConnection(conn.id);
+            });
+        }
+
+        // Test connection (automatic on load)
+        async function testConnection(connId) {
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) return;
+
+            const statusEl = document.getElementById(`conn_${connId}_status`);
+            
+            try {
+                const result = await apiRequest('check_connection', {
+                    db_host: conn.host,
+                    db_name: conn.dbName,
+                    db_user: conn.username,
+                    db_pass: conn.password,
+                    db_port: conn.port
+                });
+
+                if (result.success) {
+                    statusEl.innerHTML = '✅ Connected successfully!';
+                    statusEl.style.background = 'rgba(34, 197, 94, 0.2)';
+                    statusEl.style.borderColor = '#22c55e';
+                    statusEl.style.color = '#86efac';
+                } else {
+                    statusEl.innerHTML = `❌ Connection failed: ${result.message}`;
+                    statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
+                    statusEl.style.borderColor = '#ef4444';
+                    statusEl.style.color = '#fca5a5';
                 }
+            } catch (error) {
+                statusEl.innerHTML = `❌ Error: ${error.message}`;
+                statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
+                statusEl.style.borderColor = '#ef4444';
+                statusEl.style.color = '#fca5a5';
             }
-        });
+        }
+
+        // Test connection manually (when clicking Test Again button)
+        function testConnectionManual(connId) {
+            const statusEl = document.getElementById(`conn_${connId}_status`);
+            statusEl.innerHTML = '<span class="spinner" style="display: inline-block; vertical-align: middle; margin-right: 5px;"></span> Testing connection...';
+            statusEl.style.background = 'rgba(59, 130, 246, 0.2)';
+            statusEl.style.borderColor = '#3b82f6';
+            statusEl.style.color = '#93c5fd';
+            
+            testConnection(connId);
+        }
+
+        // ========================================
+        // NOTE: Old database operations functions below
+        // These will need to be updated for Hostinger connections
+        // ========================================
 
         // Load databases
         async function loadDatabases() {

@@ -1,10 +1,10 @@
 <?php
 /*
-CONTROL PANEL METADATA (Phase 1)
-SERVER: localhost
-DATABASE_OPERATIONS: list_databases, create_database, delete_database, rename_database, connect_database, set_database_credentials
+HOSTINGER DATABASE CONTROL PANEL - Backend
+SERVER: Hostinger (Shared/VPS)
+DATABASE_OPERATIONS: Dynamic connection management with Hostinger credentials
 TABLE_OPERATIONS: list_tables, create_table, delete_table, rename_table, alter_table, get_table_structure
-PHASE: 2 (Enhanced with Table Operations)
+PHASE: Hostinger Edition
 */
 
 // Enable error reporting for debugging
@@ -23,10 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// Database configuration
-define('DB_HOST', '127.0.0.1');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+// No default database configuration - using dynamic Hostinger credentials from requests
 
 /**
  * Send JSON response
@@ -63,30 +60,14 @@ function sanitizeDatabaseName($name) {
 }
 
 /**
- * Get database connection
+ * Get database connection with Hostinger credentials
  */
-function getConnection($dbName = null) {
+function getConnection($host, $dbName, $username, $password, $port = '3306') {
     try {
-        $dsn = 'mysql:host=' . DB_HOST;
-        if ($dbName) {
-            $dsn .= ';dbname=' . $dbName;
-        }
-        $conn = new PDO($dsn, DB_USER, DB_PASS);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        return $conn;
-    } catch (PDOException $e) {
-        return null;
-    }
-}
-
-/**
- * Get database connection with custom credentials
- */
-function getConnectionWithCredentials($dbName, $username, $password) {
-    try {
-        $dsn = 'mysql:host=' . DB_HOST . ';dbname=' . $dbName;
+        $dsn = "mysql:host={$host};port={$port};dbname={$dbName};charset=utf8mb4";
         $conn = new PDO($dsn, $username, $password);
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
         return $conn;
     } catch (PDOException $e) {
         return null;
@@ -94,15 +75,35 @@ function getConnectionWithCredentials($dbName, $username, $password) {
 }
 
 /**
- * Check database server connection
+ * Check database server connection with Hostinger credentials
  */
 function checkConnection() {
-    $conn = getConnection();
+    // Get credentials from POST
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+
+    if (empty($host) || empty($dbName) || empty($username)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required connection parameters (host, database name, username)');
+        return;
+    }
+
+    $conn = getConnection($host, $dbName, $username, $password, $port);
     if ($conn) {
-        sendResponse(true, 'Successfully connected to database server');
+        // Test a simple query
+        try {
+            $stmt = $conn->query('SELECT 1');
+            sendResponse(true, 'Successfully connected to Hostinger database: ' . $dbName);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            sendResponse(false, 'Connected but query failed: ' . $e->getMessage());
+        }
     } else {
         http_response_code(500);
-        sendResponse(false, 'Failed to connect to database server. Please check your database configuration.');
+        sendResponse(false, 'Failed to connect to database. Please check your credentials.');
     }
 }
 
