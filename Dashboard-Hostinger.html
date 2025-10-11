@@ -801,6 +801,11 @@ PHASE: Hostinger Edition
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Hidden sections - for temporary hiding */
+        .hidden-section {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -853,34 +858,35 @@ PHASE: Hostinger Edition
                     <span>Hostinger Connections</span>
                 </a>
             </li>
-            <li class="nav-item" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(251, 191, 36, 0.3);">
+            <!-- TABLE OPERATIONS - HIDDEN -->
+            <li class="nav-item hidden-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(251, 191, 36, 0.3);">
                 <div style="color: rgba(251, 191, 36, 0.7); font-size: 12px; padding: 0 15px; margin-bottom: 10px;">TABLE OPERATIONS</div>
             </li>
-            <li class="nav-item">
+            <li class="nav-item hidden-section">
                 <a class="nav-link" onclick="showSection('listTables')">
                     <span class="nav-icon">📄</span>
                     <span>List Tables</span>
                 </a>
             </li>
-            <li class="nav-item">
+            <li class="nav-item hidden-section">
                 <a class="nav-link" onclick="showSection('createTable')">
                     <span class="nav-icon">➕</span>
                     <span>Create Table</span>
                 </a>
             </li>
-            <li class="nav-item">
+            <li class="nav-item hidden-section">
                 <a class="nav-link" onclick="showSection('editTable')">
                     <span class="nav-icon">✏️</span>
                     <span>Edit Table</span>
                 </a>
             </li>
-            <li class="nav-item">
+            <li class="nav-item hidden-section">
                 <a class="nav-link" onclick="showSection('deleteTable')">
                     <span class="nav-icon">🗑️</span>
                     <span>Delete Table</span>
                 </a>
             </li>
-            <li class="nav-item">
+            <li class="nav-item hidden-section">
                 <a class="nav-link" onclick="showSection('renameTable')">
                     <span class="nav-icon">✏️</span>
                     <span>Rename Table</span>
@@ -1177,8 +1183,8 @@ PHASE: Hostinger Edition
             </div>
         </section>
 
-        <!-- List Tables Section -->
-        <section id="listTables" class="section">
+        <!-- List Tables Section - HIDDEN -->
+        <section id="listTables" class="section hidden-section">
             <div id="tableConnectionStatus" class="connection-status"></div>
             <div class="card">
                 <h2 class="card-title">
@@ -1193,8 +1199,8 @@ PHASE: Hostinger Edition
             </div>
         </section>
 
-        <!-- Create Table Section -->
-        <section id="createTable" class="section">
+        <!-- Create Table Section - HIDDEN -->
+        <section id="createTable" class="section hidden-section">
             <div id="createTableConnectionStatus" class="connection-status"></div>
             <div class="card">
                 <h2 class="card-title">
@@ -1272,8 +1278,8 @@ PHASE: Hostinger Edition
             </div>
         </section>
 
-        <!-- Edit Table Section -->
-        <section id="editTable" class="section">
+        <!-- Edit Table Section - HIDDEN -->
+        <section id="editTable" class="section hidden-section">
             <div id="editTableConnectionStatus" class="connection-status"></div>
             <div class="card">
                 <h2 class="card-title">
@@ -1331,8 +1337,8 @@ PHASE: Hostinger Edition
             </div>
         </section>
 
-        <!-- Delete Table Section -->
-        <section id="deleteTable" class="section">
+        <!-- Delete Table Section - HIDDEN -->
+        <section id="deleteTable" class="section hidden-section">
             <div id="deleteTableConnectionStatus" class="connection-status"></div>
             <div class="card">
                 <h2 class="card-title">
@@ -1355,8 +1361,8 @@ PHASE: Hostinger Edition
             </div>
         </section>
 
-        <!-- Rename Table Section -->
-        <section id="renameTable" class="section">
+        <!-- Rename Table Section - HIDDEN -->
+        <section id="renameTable" class="section hidden-section">
             <div id="renameTableConnectionStatus" class="connection-status"></div>
             <div class="card">
                 <h2 class="card-title">
