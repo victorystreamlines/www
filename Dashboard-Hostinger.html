@@ -37,6 +37,7 @@ PHASE: Hostinger Edition
             width: 260px;
             height: 100vh;
             background: rgba(0, 0, 0, 0.3);
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
             padding: 20px;
             transition: transform 0.3s ease;
@@ -152,6 +153,7 @@ PHASE: Hostinger Edition
         /* Cards */
         .card {
             background: rgba(255, 255, 255, 0.1);
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
             border-radius: 12px;
             padding: 25px;
@@ -259,22 +261,18 @@ PHASE: Hostinger Edition
             gap: 15px;
             margin-top: 20px;
         }
+        /* Database Card - Vertical Flex (3 Rows) */
         .database-item {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(251, 191, 36, 0.2);
             border-radius: 10px;
-            padding: 15px;
-            cursor: pointer;
+            padding: 20px;
             transition: all 0.3s ease;
             position: relative;
-            overflow: hidden;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
             display: flex;
             flex-direction: column;
-            height: 100%;
-            min-height: 200px;
+            gap: 15px;
+            min-height: 280px;
         }
 
         .database-item:hover {
@@ -284,21 +282,90 @@ PHASE: Hostinger Edition
             box-shadow: 0 5px 20px rgba(251, 191, 36, 0.3);
         }
 
-        .database-name {
-            font-size: 16px;
-            font-weight: bold;
-            color: #fef3c7;
+        /* Row 1: Logo/Icon (Centered) */
+        .database-icon-row {
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 10px;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
-            flex-wrap: wrap;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.15);
         }
 
         .database-icon {
-            font-size: 24px;
+            font-size: 48px;
+        }
+
+        /* Row 2: Text Content (Connection Name, Database, Host) */
+        .database-text-row {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            padding: 10px 0;
+        }
+
+        .database-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fbbf24;
+            text-align: center;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            margin-bottom: 8px;
+        }
+
+        .database-info-item {
+            font-size: 13px;
+            color: rgba(254, 243, 199, 0.8);
+            text-align: center;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-family: monospace;
+        }
+
+        /* Row 3: Status + Button */
+        .database-actions-row {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(251, 191, 36, 0.15);
+        }
+
+        .database-status {
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 40px;
+        }
+
+        .database-status.testing {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid #3b82f6;
+            color: #93c5fd;
+        }
+
+        .database-status.success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+            color: #86efac;
+        }
+
+        .database-status.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+        }
+
+        .database-button {
+            width: 100%;
+            padding: 10px;
+            font-size: 13px;
         }
 
         .lock-icon {
@@ -307,83 +374,6 @@ PHASE: Hostinger Edition
             right: 10px;
             color: #fbbf24;
             font-size: 16px;
-        }
-
-        /* Connection Card Sections */
-        .conn-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 12px;
-            min-height: 60px;
-        }
-
-        .conn-icon {
-            flex-shrink: 0;
-            font-size: 32px;
-            line-height: 1;
-        }
-
-        .conn-title {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            min-height: 32px;
-            font-size: 15px;
-            color: #fef3c7;
-            font-weight: bold;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            line-height: 1.4;
-        }
-
-        .conn-info {
-            flex: 1;
-            margin-bottom: 12px;
-        }
-
-        .conn-info-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 6px;
-            min-height: 36px;
-            margin-bottom: 8px;
-        }
-
-        .conn-info-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .conn-info-icon {
-            flex-shrink: 0;
-            font-size: 16px;
-        }
-
-        .conn-info-text {
-            font-size: 12px;
-            color: rgba(254, 243, 199, 0.8);
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            font-family: monospace;
-        }
-
-        .conn-status {
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 12px;
-            margin-bottom: 10px;
-            min-height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .conn-button {
-            margin-top: auto;
         }
 
         /* Messages */
@@ -433,6 +423,7 @@ PHASE: Hostinger Edition
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.7);
+            -webkit-backdrop-filter: blur(5px);
             backdrop-filter: blur(5px);
             z-index: 2000;
             align-items: center;
@@ -1775,20 +1766,28 @@ PHASE: Hostinger Edition
                 const connId = `conn_${conn.id}`;
                 html += `
                     <div class="database-item" id="${connId}">
-                        <div class="database-name" style="margin-bottom: 10px; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;">
+                        <!-- Row 1: Logo/Icon -->
+                        <div class="database-icon-row">
                             <span class="database-icon">${typeIcon}</span>
-                            <span style="display: inline-block; max-width: calc(100% - 30px); word-wrap: break-word;"><strong>${conn.name}</strong></span>
                         </div>
-                        <div style="font-size: 12px; color: rgba(254, 243, 199, 0.6); margin-bottom: 10px; word-wrap: break-word; overflow-wrap: break-word;">
-                            <div style="margin-bottom: 5px; word-wrap: break-word; overflow-wrap: break-word;">📁 ${conn.dbName}</div>
-                            <div style="word-wrap: break-word; overflow-wrap: break-word;">🖥️ ${conn.host}</div>
+                        
+                        <!-- Row 2: Text Content -->
+                        <div class="database-text-row">
+                            <div class="database-name">${conn.name}</div>
+                            <div class="database-info-item">📁 ${conn.dbName}</div>
+                            <div class="database-info-item">🖥️ ${conn.host}</div>
                         </div>
-                        <div id="${connId}_status" style="padding: 8px; border-radius: 6px; background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #93c5fd; font-size: 12px; margin-bottom: 8px;">
-                            <span class="spinner" style="display: inline-block; vertical-align: middle; margin-right: 5px;"></span> Testing connection...
+                        
+                        <!-- Row 3: Status + Button -->
+                        <div class="database-actions-row">
+                            <div id="${connId}_status" class="database-status testing">
+                                <span class="spinner"></span>
+                                <span>Testing connection...</span>
+                            </div>
+                            <button class="btn btn-primary database-button" onclick="testConnectionManual('${conn.id}')">
+                                <span>🔄</span> Test Again
+                            </button>
                         </div>
-                        <button class="btn btn-primary" style="width: 100%; padding: 8px; font-size: 13px;" onclick="testConnectionManual('${conn.id}')">
-                            <span>🔄</span> Test Again
-                        </button>
                     </div>`;
             });
 
@@ -1819,31 +1818,23 @@ PHASE: Hostinger Edition
                 });
 
                 if (result.success) {
+                    statusEl.className = 'database-status success';
                     statusEl.innerHTML = '✅ Connected successfully!';
-                    statusEl.style.background = 'rgba(34, 197, 94, 0.2)';
-                    statusEl.style.borderColor = '#22c55e';
-                    statusEl.style.color = '#86efac';
                 } else {
+                    statusEl.className = 'database-status error';
                     statusEl.innerHTML = `❌ Connection failed: ${result.message}`;
-                    statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
-                    statusEl.style.borderColor = '#ef4444';
-                    statusEl.style.color = '#fca5a5';
                 }
             } catch (error) {
+                statusEl.className = 'database-status error';
                 statusEl.innerHTML = `❌ Error: ${error.message}`;
-                statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
-                statusEl.style.borderColor = '#ef4444';
-                statusEl.style.color = '#fca5a5';
             }
         }
 
         // Test connection manually (when clicking Test Again button)
         function testConnectionManual(connId) {
             const statusEl = document.getElementById(`conn_${connId}_status`);
-            statusEl.innerHTML = '<span class="spinner" style="display: inline-block; vertical-align: middle; margin-right: 5px;"></span> Testing connection...';
-            statusEl.style.background = 'rgba(59, 130, 246, 0.2)';
-            statusEl.style.borderColor = '#3b82f6';
-            statusEl.style.color = '#93c5fd';
+            statusEl.className = 'database-status testing';
+            statusEl.innerHTML = '<span class="spinner"></span><span>Testing connection...</span>';
             
             testConnection(connId);
         }
