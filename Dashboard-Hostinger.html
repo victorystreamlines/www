@@ -271,6 +271,10 @@ PHASE: Hostinger Edition
             word-wrap: break-word;
             overflow-wrap: break-word;
             word-break: break-word;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 200px;
         }
 
         .database-item:hover {
@@ -303,6 +307,83 @@ PHASE: Hostinger Edition
             right: 10px;
             color: #fbbf24;
             font-size: 16px;
+        }
+
+        /* Connection Card Sections */
+        .conn-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            min-height: 60px;
+        }
+
+        .conn-icon {
+            flex-shrink: 0;
+            font-size: 32px;
+            line-height: 1;
+        }
+
+        .conn-title {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            min-height: 32px;
+            font-size: 15px;
+            color: #fef3c7;
+            font-weight: bold;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.4;
+        }
+
+        .conn-info {
+            flex: 1;
+            margin-bottom: 12px;
+        }
+
+        .conn-info-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            min-height: 36px;
+            margin-bottom: 8px;
+        }
+
+        .conn-info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .conn-info-icon {
+            flex-shrink: 0;
+            font-size: 16px;
+        }
+
+        .conn-info-text {
+            font-size: 12px;
+            color: rgba(254, 243, 199, 0.8);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-family: monospace;
+        }
+
+        .conn-status {
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-bottom: 10px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .conn-button {
+            margin-top: auto;
         }
 
         /* Messages */
@@ -1693,7 +1774,7 @@ PHASE: Hostinger Edition
                 const typeIcon = conn.type === 'vps' ? '🖥️' : '🌐';
                 const connId = `conn_${conn.id}`;
                 html += `
-                    <div class="database-item" id="${connId}" style="position: relative; overflow: hidden;">
+                    <div class="database-item" id="${connId}">
                         <div class="database-name" style="margin-bottom: 10px; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;">
                             <span class="database-icon">${typeIcon}</span>
                             <span style="display: inline-block; max-width: calc(100% - 30px); word-wrap: break-word;"><strong>${conn.name}</strong></span>
