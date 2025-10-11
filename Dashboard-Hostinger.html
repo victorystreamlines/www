@@ -1046,20 +1046,31 @@ PHASE: Hostinger Edition
                                 <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; flex: 1;" onclick="document.getElementById('connHost').value='localhost'">📍 localhost</button>
                                 <button type="button" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; flex: 1;" onclick="document.getElementById('connHost').value='127.0.0.1'">🔗 127.0.0.1</button>
                             </div>
-                            <input type="text" id="connHost" class="form-input" placeholder="e.g., localhost, 192.168.8.4, or Hostinger host" value="192.168.8.4" required>
+                            <input type="text" id="connHost" class="form-input" list="hostList" placeholder="e.g., localhost, 192.168.8.4, or Hostinger host" value="192.168.8.4" required>
+                            <datalist id="hostList"></datalist>
                             <div class="helper-text">💡 Your PC IP: 192.168.8.4 | Use 'localhost' for shared hosting | Use Hostinger host for remote</div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Database Name *</label>
-                            <input type="text" id="connDbName" class="form-input" placeholder="Database name" required>
+                            <input type="text" id="connDbName" class="form-input" list="dbNameList" placeholder="Database name" required>
+                            <datalist id="dbNameList"></datalist>
+                            <div class="helper-text">💡 Select from previous entries or type new name</div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Database Username *</label>
-                            <input type="text" id="connUsername" class="form-input" placeholder="Username" required>
+                            <input type="text" id="connUsername" class="form-input" list="usernameList" placeholder="Username" required>
+                            <datalist id="usernameList"></datalist>
+                            <div class="helper-text">💡 Select from previous entries or type new username</div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Database Password *</label>
-                            <input type="password" id="connPassword" class="form-input" placeholder="Password" required>
+                            <div style="position: relative;">
+                                <input type="password" id="connPassword" class="form-input" placeholder="Password" required style="padding-right: 45px;">
+                                <button type="button" onclick="togglePasswordVisibility()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #93c5fd; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 16px; transition: all 0.3s;" id="togglePasswordBtn">
+                                    👁️
+                                </button>
+                            </div>
+                            <div class="helper-text">💡 Click the eye icon to show/hide password</div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Port</label>
@@ -1457,11 +1468,20 @@ PHASE: Hostinger Edition
             
             // Reset form
             document.getElementById('connName').value = '';
-            document.getElementById('connHost').value = '';
+            document.getElementById('connHost').value = '192.168.8.4';
             document.getElementById('connDbName').value = '';
             document.getElementById('connUsername').value = '';
             document.getElementById('connPassword').value = '';
             document.getElementById('connPort').value = '3306';
+            
+            // Reset password visibility
+            const passwordInput = document.getElementById('connPassword');
+            const toggleBtn = document.getElementById('togglePasswordBtn');
+            passwordInput.type = 'password';
+            toggleBtn.textContent = '👁️';
+            toggleBtn.style.background = 'rgba(59, 130, 246, 0.2)';
+            toggleBtn.style.borderColor = '#3b82f6';
+            toggleBtn.style.color = '#93c5fd';
             
             loadHostingerConnectionsTable();
             loadDashboardConnections();
@@ -1521,10 +1541,77 @@ PHASE: Hostinger Edition
             loadDashboardConnections();
         }
 
+        // Toggle password visibility in Settings
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('connPassword');
+            const toggleBtn = document.getElementById('togglePasswordBtn');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleBtn.textContent = '🙈';
+                toggleBtn.style.background = 'rgba(34, 197, 94, 0.2)';
+                toggleBtn.style.borderColor = '#22c55e';
+                toggleBtn.style.color = '#86efac';
+            } else {
+                passwordInput.type = 'password';
+                toggleBtn.textContent = '👁️';
+                toggleBtn.style.background = 'rgba(59, 130, 246, 0.2)';
+                toggleBtn.style.borderColor = '#3b82f6';
+                toggleBtn.style.color = '#93c5fd';
+            }
+        }
+
+        // Populate autocomplete fields from previous connections
+        function populateAutocompleteFields() {
+            const connections = getHostingerConnections();
+            
+            // Get unique values
+            const hosts = [...new Set(connections.map(c => c.host))];
+            const dbNames = [...new Set(connections.map(c => c.dbName))];
+            const usernames = [...new Set(connections.map(c => c.username))];
+
+            // Populate Host datalist
+            const hostList = document.getElementById('hostList');
+            hostList.innerHTML = hosts.map(h => `<option value="${h}">`).join('');
+
+            // Populate Database Name datalist
+            const dbNameList = document.getElementById('dbNameList');
+            dbNameList.innerHTML = dbNames.map(db => `<option value="${db}">`).join('');
+
+            // Populate Username datalist
+            const usernameList = document.getElementById('usernameList');
+            usernameList.innerHTML = usernames.map(u => `<option value="${u}">`).join('');
+        }
+
+        // Toggle password visibility in table
+        function toggleTablePassword(connId, password) {
+            const pwdSpan = document.getElementById(`pwd_${connId}`);
+            const pwdBtn = document.getElementById(`pwdBtn_${connId}`);
+            
+            if (pwdSpan.textContent.includes('•')) {
+                // Show password
+                pwdSpan.textContent = password;
+                pwdBtn.textContent = '🙈';
+                pwdBtn.style.background = 'rgba(34, 197, 94, 0.2)';
+                pwdBtn.style.borderColor = '#22c55e';
+                pwdBtn.style.color = '#86efac';
+            } else {
+                // Hide password
+                pwdSpan.textContent = '•'.repeat(password.length);
+                pwdBtn.textContent = '👁️';
+                pwdBtn.style.background = 'rgba(59, 130, 246, 0.2)';
+                pwdBtn.style.borderColor = '#3b82f6';
+                pwdBtn.style.color = '#93c5fd';
+            }
+        }
+
         // Load connections table in Settings
         function loadHostingerConnectionsTable() {
             const tableEl = document.getElementById('hostingerConnectionsTable');
             const connections = getHostingerConnections();
+
+            // Populate autocomplete fields
+            populateAutocompleteFields();
 
             if (connections.length === 0) {
                 tableEl.innerHTML = '<p style="color: rgba(254, 243, 199, 0.6); text-align: center; padding: 20px;">No connections saved yet.</p>';
@@ -1541,6 +1628,7 @@ PHASE: Hostinger Edition
                                 <th style="padding: 12px; text-align: left; color: #fbbf24;">Host</th>
                                 <th style="padding: 12px; text-align: left; color: #fbbf24;">Database</th>
                                 <th style="padding: 12px; text-align: left; color: #fbbf24;">Username</th>
+                                <th style="padding: 12px; text-align: left; color: #fbbf24;">Password</th>
                                 <th style="padding: 12px; text-align: center; color: #fbbf24;">Actions</th>
                             </tr>
                         </thead>
@@ -1548,6 +1636,7 @@ PHASE: Hostinger Edition
 
             connections.forEach(conn => {
                 const typeIcon = conn.type === 'vps' ? '🖥️' : '🌐';
+                const maskedPassword = '•'.repeat(conn.password.length);
                 html += `
                     <tr style="border-bottom: 1px solid rgba(251, 191, 36, 0.1);">
                         <td style="padding: 12px; color: #fef3c7;"><strong>${conn.name}</strong></td>
@@ -1555,6 +1644,14 @@ PHASE: Hostinger Edition
                         <td style="padding: 12px; color: rgba(254, 243, 199, 0.7); font-family: monospace; font-size: 13px;">${conn.host}</td>
                         <td style="padding: 12px; color: rgba(254, 243, 199, 0.7); font-family: monospace; font-size: 13px;">${conn.dbName}</td>
                         <td style="padding: 12px; color: rgba(254, 243, 199, 0.7);">${conn.username}</td>
+                        <td style="padding: 12px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span id="pwd_${conn.id}" style="font-family: monospace; color: rgba(254, 243, 199, 0.7); font-size: 13px;">${maskedPassword}</span>
+                                <button onclick="toggleTablePassword('${conn.id}', '${conn.password.replace(/'/g, "\\'")}')" style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #93c5fd; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 14px; transition: all 0.3s;" id="pwdBtn_${conn.id}">
+                                    👁️
+                                </button>
+                            </div>
+                        </td>
                         <td style="padding: 12px; text-align: center;">
                             <button class="btn btn-secondary" style="padding: 6px 12px; margin-right: 5px; font-size: 12px;" onclick="editHostingerConnection('${conn.id}')">✏️ Edit</button>
                             <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deleteHostingerConnection('${conn.id}')">🗑️ Delete</button>
