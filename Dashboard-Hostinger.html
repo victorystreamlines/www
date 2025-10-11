@@ -1642,6 +1642,13 @@ PHASE: Hostinger Edition
                 loadDashboardConnections();
             } else if (sectionId === 'settings') {
                 loadHostingerConnectionsTable();
+            } else if (sectionId === 'listTables') {
+                // Auto-load tables when entering List Tables section
+                if (selectedDatabaseId) {
+                    setTimeout(() => {
+                        loadTables();
+                    }, 100);
+                }
             }
 
             // Restore selection state when navigating
@@ -2911,17 +2918,37 @@ PHASE: Hostinger Edition
             }
         }
 
-        // Load tables
+        // Load tables from selected database
         async function loadTables() {
-            if (!currentDatabase) {
-                showMessage('listTablesMessage', '❌ Please connect to a database first', 'error');
+            // Check if database is selected
+            if (!selectedDatabaseId) {
+                showMessage('listTablesMessage', '❌ Please select a database first', 'error');
+                const listEl = document.getElementById('tableList');
+                listEl.innerHTML = '<p style="color: rgba(254, 243, 199, 0.6); text-align: center; padding: 20px;">No database selected. Please select a database from the Dashboard.</p>';
+                return;
+            }
+            
+            // Get connection info from selected database
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('listTablesMessage', '❌ Selected database connection not found', 'error');
                 return;
             }
             
             const listEl = document.getElementById('tableList');
             listEl.innerHTML = '<div class="spinner"></div> Loading tables...';
             
-            const result = await apiRequest('list_tables', { db_name: currentDatabase });
+            // Call API with Hostinger credentials
+            const result = await apiRequest('list_tables', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port
+            });
             
             if (result.success) {
                 if (result.tables.length === 0) {
@@ -2936,7 +2963,7 @@ PHASE: Hostinger Edition
                         </div>
                     `).join('');
                 }
-                showMessage('listTablesMessage', `✅ Found ${result.tables.length} table(s)`, 'success');
+                showMessage('listTablesMessage', `✅ Found ${result.tables.length} table(s) in ${conn.name}`, 'success');
             } else {
                 listEl.innerHTML = '';
                 showMessage('listTablesMessage', '❌ ' + result.message, 'error');

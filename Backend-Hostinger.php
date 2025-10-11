@@ -394,25 +394,38 @@ function setDatabaseCredentials($dbName, $username, $password) {
 }
 
 /**
- * List all tables in a database
+ * List all tables in a database with Hostinger credentials
  */
-function listTables($dbName) {
+function listTables() {
+    // Get Hostinger credentials from POST
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+
+    if (empty($host) || empty($dbName) || empty($username)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required connection parameters (host, database name, username)');
+        return;
+    }
+
     if (!validateDatabaseName($dbName)) {
         http_response_code(400);
         sendResponse(false, 'Invalid database name');
     }
 
-    $conn = getConnection($dbName);
+    $conn = getConnection($host, $dbName, $username, $password, $port);
     if (!$conn) {
         http_response_code(500);
-        sendResponse(false, 'Failed to connect to database');
+        sendResponse(false, 'Failed to connect to database. Please check your credentials.');
     }
 
     try {
         $stmt = $conn->query('SHOW TABLES');
         $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
         
-        sendResponse(true, 'Tables retrieved successfully', ['tables' => $tables]);
+        sendResponse(true, 'Tables retrieved successfully', ['tables' => $tables, 'count' => count($tables)]);
     } catch (PDOException $e) {
         http_response_code(500);
         sendResponse(false, 'Error retrieving tables: ' . $e->getMessage());
@@ -781,8 +794,7 @@ switch ($action) {
         break;
 
     case 'list_tables':
-        $dbName = $_POST['db_name'] ?? '';
-        listTables($dbName);
+        listTables();
         break;
 
     case 'create_table':
