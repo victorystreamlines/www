@@ -1489,6 +1489,7 @@ PHASE: Hostinger Edition
         // Configuration
         const API_URL = 'http://localhost/Backend-Hostinger.php';
         const HOSTINGER_CONNECTIONS_KEY = 'hostinger_connections';
+        const SELECTED_DATABASE_KEY = 'selected_database_id';
         let currentDatabase = null;
         let currentConnection = null;
         let columnCounter = 0;
@@ -1499,6 +1500,11 @@ PHASE: Hostinger Edition
             loadDashboardConnections();
             loadHostingerConnectionsTable();
             addColumnRow(); // Add initial column row for table creation
+            
+            // Load selected database from localStorage
+            setTimeout(() => {
+                loadSelectedDatabase();
+            }, 100);
         });
 
         // Sidebar toggle
@@ -1536,6 +1542,11 @@ PHASE: Hostinger Edition
             } else if (sectionId === 'settings') {
                 loadHostingerConnectionsTable();
             }
+
+            // Restore selection state when navigating
+            setTimeout(() => {
+                loadSelectedDatabase();
+            }, 50);
         }
 
         // Expandable section toggle
@@ -1583,6 +1594,29 @@ PHASE: Hostinger Edition
         
         let selectedDatabaseId = null;
 
+        // Load selected database from localStorage
+        function loadSelectedDatabase() {
+            const savedSelection = localStorage.getItem(SELECTED_DATABASE_KEY);
+            if (savedSelection) {
+                selectedDatabaseId = savedSelection;
+                
+                // Apply selection to card if it exists
+                const card = document.getElementById(selectedDatabaseId);
+                if (card) {
+                    card.classList.add('selected');
+                }
+
+                // Show deselect button
+                const deselectBtn = document.getElementById('deselectDatabaseBtn');
+                if (deselectBtn) {
+                    deselectBtn.classList.add('active');
+                }
+
+                // Show TABLE OPERATIONS in sidebar
+                showTableOperations();
+            }
+        }
+
         // Select database
         function selectDatabase(connId) {
             // Deselect previous if any
@@ -1600,9 +1634,14 @@ PHASE: Hostinger Edition
                 card.classList.add('selected');
             }
 
+            // Save to localStorage
+            localStorage.setItem(SELECTED_DATABASE_KEY, connId);
+
             // Show deselect button
             const deselectBtn = document.getElementById('deselectDatabaseBtn');
-            deselectBtn.classList.add('active');
+            if (deselectBtn) {
+                deselectBtn.classList.add('active');
+            }
 
             // Show TABLE OPERATIONS in sidebar
             showTableOperations();
@@ -1620,9 +1659,14 @@ PHASE: Hostinger Edition
 
             selectedDatabaseId = null;
 
+            // Remove from localStorage
+            localStorage.removeItem(SELECTED_DATABASE_KEY);
+
             // Hide deselect button
             const deselectBtn = document.getElementById('deselectDatabaseBtn');
-            deselectBtn.classList.remove('active');
+            if (deselectBtn) {
+                deselectBtn.classList.remove('active');
+            }
 
             // Hide TABLE OPERATIONS in sidebar
             hideTableOperations();
@@ -1750,6 +1794,12 @@ PHASE: Hostinger Edition
                 return;
             }
 
+            // Check if deleted connection is the selected one
+            const connId = `conn_${id}`;
+            if (selectedDatabaseId === connId) {
+                deselectAllDatabases();
+            }
+
             let connections = getHostingerConnections();
             connections = connections.filter(c => c.id !== id);
             saveHostingerConnections(connections);
@@ -1767,6 +1817,9 @@ PHASE: Hostinger Edition
             if (!confirm('Are you sure you want to delete ALL connections? This action cannot be undone!')) {
                 return;
             }
+
+            // Deselect if any database was selected
+            deselectAllDatabases();
 
             localStorage.removeItem(HOSTINGER_CONNECTIONS_KEY);
             showMessage('settingsMessage', '✅ All connections cleared!', 'success');
@@ -1952,6 +2005,11 @@ PHASE: Hostinger Edition
             connections.forEach(conn => {
                 testConnection(conn.id);
             });
+
+            // Restore selected database if exists
+            setTimeout(() => {
+                loadSelectedDatabase();
+            }, 50);
         }
 
         // Test connection (automatic on load)
