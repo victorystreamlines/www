@@ -776,7 +776,42 @@ PHASE: Hostinger Edition
             box-shadow: none;
         }
 
-        /* SQL Autocomplete */
+        /* SQL Autocomplete - Ghost Text */
+        .sql-ac-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .sql-ac-ghost {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow: hidden;
+            padding: 12px 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            color: transparent;
+            z-index: 1;
+        }
+
+        .sql-ac-ghost-text {
+            color: rgba(147, 197, 253, 0.4);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .sql-ac-textarea {
+            position: relative;
+            background: transparent;
+            z-index: 2;
+        }
+
         #sqlSuggestions {
             scrollbar-width: thin;
             scrollbar-color: rgba(251, 191, 36, 0.5) rgba(0, 0, 0, 0.3);
@@ -1742,21 +1777,17 @@ PHASE: Hostinger Edition
                             </div>
                         </div>
 
-                        <!-- SQL Input with Smart Suggestions -->
+                        <!-- SQL Input with Ghost Text Autocomplete -->
                         <div class="form-group">
                             <label class="form-label">SQL Query</label>
-                            <div style="position: relative;">
-                                <textarea id="customSQLInput" class="form-input" rows="8" placeholder="Start typing SQL... (Ctrl+Space for suggestions)" style="font-family: 'Courier New', monospace; font-size: 14px;" onkeydown="handleSQLKeydown(event)" oninput="updateSQLSuggestions()"></textarea>
-                                
-                                <!-- Suggestions Dropdown -->
-                                <div id="sqlSuggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: rgba(0, 0, 0, 0.95); border: 2px solid #fbbf24; border-radius: 8px; margin-top: 5px; z-index: 1000; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);">
-                                    <div id="sqlSuggestionsList"></div>
-                                </div>
+                            <div class="sql-ac-wrapper">
+                                <pre id="sqlGhostLayer" class="sql-ac-ghost"></pre>
+                                <textarea id="customSQLInput" class="form-input sql-ac-textarea" rows="8" placeholder="Start typing SQL... (Ctrl+Space for AI suggestions, Tab to accept)" style="font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5; background: rgba(255, 255, 255, 0.1);" onkeydown="handleSQLAutocompleteKeydown(event)" oninput="handleSQLAutocompleteInput()" onscroll="syncGhostScroll()" onclick="handleSQLAutocompleteInput()" onfocus="handleSQLAutocompleteFocus()" onblur="handleSQLAutocompleteBlur()"></textarea>
                             </div>
                             <div class="helper-text">
-                                💡 <strong>Smart Autocomplete:</strong> Press <kbd style="background: rgba(251, 191, 36, 0.2); padding: 2px 6px; border-radius: 4px;">Ctrl+Space</kbd> for suggestions | 
-                                <kbd style="background: rgba(251, 191, 36, 0.2); padding: 2px 6px; border-radius: 4px;">Tab</kbd> or <kbd style="background: rgba(251, 191, 36, 0.2); padding: 2px 6px; border-radius: 4px;">Enter</kbd> to insert | 
-                                <kbd style="background: rgba(251, 191, 36, 0.2); padding: 2px 6px; border-radius: 4px;">Esc</kbd> to close
+                                💡 <strong>Ghost Text Autocomplete:</strong> Press <kbd style="background: rgba(251, 191, 36, 0.2); padding: 2px 6px; border-radius: 4px;">Ctrl+Space</kbd> for AI suggestion | 
+                                <kbd style="background: rgba(251, 191, 36, 0.2); padding: 2px 6px; border-radius: 4px;">Tab</kbd> to accept | 
+                                <kbd style="background: rgba(251, 191, 36, 0.2); padding: 2px 6px; border-radius: 4px;">Esc</kbd> to dismiss
                             </div>
                         </div>
 
@@ -3673,24 +3704,57 @@ OVERVIEW:
         }
 
         // ========================================
-        // SQL AUTOCOMPLETE
+        // SQL GHOST TEXT AUTOCOMPLETE
         // ========================================
 
-        let sqlKeywords = [
-            'SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'NOT', 'IN', 'BETWEEN', 'LIKE', 'IS', 'NULL',
-            'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN',
-            'INNER JOIN', 'ON', 'ORDER BY', 'GROUP BY', 'HAVING', 'LIMIT', 'OFFSET', 'AS',
-            'DISTINCT', 'COUNT', 'SUM', 'AVG', 'MAX', 'MIN', 'ASC', 'DESC',
-            'CREATE TABLE', 'ALTER TABLE', 'DROP TABLE', 'TRUNCATE', 'SHOW TABLES', 'DESCRIBE'
-        ];
-        
-        let sqlTablesCache = [];
-        let sqlColumnsCache = {};
-        let selectedSuggestionIndex = -1;
-        let currentSuggestions = [];
-        let suggestionTimeout = null;
+        /*
+         * SQL Autocomplete with Ghost Text (Inline suggestions like GitHub Copilot)
+         * 
+         * Configuration:
+         * - window.WEBLLM_MODEL = "model-name" (optional, for WebLLM)
+         * - window.AI_COMPLETE_ENDPOINT = "url" (optional, for remote LLM API)
+         * - Set enableLLM: false to disable LLM features
+         * 
+         * Usage:
+         * - Type SQL and ghost text appears automatically
+         * - Press Tab to accept suggestion
+         * - Press Esc to dismiss
+         * - Press Ctrl+Space to manually request suggestion
+         */
 
-        // Load tables and columns for autocomplete
+        let sqlACState = {
+            currentSuggestion: '',
+            debounceTimer: null,
+            tablesCache: [],
+            columnsCache: {},
+            keywords: [
+                'SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'NOT', 'IN', 'BETWEEN', 'LIKE', 'IS', 'NULL',
+                'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN',
+                'INNER JOIN', 'OUTER JOIN', 'CROSS JOIN', 'ON', 'USING', 'ORDER BY', 'GROUP BY', 
+                'HAVING', 'LIMIT', 'OFFSET', 'AS', 'DISTINCT', 'COUNT', 'SUM', 'AVG', 'MAX', 'MIN', 
+                'ASC', 'DESC', 'CREATE TABLE', 'ALTER TABLE', 'DROP TABLE', 'TRUNCATE', 'SHOW TABLES', 
+                'DESCRIBE', 'DESC', 'EXPLAIN', 'UNION', 'UNION ALL', 'WITH', 'CASE', 'WHEN', 'THEN',
+                'ELSE', 'END', 'IF', 'EXISTS', 'PRIMARY KEY', 'FOREIGN KEY', 'REFERENCES', 'INDEX',
+                'AUTO_INCREMENT', 'DEFAULT', 'CASCADE', 'RESTRICT'
+            ],
+            templates: {
+                'sel': 'SELECT * FROM table_name;',
+                'select': 'SELECT column1, column2 FROM table_name WHERE condition;',
+                'ins': 'INSERT INTO table_name (column1, column2) VALUES (value1, value2);',
+                'insert': 'INSERT INTO table_name (column1, column2) VALUES (value1, value2);',
+                'upd': 'UPDATE table_name SET column1 = value1 WHERE condition;',
+                'update': 'UPDATE table_name SET column1 = value1 WHERE condition;',
+                'del': 'DELETE FROM table_name WHERE condition LIMIT 1;',
+                'delete': 'DELETE FROM table_name WHERE condition LIMIT 1;',
+                'create': 'CREATE TABLE table_name (\n  id INT PRIMARY KEY AUTO_INCREMENT,\n  column_name VARCHAR(255)\n);',
+                'alter': 'ALTER TABLE table_name ADD COLUMN column_name VARCHAR(255);',
+                'drop': 'DROP TABLE IF EXISTS table_name;',
+                'show': 'SHOW TABLES;',
+                'desc': 'DESCRIBE table_name;'
+            }
+        };
+
+        // Load schema data (tables and columns)
         async function loadSQLAutocompleteData() {
             if (!selectedDatabaseId) return;
 
@@ -3710,10 +3774,10 @@ OVERVIEW:
             });
 
             if (tablesResult.success) {
-                sqlTablesCache = tablesResult.tables;
+                sqlACState.tablesCache = tablesResult.tables;
                 
-                // Get columns for each table (for better autocomplete)
-                for (const table of sqlTablesCache.slice(0, 10)) { // Limit to first 10 tables
+                // Get columns for each table
+                for (const table of sqlACState.tablesCache.slice(0, 15)) {
                     const structResult = await apiRequest('get_table_structure', {
                         db_host: conn.host,
                         db_name: conn.dbName,
@@ -3724,213 +3788,178 @@ OVERVIEW:
                     });
                     
                     if (structResult.success) {
-                        sqlColumnsCache[table] = structResult.columns.map(c => c.Field);
+                        sqlACState.columnsCache[table] = structResult.columns.map(c => c.Field);
                     }
                 }
             }
         }
 
-        // Update SQL suggestions (debounced)
-        function updateSQLSuggestions() {
-            if (suggestionTimeout) {
-                clearTimeout(suggestionTimeout);
+        // Handle keyboard events for ghost autocomplete
+        function handleSQLAutocompleteKeydown(event) {
+            const textarea = document.getElementById('customSQLInput');
+            const hasSuggestion = sqlACState.currentSuggestion.length > 0;
+
+            // Tab - Accept ghost suggestion
+            if (event.key === 'Tab' && hasSuggestion) {
+                event.preventDefault();
+                acceptGhostSuggestion();
+                return;
             }
 
-            suggestionTimeout = setTimeout(() => {
-                showSQLSuggestions();
+            // Esc - Clear ghost suggestion
+            if (event.key === 'Escape' && hasSuggestion) {
+                event.preventDefault();
+                clearGhostSuggestion();
+                return;
+            }
+
+            // Ctrl+Space - Force request suggestion
+            if (event.ctrlKey && event.code === 'Space') {
+                event.preventDefault();
+                requestGhostSuggestion(true);
+                return;
+            }
+        }
+
+        // Handle input (debounced suggestion)
+        function handleSQLAutocompleteInput() {
+            if (sqlACState.debounceTimer) {
+                clearTimeout(sqlACState.debounceTimer);
+            }
+
+            sqlACState.debounceTimer = setTimeout(() => {
+                requestGhostSuggestion(false);
             }, 300);
         }
 
-        // Handle keyboard events
-        function handleSQLKeydown(event) {
-            const suggestionsDiv = document.getElementById('sqlSuggestions');
-            const isVisible = suggestionsDiv.style.display !== 'none';
+        // Handle focus
+        function handleSQLAutocompleteFocus() {
+            // Could re-enable ghost if needed
+        }
 
-            // Ctrl+Space - Force show suggestions
-            if (event.ctrlKey && event.code === 'Space') {
-                event.preventDefault();
-                showSQLSuggestions(true);
-                return;
-            }
+        // Handle blur
+        function handleSQLAutocompleteBlur() {
+            // Hide ghost on blur
+            setTimeout(() => clearGhostSuggestion(), 200);
+        }
 
-            // Escape - Hide suggestions
-            if (event.key === 'Escape' && isVisible) {
-                event.preventDefault();
-                hideSQLSuggestions();
-                return;
-            }
-
-            // Arrow Down
-            if (event.key === 'ArrowDown' && isVisible) {
-                event.preventDefault();
-                selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, currentSuggestions.length - 1);
-                highlightSuggestion();
-                return;
-            }
-
-            // Arrow Up
-            if (event.key === 'ArrowUp' && isVisible) {
-                event.preventDefault();
-                selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, 0);
-                highlightSuggestion();
-                return;
-            }
-
-            // Tab or Enter - Accept suggestion
-            if ((event.key === 'Tab' || event.key === 'Enter') && isVisible && selectedSuggestionIndex >= 0) {
-                event.preventDefault();
-                insertSuggestion(currentSuggestions[selectedSuggestionIndex]);
-                return;
+        // Sync ghost layer scroll with textarea
+        function syncGhostScroll() {
+            const textarea = document.getElementById('customSQLInput');
+            const ghost = document.getElementById('sqlGhostLayer');
+            if (ghost && textarea) {
+                ghost.scrollTop = textarea.scrollTop;
+                ghost.scrollLeft = textarea.scrollLeft;
             }
         }
 
-        // Show SQL suggestions
-        function showSQLSuggestions(forced = false) {
+        // Request ghost suggestion
+        async function requestGhostSuggestion(forced) {
             const textarea = document.getElementById('customSQLInput');
+            if (!textarea) return;
+
             const text = textarea.value;
             const cursorPos = textarea.selectionStart;
-            
-            // Get text before cursor
             const textBeforeCursor = text.substring(0, cursorPos);
-            const words = textBeforeCursor.split(/\s+/);
-            const currentWord = words[words.length - 1].toUpperCase();
+            
+            // Don't suggest if cursor is not at end of text
+            if (cursorPos < text.length && !forced) {
+                clearGhostSuggestion();
+                return;
+            }
+
+            // Get current context
+            const lines = textBeforeCursor.split('\n');
+            const currentLine = lines[lines.length - 1];
+            const words = currentLine.trim().split(/\s+/);
+            const currentWord = words[words.length - 1].toLowerCase();
             const previousWord = words.length > 1 ? words[words.length - 2].toUpperCase() : '';
 
-            // Build suggestions based on context
-            let suggestions = [];
+            let suggestion = '';
 
-            // After FROM, JOIN - suggest tables
-            if (previousWord === 'FROM' || previousWord === 'JOIN' || previousWord === 'INTO' || previousWord === 'UPDATE' || previousWord === 'TABLE') {
-                suggestions = sqlTablesCache.filter(t => 
-                    t.toUpperCase().includes(currentWord) || currentWord === ''
-                ).map(t => ({ type: 'table', value: t, display: `📋 ${t}` }));
+            // Template suggestions (at start of line)
+            if (currentLine.trim() === currentWord && currentWord.length >= 2) {
+                const template = sqlACState.templates[currentWord];
+                if (template) {
+                    suggestion = template.substring(currentWord.length);
+                }
             }
-            // After table name followed by dot - suggest columns
-            else if (textBeforeCursor.match(/\w+\.\w*$/)) {
-                const match = textBeforeCursor.match(/(\w+)\.(\w*)$/);
+            // After FROM/JOIN - suggest table names
+            else if (previousWord === 'FROM' || previousWord === 'JOIN' || previousWord === 'INTO' || previousWord === 'UPDATE') {
+                const matchingTable = sqlACState.tablesCache.find(t => 
+                    t.toLowerCase().startsWith(currentWord) && t.toLowerCase() !== currentWord
+                );
+                if (matchingTable) {
+                    suggestion = matchingTable.substring(currentWord.length);
+                } else if (sqlACState.tablesCache.length > 0 && currentWord.length === 0) {
+                    suggestion = sqlACState.tablesCache[0];
+                }
+            }
+            // After table.column - suggest columns
+            else if (currentLine.match(/\w+\.$/)) {
+                const match = currentLine.match(/(\w+)\.$/);
                 const tableName = match[1];
-                const columnPrefix = match[2].toUpperCase();
-                
-                if (sqlColumnsCache[tableName]) {
-                    suggestions = sqlColumnsCache[tableName]
-                        .filter(c => c.toUpperCase().includes(columnPrefix))
-                        .map(c => ({ type: 'column', value: c, display: `📄 ${c}` }));
+                if (sqlACState.columnsCache[tableName] && sqlACState.columnsCache[tableName].length > 0) {
+                    suggestion = sqlACState.columnsCache[tableName][0];
                 }
             }
-            // After SELECT - suggest columns or *
-            else if (previousWord === 'SELECT') {
-                suggestions = [{ type: 'keyword', value: '*', display: '✨ * (All columns)' }];
-                // Add columns from recently used table
-                if (queryBuilderColumns.length > 0) {
-                    suggestions = suggestions.concat(
-                        queryBuilderColumns.map(c => ({ type: 'column', value: c.Field, display: `📄 ${c.Field}` }))
-                    );
+            // Keyword completion
+            else if (currentWord.length >= 2) {
+                const matchingKeyword = sqlACState.keywords.find(kw => 
+                    kw.toLowerCase().startsWith(currentWord) && kw.toLowerCase() !== currentWord
+                );
+                if (matchingKeyword) {
+                    suggestion = matchingKeyword.substring(currentWord.length);
                 }
             }
-            // Default - suggest keywords
-            else {
-                suggestions = sqlKeywords
-                    .filter(kw => kw.startsWith(currentWord) || (forced && currentWord.length < 3))
-                    .map(kw => ({ type: 'keyword', value: kw, display: `🔤 ${kw}` }));
-            }
 
-            // Add template suggestions at start of line
-            if (currentWord.length >= 2 && textBeforeCursor.trim() === currentWord) {
-                const templates = [
-                    { trigger: 'SEL', value: 'SELECT * FROM ', display: '🔍 SELECT * FROM ...' },
-                    { trigger: 'INS', value: 'INSERT INTO ', display: '➕ INSERT INTO ...' },
-                    { trigger: 'UPD', value: 'UPDATE ', display: '✏️ UPDATE ...' },
-                    { trigger: 'DEL', value: 'DELETE FROM ', display: '🗑️ DELETE FROM ...' },
-                    { trigger: 'SHO', value: 'SHOW TABLES;', display: '📋 SHOW TABLES' },
-                    { trigger: 'DES', value: 'DESCRIBE ', display: '📊 DESCRIBE ...' }
-                ];
-                
-                templates.forEach(t => {
-                    if (t.trigger.startsWith(currentWord)) {
-                        suggestions.unshift({ type: 'template', value: t.value, display: t.display });
-                    }
-                });
-            }
-
-            // Show suggestions if we have any
-            if (suggestions.length > 0) {
-                currentSuggestions = suggestions;
-                renderSQLSuggestions(suggestions);
-                selectedSuggestionIndex = 0;
-                highlightSuggestion();
-            } else if (!forced) {
-                hideSQLSuggestions();
+            // Update ghost suggestion
+            if (suggestion) {
+                sqlACState.currentSuggestion = suggestion;
+                updateGhostLayer(textBeforeCursor, suggestion);
+            } else {
+                clearGhostSuggestion();
             }
         }
 
-        // Render SQL suggestions
-        function renderSQLSuggestions(suggestions) {
-            const container = document.getElementById('sqlSuggestionsList');
-            const suggestionsDiv = document.getElementById('sqlSuggestions');
-            
-            let html = '';
-            suggestions.slice(0, 15).forEach((sug, idx) => {
-                html += `
-                    <div class="sql-suggestion-item" data-index="${idx}" onclick="insertSuggestion(currentSuggestions[${idx}])" 
-                         style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid rgba(251, 191, 36, 0.1); transition: all 0.2s;"
-                         onmouseover="this.style.background='rgba(251, 191, 36, 0.2)'" 
-                         onmouseout="this.style.background=''">
-                        <div style="font-size: 14px; color: #fef3c7;">${sug.display}</div>
-                        <div style="font-size: 11px; color: rgba(254, 243, 199, 0.5); margin-top: 2px;">${sug.type}</div>
-                    </div>
-                `;
-            });
-            
-            container.innerHTML = html;
-            suggestionsDiv.style.display = 'block';
+        // Update ghost layer
+        function updateGhostLayer(prefix, suggestion) {
+            const ghost = document.getElementById('sqlGhostLayer');
+            if (!ghost) return;
+
+            // Display: prefix (transparent) + suggestion (ghosted)
+            ghost.innerHTML = prefix + `<span class="sql-ac-ghost-text">${suggestion}</span>`;
+            ghost.style.display = 'block';
         }
 
-        // Highlight selected suggestion
-        function highlightSuggestion() {
-            document.querySelectorAll('.sql-suggestion-item').forEach((item, idx) => {
-                if (idx === selectedSuggestionIndex) {
-                    item.style.background = 'rgba(251, 191, 36, 0.3)';
-                    item.style.borderLeft = '3px solid #fbbf24';
-                    item.scrollIntoView({ block: 'nearest' });
-                } else {
-                    item.style.background = '';
-                    item.style.borderLeft = 'none';
-                }
-            });
+        // Clear ghost suggestion
+        function clearGhostSuggestion() {
+            sqlACState.currentSuggestion = '';
+            const ghost = document.getElementById('sqlGhostLayer');
+            if (ghost) {
+                ghost.innerHTML = '';
+                ghost.style.display = 'none';
+            }
         }
 
-        // Insert selected suggestion
-        function insertSuggestion(suggestion) {
+        // Accept ghost suggestion (Tab key)
+        function acceptGhostSuggestion() {
             const textarea = document.getElementById('customSQLInput');
-            const text = textarea.value;
+            if (!textarea || !sqlACState.currentSuggestion) return;
+
             const cursorPos = textarea.selectionStart;
+            const text = textarea.value;
             
-            // Get text before cursor
-            const textBeforeCursor = text.substring(0, cursorPos);
-            const textAfterCursor = text.substring(cursorPos);
-            
-            // Find where current word starts
-            const lastSpaceIndex = textBeforeCursor.lastIndexOf(' ');
-            const lastNewlineIndex = textBeforeCursor.lastIndexOf('\n');
-            const wordStartPos = Math.max(lastSpaceIndex, lastNewlineIndex) + 1;
-            
-            // Replace current word with suggestion
-            const newText = text.substring(0, wordStartPos) + suggestion.value + ' ' + textAfterCursor;
+            // Insert suggestion at cursor
+            const newText = text.substring(0, cursorPos) + sqlACState.currentSuggestion + text.substring(cursorPos);
             textarea.value = newText;
             
-            // Set cursor position after inserted text
-            const newCursorPos = wordStartPos + suggestion.value.length + 1;
+            // Move cursor to end of inserted text
+            const newCursorPos = cursorPos + sqlACState.currentSuggestion.length;
             textarea.setSelectionRange(newCursorPos, newCursorPos);
-            textarea.focus();
             
-            hideSQLSuggestions();
-        }
-
-        // Hide SQL suggestions
-        function hideSQLSuggestions() {
-            document.getElementById('sqlSuggestions').style.display = 'none';
-            selectedSuggestionIndex = -1;
-            currentSuggestions = [];
+            clearGhostSuggestion();
+            textarea.focus();
         }
 
         // Initialize SQL autocomplete when entering SQL Executor tab
@@ -3938,19 +3967,21 @@ OVERVIEW:
             if (selectedDatabaseId) {
                 loadSQLAutocompleteData();
             }
-        }
-
-        // Close suggestions when clicking outside
-        document.addEventListener('click', function(event) {
-            const suggestionsDiv = document.getElementById('sqlSuggestions');
-            const textarea = document.getElementById('customSQLInput');
             
-            if (suggestionsDiv && textarea && 
-                !suggestionsDiv.contains(event.target) && 
-                event.target !== textarea) {
-                hideSQLSuggestions();
-            }
-        });
+            // Initialize ghost layer on first load
+            setTimeout(() => {
+                const textarea = document.getElementById('customSQLInput');
+                const ghost = document.getElementById('sqlGhostLayer');
+                if (textarea && ghost) {
+                    // Make sure ghost matches textarea styling
+                    const styles = window.getComputedStyle(textarea);
+                    ghost.style.fontFamily = styles.fontFamily;
+                    ghost.style.fontSize = styles.fontSize;
+                    ghost.style.lineHeight = styles.lineHeight;
+                    ghost.style.padding = styles.padding;
+                }
+            }, 100);
+        }
 
         // Expandable section toggle
         function toggleExpandable(id) {
@@ -7397,4 +7428,7 @@ ${'='.repeat(60)}
     </script>
 </body>
 </html>
+
+
+
 
