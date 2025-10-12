@@ -1271,6 +1271,276 @@ function insertRandomData() {
 }
 
 /**
+ * Insert new record into table
+ */
+function insertRecord() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $tableName = $_POST['table_name'] ?? '';
+    $recordData = $_POST['record_data'] ?? '';
+
+    if (empty($host) || empty($dbName) || empty($username) || empty($tableName) || empty($recordData)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required parameters');
+        return;
+    }
+
+    if (!validateTableName($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Invalid table name');
+        return;
+    }
+
+    $conn = getConnection($host, $dbName, $username, $password, $port);
+    if (!$conn) {
+        http_response_code(500);
+        sendResponse(false, 'Failed to connect to database');
+        return;
+    }
+
+    try {
+        $data = json_decode($recordData, true);
+        if (!$data) {
+            http_response_code(400);
+            sendResponse(false, 'Invalid record data');
+            return;
+        }
+
+        $safeTableName = sanitizeTableName($tableName);
+        $columns = array_keys($data);
+        $placeholders = array_fill(0, count($columns), '?');
+        
+        $sql = "INSERT INTO $safeTableName (`" . implode('`, `', $columns) . "`) VALUES (" . implode(', ', $placeholders) . ")";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute(array_values($data));
+        
+        sendResponse(true, 'Record inserted successfully', ['insert_id' => $conn->lastInsertId()]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        sendResponse(false, 'Error inserting record: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Update existing record
+ */
+function updateRecord() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $tableName = $_POST['table_name'] ?? '';
+    $recordData = $_POST['record_data'] ?? '';
+    $primaryKey = $_POST['primary_key'] ?? '';
+    $primaryValue = $_POST['primary_value'] ?? '';
+
+    if (empty($host) || empty($dbName) || empty($username) || empty($tableName) || empty($recordData) || empty($primaryKey) || empty($primaryValue)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required parameters');
+        return;
+    }
+
+    if (!validateTableName($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Invalid table name');
+        return;
+    }
+
+    $conn = getConnection($host, $dbName, $username, $password, $port);
+    if (!$conn) {
+        http_response_code(500);
+        sendResponse(false, 'Failed to connect to database');
+        return;
+    }
+
+    try {
+        $data = json_decode($recordData, true);
+        if (!$data) {
+            http_response_code(400);
+            sendResponse(false, 'Invalid record data');
+            return;
+        }
+
+        $safeTableName = sanitizeTableName($tableName);
+        $safePrimaryKey = sanitizeTableName($primaryKey);
+        
+        $setParts = [];
+        $values = [];
+        foreach ($data as $col => $val) {
+            $setParts[] = sanitizeTableName($col) . ' = ?';
+            $values[] = $val;
+        }
+        $values[] = $primaryValue;
+        
+        $sql = "UPDATE $safeTableName SET " . implode(', ', $setParts) . " WHERE $safePrimaryKey = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($values);
+        
+        sendResponse(true, 'Record updated successfully');
+    } catch (PDOException $e) {
+        http_response_code(500);
+        sendResponse(false, 'Error updating record: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Delete record from table
+ */
+function deleteRecord() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $tableName = $_POST['table_name'] ?? '';
+    $primaryKey = $_POST['primary_key'] ?? '';
+    $primaryValue = $_POST['primary_value'] ?? '';
+
+    if (empty($host) || empty($dbName) || empty($username) || empty($tableName) || empty($primaryKey) || empty($primaryValue)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required parameters');
+        return;
+    }
+
+    if (!validateTableName($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Invalid table name');
+        return;
+    }
+
+    $conn = getConnection($host, $dbName, $username, $password, $port);
+    if (!$conn) {
+        http_response_code(500);
+        sendResponse(false, 'Failed to connect to database');
+        return;
+    }
+
+    try {
+        $safeTableName = sanitizeTableName($tableName);
+        $safePrimaryKey = sanitizeTableName($primaryKey);
+        
+        $sql = "DELETE FROM $safeTableName WHERE $safePrimaryKey = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([$primaryValue]);
+        
+        sendResponse(true, 'Record deleted successfully');
+    } catch (PDOException $e) {
+        http_response_code(500);
+        sendResponse(false, 'Error deleting record: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Search records in table
+ */
+function searchRecords() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $tableName = $_POST['table_name'] ?? '';
+    $searchTerm = $_POST['search_term'] ?? '';
+    $page = intval($_POST['page'] ?? 1);
+    $limit = intval($_POST['limit'] ?? 50);
+
+    if (empty($host) || empty($dbName) || empty($username) || empty($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required parameters');
+        return;
+    }
+
+    if (!validateTableName($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Invalid table name');
+        return;
+    }
+
+    $conn = getConnection($host, $dbName, $username, $password, $port);
+    if (!$conn) {
+        http_response_code(500);
+        sendResponse(false, 'Failed to connect to database');
+        return;
+    }
+
+    try {
+        $safeTableName = sanitizeTableName($tableName);
+        
+        // Get table columns
+        $columnsStmt = $conn->query("SHOW COLUMNS FROM $safeTableName");
+        $columns = $columnsStmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        if (empty($searchTerm)) {
+            // No search term, return all
+            $countStmt = $conn->query("SELECT COUNT(*) as total FROM $safeTableName");
+            $totalRows = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+            
+            $offset = ($page - 1) * $limit;
+            $dataStmt = $conn->query("SELECT * FROM $safeTableName LIMIT $limit OFFSET $offset");
+            $data = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            // Build search query (search in all text columns)
+            $searchColumns = [];
+            foreach ($columns as $col) {
+                $type = strtoupper($col['Type']);
+                if (strpos($type, 'VARCHAR') !== false || strpos($type, 'TEXT') !== false || strpos($type, 'CHAR') !== false) {
+                    $searchColumns[] = sanitizeTableName($col['Field']);
+                }
+            }
+            
+            if (empty($searchColumns)) {
+                sendResponse(false, 'No searchable text columns found in table');
+                return;
+            }
+            
+            $searchConditions = array_map(function($col) {
+                return "$col LIKE ?";
+            }, $searchColumns);
+            
+            $whereClause = '(' . implode(' OR ', $searchConditions) . ')';
+            $searchPattern = '%' . $searchTerm . '%';
+            $searchParams = array_fill(0, count($searchColumns), $searchPattern);
+            
+            // Count results
+            $countSql = "SELECT COUNT(*) as total FROM $safeTableName WHERE $whereClause";
+            $countStmt = $conn->prepare($countSql);
+            $countStmt->execute($searchParams);
+            $totalRows = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+            
+            // Get data
+            $offset = ($page - 1) * $limit;
+            $dataSql = "SELECT * FROM $safeTableName WHERE $whereClause LIMIT $limit OFFSET $offset";
+            $dataStmt = $conn->prepare($dataSql);
+            $dataStmt->execute($searchParams);
+            $data = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        
+        $totalPages = ceil($totalRows / $limit);
+        
+        sendResponse(true, 'Records retrieved successfully', [
+            'columns' => $columns,
+            'data' => $data,
+            'pagination' => [
+                'current_page' => $page,
+                'total_pages' => $totalPages,
+                'total_rows' => $totalRows,
+                'per_page' => $limit,
+                'showing_from' => (($page - 1) * $limit) + 1,
+                'showing_to' => min($page * $limit, $totalRows)
+            ],
+            'search_term' => $searchTerm
+        ]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        sendResponse(false, 'Error searching records: ' . $e->getMessage());
+    }
+}
+
+/**
  * Export connections to JSON file
  */
 function exportConnections() {
@@ -1522,8 +1792,24 @@ switch ($action) {
         insertRandomData();
         break;
 
+    case 'insert_record':
+        insertRecord();
+        break;
+
+    case 'update_record':
+        updateRecord();
+        break;
+
+    case 'delete_record':
+        deleteRecord();
+        break;
+
+    case 'search_records':
+        searchRecords();
+        break;
+
     default:
         http_response_code(400);
-        sendResponse(false, 'Invalid action specified. Supported actions: check_connection, list_databases, connect_database, create_database, delete_database, rename_database, set_database_credentials, list_tables, create_table, delete_table, rename_table, alter_table, get_table_structure, export_connections, import_connections, list_import_files, get_table_data, generate_table_sql, generate_database_sql, insert_random_data');
+        sendResponse(false, 'Invalid action specified. Supported actions: check_connection, list_databases, connect_database, create_database, delete_database, rename_database, set_database_credentials, list_tables, create_table, delete_table, rename_table, alter_table, get_table_structure, export_connections, import_connections, list_import_files, get_table_data, generate_table_sql, generate_database_sql, insert_random_data, insert_record, update_record, delete_record, search_records');
 }
 ?>

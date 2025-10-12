@@ -1786,55 +1786,85 @@ PHASE: Hostinger Edition
             <div class="card">
                 <h2 class="card-title">
                     <span class="card-title-icon">✏️</span>
-                    Edit Table Structure
+                    Edit Table
                 </h2>
                 <div id="editTableMessage"></div>
                 
                 <div class="form-group">
                     <label class="form-label">Select Table *</label>
-                    <select id="editTableSelect" class="form-select" onchange="loadTableStructure()" required>
+                    <select id="editTableSelect" class="form-select" onchange="loadTableForEditing()" required>
                         <option value="">-- Select Table --</option>
                     </select>
                     <div class="helper-text" id="editTableHelper">💡 Select a database from Dashboard to see available tables</div>
                 </div>
 
-                <div id="currentStructure" style="display: none;">
-                    <h3 style="color: #fbbf24; margin: 20px 0 10px;">Current Columns</h3>
-                    <div id="currentColumns"></div>
+                <!-- Tabs for Structure / Manage Data -->
+                <div id="editTableTabs" style="display: none;">
+                    <div class="tab-buttons" style="margin: 20px 0;">
+                        <button class="tab-btn active" onclick="switchEditTab('structure')">Table Structure</button>
+                        <button class="tab-btn" onclick="switchEditTab('manageData')">Manage Data (CRUD)</button>
+                    </div>
 
-                    <h3 style="color: #fbbf24; margin: 20px 0 10px;">Add New Column</h3>
-                    <div class="column-builder">
-                        <div class="column-row">
-                            <div class="form-group" style="margin: 0;">
-                                <input type="text" id="newColName" class="form-input" placeholder="Column name">
+                    <!-- Structure Tab -->
+                    <div id="editStructureTab" class="tab-content active">
+                        <h3 style="color: #fbbf24; margin: 20px 0 10px;">Current Columns</h3>
+                        <div id="currentColumns"></div>
+
+                        <h3 style="color: #fbbf24; margin: 20px 0 10px;">Add New Column</h3>
+                        <div class="column-builder">
+                            <div class="column-row">
+                                <div class="form-group" style="margin: 0;">
+                                    <input type="text" id="newColName" class="form-input" placeholder="Column name">
+                                </div>
+                                <div class="form-group" style="margin: 0;">
+                                    <select id="newColType" class="form-select">
+                                        <option value="INT">INT</option>
+                                        <option value="VARCHAR">VARCHAR</option>
+                                        <option value="TEXT">TEXT</option>
+                                        <option value="DATE">DATE</option>
+                                        <option value="DATETIME">DATETIME</option>
+                                        <option value="TIMESTAMP">TIMESTAMP</option>
+                                        <option value="BOOLEAN">BOOLEAN</option>
+                                        <option value="DECIMAL">DECIMAL</option>
+                                        <option value="FLOAT">FLOAT</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin: 0;">
+                                    <input type="text" id="newColLength" class="form-input" placeholder="Length">
+                                </div>
+                                <div class="form-group" style="margin: 0;">
+                                    <select id="newColNullable" class="form-select">
+                                        <option value="yes">NULL</option>
+                                        <option value="no">NOT NULL</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin: 0;">
+                                    <input type="text" id="newColDefault" class="form-input" placeholder="Default">
+                                </div>
+                                <button type="button" class="btn btn-primary btn-icon" onclick="addColumn()">+</button>
                             </div>
-                            <div class="form-group" style="margin: 0;">
-                                <select id="newColType" class="form-select">
-                                    <option value="INT">INT</option>
-                                    <option value="VARCHAR">VARCHAR</option>
-                                    <option value="TEXT">TEXT</option>
-                                    <option value="DATE">DATE</option>
-                                    <option value="DATETIME">DATETIME</option>
-                                    <option value="TIMESTAMP">TIMESTAMP</option>
-                                    <option value="BOOLEAN">BOOLEAN</option>
-                                    <option value="DECIMAL">DECIMAL</option>
-                                    <option value="FLOAT">FLOAT</option>
-                                </select>
-                            </div>
-                            <div class="form-group" style="margin: 0;">
-                                <input type="text" id="newColLength" class="form-input" placeholder="Length">
-                            </div>
-                            <div class="form-group" style="margin: 0;">
-                                <select id="newColNullable" class="form-select">
-                                    <option value="yes">NULL</option>
-                                    <option value="no">NOT NULL</option>
-                                </select>
-                            </div>
-                            <div class="form-group" style="margin: 0;">
-                                <input type="text" id="newColDefault" class="form-input" placeholder="Default">
-                            </div>
-                            <button type="button" class="btn btn-primary btn-icon" onclick="addColumn()">+</button>
                         </div>
+                    </div>
+
+                    <!-- Manage Data Tab -->
+                    <div id="editDataTab" class="tab-content">
+                        <!-- Search Bar -->
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="dataSearchInput" class="form-input" placeholder="🔍 Search in all text columns..." style="flex: 1;">
+                                <button class="btn btn-primary" onclick="searchTableRecords()">Search</button>
+                                <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
+                                <button class="btn btn-primary" onclick="showRecordForm('add')" style="background: #22c55e;">
+                                    <span>➕</span> Add New Record
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Data Container -->
+                        <div id="dataManagementContainer"></div>
+
+                        <!-- Pagination for data -->
+                        <div id="dataPagination" style="margin-top: 20px;"></div>
                     </div>
                 </div>
             </div>
@@ -1929,6 +1959,28 @@ PHASE: Hostinger Edition
                 <button class="btn btn-primary" onclick="submitConnection()">
                     <span>🔌</span> Connect
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record Form Modal -->
+    <div id="recordFormModal" class="modal">
+        <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="recordFormTitle">Add New Record</h3>
+                <button class="modal-close" onclick="closeRecordForm()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="recordFormMessage"></div>
+                <form id="recordForm" onsubmit="saveRecord(event)">
+                    <div id="recordFormFields"></div>
+                    <div class="modal-footer" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(251, 191, 36, 0.2);">
+                        <button type="button" class="btn btn-secondary" onclick="closeRecordForm()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <span id="recordFormSaveIcon">💾</span> <span id="recordFormSaveText">Save</span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -4437,14 +4489,44 @@ PHASE: Hostinger Edition
             }
         }
 
-        // Load table structure for editing
-        async function loadTableStructure() {
+        // ========================================
+        // EDIT TABLE - CRUD OPERATIONS
+        // ========================================
+
+        let currentEditTableName = null;
+        let currentEditTableColumns = [];
+        let currentEditTablePrimaryKey = null;
+        let currentRecordFormMode = 'add'; // 'add' or 'edit'
+        let currentEditingRecord = null;
+        let currentDataPage = 1;
+        let currentSearchTerm = '';
+
+        // Switch between tabs in Edit Table
+        function switchEditTab(tabName) {
+            document.querySelectorAll('#editTableTabs .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('#editTableTabs .tab-content').forEach(content => content.classList.remove('active'));
+            
+            if (tabName === 'structure') {
+                document.querySelector('#editTableTabs .tab-btn:nth-child(1)').classList.add('active');
+                document.getElementById('editStructureTab').classList.add('active');
+            } else if (tabName === 'manageData') {
+                document.querySelector('#editTableTabs .tab-btn:nth-child(2)').classList.add('active');
+                document.getElementById('editDataTab').classList.add('active');
+                // Load data when switching to manage data tab
+                loadTableRecordsForManagement(1);
+            }
+        }
+
+        // Load table for editing (called when table is selected)
+        async function loadTableForEditing() {
             const tableName = document.getElementById('editTableSelect').value;
             
             if (!tableName || !selectedDatabaseId) {
-                document.getElementById('currentStructure').style.display = 'none';
+                document.getElementById('editTableTabs').style.display = 'none';
                 return;
             }
+
+            currentEditTableName = tableName;
 
             const connId = selectedDatabaseId.replace('conn_', '');
             const connections = getHostingerConnections();
@@ -4455,6 +4537,7 @@ PHASE: Hostinger Edition
                 return;
             }
             
+            // Load table structure
             const result = await apiRequest('get_table_structure', {
                 db_host: conn.host,
                 db_name: conn.dbName,
@@ -4465,6 +4548,18 @@ PHASE: Hostinger Edition
             });
             
             if (result.success) {
+                currentEditTableColumns = result.columns;
+                
+                // Find primary key
+                currentEditTablePrimaryKey = null;
+                for (const col of result.columns) {
+                    if (col.Key === 'PRI') {
+                        currentEditTablePrimaryKey = col.Field;
+                        break;
+                    }
+                }
+
+                // Display structure
                 const container = document.getElementById('currentColumns');
                 container.innerHTML = result.columns.map(col => `
                     <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
@@ -4483,18 +4578,369 @@ PHASE: Hostinger Edition
                     </div>
                 `).join('');
                 
-                document.getElementById('currentStructure').style.display = 'block';
-                showMessage('editTableMessage', `✅ Loaded structure for table: ${tableName}`, 'success');
+                // Show tabs
+                document.getElementById('editTableTabs').style.display = 'block';
+                
+                showMessage('editTableMessage', `✅ Loaded table: ${tableName}`, 'success');
             } else {
                 showMessage('editTableMessage', '❌ ' + result.message, 'error');
             }
         }
 
+        // Load table structure (old function - for backward compatibility)
+        function loadTableStructure() {
+            loadTableForEditing();
+        }
+
+        // Load records for management
+        async function loadTableRecordsForManagement(page = 1, searchTerm = '') {
+            if (!selectedDatabaseId || !currentEditTableName) {
+                document.getElementById('dataManagementContainer').innerHTML = '<p style="color: rgba(254, 243, 199, 0.6); text-align: center; padding: 20px;">Please select a table first</p>';
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) return;
+
+            currentDataPage = page;
+            currentSearchTerm = searchTerm;
+
+            document.getElementById('dataManagementContainer').innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner"></div><div style="margin-top: 15px;">Loading records...</div></div>';
+
+            const result = await apiRequest('search_records', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                table_name: currentEditTableName,
+                search_term: searchTerm,
+                page: page,
+                limit: 20
+            });
+
+            if (result.success) {
+                renderDataManagementTable(result.columns, result.data);
+                renderDataPagination(result.pagination);
+            } else {
+                document.getElementById('dataManagementContainer').innerHTML = `<div style="text-align: center; padding: 40px; color: #fca5a5;">❌ ${result.message}</div>`;
+            }
+        }
+
+        // Render data management table
+        function renderDataManagementTable(columns, data) {
+            if (data.length === 0) {
+                document.getElementById('dataManagementContainer').innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(254, 243, 199, 0.6);">📭 No records found</div>';
+                return;
+            }
+
+            let html = '<div style="overflow-x: auto;"><table class="data-table">';
+            
+            // Header
+            html += '<thead><tr>';
+            html += '<th style="width: 150px;">Actions</th>';
+            columns.forEach(col => {
+                html += `<th title="${col.Type}">${col.Field}${col.Key === 'PRI' ? ' 🔑' : ''}</th>`;
+            });
+            html += '</tr></thead>';
+            
+            // Body
+            html += '<tbody>';
+            data.forEach(row => {
+                const primaryValue = currentEditTablePrimaryKey ? row[currentEditTablePrimaryKey] : null;
+                html += '<tr>';
+                
+                // Actions column
+                html += '<td><div style="display: flex; gap: 5px;">';
+                if (primaryValue) {
+                    html += `<button class="btn btn-primary" onclick='editRecord(${JSON.stringify(row)})' style="padding: 6px 12px; font-size: 12px;">✏️ Edit</button>`;
+                    html += `<button class="btn btn-danger" onclick="deleteRecordAction('${primaryValue}')" style="padding: 6px 12px; font-size: 12px;">🗑️</button>`;
+                }
+                html += '</div></td>';
+                
+                // Data columns
+                columns.forEach(col => {
+                    const value = row[col.Field];
+                    const displayValue = value === null ? '<span style="color: #fca5a5; font-style: italic;">NULL</span>' : 
+                                       typeof value === 'string' && value.length > 50 ? value.substring(0, 50) + '...' : 
+                                       value;
+                    html += `<td title="${value}">${displayValue}</td>`;
+                });
+                
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+            
+            document.getElementById('dataManagementContainer').innerHTML = html;
+        }
+
+        // Render data pagination
+        function renderDataPagination(pagination) {
+            const html = `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div class="pagination-info">
+                        Showing <strong>${pagination.showing_from}</strong> - <strong>${pagination.showing_to}</strong> of <strong>${pagination.total_rows}</strong> records
+                    </div>
+                    <div class="pagination-buttons">
+                        <button class="btn btn-secondary" onclick="loadTableRecordsForManagement(1, currentSearchTerm)" ${pagination.current_page === 1 ? 'disabled' : ''}>⏮️ First</button>
+                        <button class="btn btn-secondary" onclick="loadTableRecordsForManagement(${pagination.current_page - 1}, currentSearchTerm)" ${pagination.current_page === 1 ? 'disabled' : ''}>◀️ Prev</button>
+                        <span style="padding: 0 15px;">Page ${pagination.current_page} of ${pagination.total_pages}</span>
+                        <button class="btn btn-secondary" onclick="loadTableRecordsForManagement(${pagination.current_page + 1}, currentSearchTerm)" ${pagination.current_page === pagination.total_pages ? 'disabled' : ''}>Next ▶️</button>
+                        <button class="btn btn-secondary" onclick="loadTableRecordsForManagement(${pagination.total_pages}, currentSearchTerm)" ${pagination.current_page === pagination.total_pages ? 'disabled' : ''}>Last ⏭️</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('dataPagination').innerHTML = html;
+        }
+
+        // Search table records
+        function searchTableRecords() {
+            const searchTerm = document.getElementById('dataSearchInput').value.trim();
+            loadTableRecordsForManagement(1, searchTerm);
+        }
+
+        // Clear search
+        function clearSearch() {
+            document.getElementById('dataSearchInput').value = '';
+            loadTableRecordsForManagement(1, '');
+        }
+
+        // Show record form (add or edit)
+        function showRecordForm(mode, record = null) {
+            currentRecordFormMode = mode;
+            currentEditingRecord = record;
+
+            if (mode === 'add') {
+                document.getElementById('recordFormTitle').textContent = `Add New Record to ${currentEditTableName}`;
+                document.getElementById('recordFormSaveIcon').textContent = '➕';
+                document.getElementById('recordFormSaveText').textContent = 'Add Record';
+            } else {
+                document.getElementById('recordFormTitle').textContent = `Edit Record in ${currentEditTableName}`;
+                document.getElementById('recordFormSaveIcon').textContent = '💾';
+                document.getElementById('recordFormSaveText').textContent = 'Update Record';
+            }
+
+            // Generate form fields dynamically
+            let formHtml = '';
+            currentEditTableColumns.forEach(col => {
+                const isAutoIncrement = col.Extra && col.Extra.toLowerCase().includes('auto_increment');
+                const value = record ? record[col.Field] : '';
+                
+                // Skip auto increment in add mode
+                if (mode === 'add' && isAutoIncrement) {
+                    return;
+                }
+
+                // Read-only for primary key in edit mode
+                const isReadOnly = mode === 'edit' && col.Key === 'PRI';
+
+                formHtml += `
+                    <div class="form-group">
+                        <label class="form-label">
+                            ${col.Field}
+                            ${col.Key === 'PRI' ? ' 🔑' : ''}
+                            ${col.Null === 'NO' ? ' <span style="color: #ef4444;">*</span>' : ''}
+                        </label>
+                        ${generateFormInput(col, value, isReadOnly)}
+                        <div class="helper-text">${col.Type}${col.Null === 'YES' ? ' (Optional)' : ' (Required)'}</div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('recordFormFields').innerHTML = formHtml;
+            document.getElementById('recordFormMessage').innerHTML = '';
+            document.getElementById('recordFormModal').classList.add('active');
+        }
+
+        // Generate form input based on column type
+        function generateFormInput(col, value, isReadOnly) {
+            const typeUpper = col.Type.toUpperCase();
+            const required = col.Null === 'NO' && !col.Extra?.includes('auto_increment') ? 'required' : '';
+            const readonly = isReadOnly ? 'readonly style="background: rgba(255, 255, 255, 0.05); cursor: not-allowed;"' : '';
+            
+            // TEXT/LONGTEXT
+            if (typeUpper.includes('TEXT') && !typeUpper.includes('TINY')) {
+                return `<textarea name="${col.Field}" class="form-input" rows="4" ${required} ${readonly}>${value || ''}</textarea>`;
+            }
+            
+            // DATE
+            if (typeUpper.includes('DATE') && !typeUpper.includes('TIME')) {
+                return `<input type="date" name="${col.Field}" class="form-input" value="${value || ''}" ${required} ${readonly}>`;
+            }
+            
+            // DATETIME/TIMESTAMP
+            if (typeUpper.includes('DATETIME') || typeUpper.includes('TIMESTAMP')) {
+                const datetimeValue = value ? value.replace(' ', 'T').slice(0, 16) : '';
+                return `<input type="datetime-local" name="${col.Field}" class="form-input" value="${datetimeValue}" ${required} ${readonly}>`;
+            }
+            
+            // TIME
+            if (typeUpper.includes('TIME') && !typeUpper.includes('DATE')) {
+                return `<input type="time" name="${col.Field}" class="form-input" value="${value || ''}" ${required} ${readonly}>`;
+            }
+            
+            // BOOLEAN/TINYINT(1)
+            if (typeUpper.includes('TINYINT(1)') || typeUpper.includes('BOOLEAN') || typeUpper.includes('BOOL')) {
+                return `
+                    <select name="${col.Field}" class="form-select" ${required} ${readonly}>
+                        <option value="">-- Select --</option>
+                        <option value="1" ${value == 1 ? 'selected' : ''}>✅ True (1)</option>
+                        <option value="0" ${value == 0 ? 'selected' : ''}>❌ False (0)</option>
+                    </select>
+                `;
+            }
+            
+            // ENUM (if we can detect it)
+            // For now, use text input
+            
+            // Default: text input
+            return `<input type="text" name="${col.Field}" class="form-input" value="${value || ''}" ${required} ${readonly}>`;
+        }
+
+        // Edit record
+        function editRecord(record) {
+            showRecordForm('edit', record);
+        }
+
+        // Close record form
+        function closeRecordForm() {
+            document.getElementById('recordFormModal').classList.remove('active');
+            currentRecordFormMode = 'add';
+            currentEditingRecord = null;
+        }
+
+        // Save record (add or update)
+        async function saveRecord(event) {
+            event.preventDefault();
+
+            if (!selectedDatabaseId || !currentEditTableName) {
+                showMessage('editTableMessage', '❌ No table selected', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('editTableMessage', '❌ Connection not found', 'error');
+                return;
+            }
+
+            // Get form data
+            const formData = new FormData(document.getElementById('recordForm'));
+            const recordData = {};
+            for (const [key, value] of formData.entries()) {
+                recordData[key] = value || null;
+            }
+
+            const messageEl = document.getElementById('recordFormMessage');
+
+            if (currentRecordFormMode === 'add') {
+                // Insert new record
+                messageEl.className = 'message info';
+                messageEl.textContent = '🔄 Adding record...';
+                messageEl.style.display = 'block';
+
+                const result = await apiRequest('insert_record', {
+                    db_host: conn.host,
+                    db_name: conn.dbName,
+                    db_user: conn.username,
+                    db_pass: conn.password,
+                    db_port: conn.port,
+                    table_name: currentEditTableName,
+                    record_data: JSON.stringify(recordData)
+                });
+
+                if (result.success) {
+                    showMessage('editTableMessage', `✅ ${result.message}`, 'success');
+                    closeRecordForm();
+                    loadTableRecordsForManagement(currentDataPage, currentSearchTerm);
+                } else {
+                    messageEl.className = 'message error';
+                    messageEl.textContent = `❌ ${result.message}`;
+                }
+            } else {
+                // Update existing record
+                if (!currentEditTablePrimaryKey || !currentEditingRecord) {
+                    messageEl.className = 'message error';
+                    messageEl.textContent = '❌ Cannot update: No primary key found';
+                    return;
+                }
+
+                messageEl.className = 'message info';
+                messageEl.textContent = '🔄 Updating record...';
+                messageEl.style.display = 'block';
+
+                const primaryValue = currentEditingRecord[currentEditTablePrimaryKey];
+
+                const result = await apiRequest('update_record', {
+                    db_host: conn.host,
+                    db_name: conn.dbName,
+                    db_user: conn.username,
+                    db_pass: conn.password,
+                    db_port: conn.port,
+                    table_name: currentEditTableName,
+                    record_data: JSON.stringify(recordData),
+                    primary_key: currentEditTablePrimaryKey,
+                    primary_value: primaryValue
+                });
+
+                if (result.success) {
+                    showMessage('editTableMessage', `✅ ${result.message}`, 'success');
+                    closeRecordForm();
+                    loadTableRecordsForManagement(currentDataPage, currentSearchTerm);
+                } else {
+                    messageEl.className = 'message error';
+                    messageEl.textContent = `❌ ${result.message}`;
+                }
+            }
+        }
+
+        // Delete record action
+        async function deleteRecordAction(primaryValue) {
+            if (!confirm('Are you sure you want to delete this record?\n\nThis action cannot be undone!')) {
+                return;
+            }
+
+            if (!selectedDatabaseId || !currentEditTableName || !currentEditTablePrimaryKey) {
+                showMessage('editTableMessage', '❌ Cannot delete: Missing information', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) return;
+
+            showMessage('editTableMessage', '🔄 Deleting record...', 'info');
+
+            const result = await apiRequest('delete_record', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                table_name: currentEditTableName,
+                primary_key: currentEditTablePrimaryKey,
+                primary_value: primaryValue
+            });
+
+            if (result.success) {
+                showMessage('editTableMessage', `✅ ${result.message}`, 'success');
+                loadTableRecordsForManagement(currentDataPage, currentSearchTerm);
+            } else {
+                showMessage('editTableMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
         // Add column to existing table
         async function addColumn() {
-            const tableName = document.getElementById('editTableSelect').value;
-            
-            if (!tableName || !selectedDatabaseId) {
+            if (!currentEditTableName || !selectedDatabaseId) {
                 showMessage('editTableMessage', '❌ Please select a table first', 'error');
                 return;
             }
@@ -4529,7 +4975,7 @@ PHASE: Hostinger Edition
                 db_user: conn.username,
                 db_pass: conn.password,
                 db_port: conn.port,
-                table_name: tableName,
+                table_name: currentEditTableName,
                 alter_action: 'add',
                 column_data: JSON.stringify(columnData)
             });
@@ -4539,7 +4985,8 @@ PHASE: Hostinger Edition
                 document.getElementById('newColName').value = '';
                 document.getElementById('newColLength').value = '';
                 document.getElementById('newColDefault').value = '';
-                loadTableStructure();
+                // Reload table to refresh structure
+                loadTableForEditing();
             } else {
                 showMessage('editTableMessage', `❌ ${result.message}`, 'error');
             }
@@ -4580,7 +5027,8 @@ PHASE: Hostinger Edition
             
             if (result.success) {
                 showMessage('editTableMessage', `✅ ${result.message}`, 'success');
-                loadTableStructure();
+                // Reload table to refresh structure
+                loadTableForEditing();
             } else {
                 showMessage('editTableMessage', `❌ ${result.message}`, 'error');
             }
