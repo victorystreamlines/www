@@ -207,7 +207,7 @@
         <div class="content">
             <div class="info-section">
                 <h3>📋 System Overview</h3>
-                <p>This generator creates a comprehensive accounting database structure including all essential tables for managing financial operations, customer relationships, inventory, and reporting. The generated SQL is database-agnostic and can be adapted for MySQL, PostgreSQL, SQL Server, or other systems.</p>
+                <p>This generator creates a comprehensive accounting database structure including all essential tables for managing financial operations, customer relationships, inventory, and reporting. The generated SQL is fully compatible with <strong>MariaDB/MySQL</strong> and follows best practices for database design.</p>
             </div>
 
             <h3>📊 Included Tables</h3>
@@ -272,25 +272,28 @@
             const sql = `-- =====================================================
 -- COMPLETE ACCOUNTING SYSTEM DATABASE STRUCTURE
 -- Generated on: ${new Date().toLocaleString()}
+-- MariaDB Compatible Version
 -- =====================================================
 
 -- Chart of Accounts - Main account structure
 CREATE TABLE chart_of_accounts (
-    account_id INT PRIMARY KEY AUTO_INCREMENT,
-    account_code VARCHAR(20) UNIQUE NOT NULL,
+    account_id INT AUTO_INCREMENT,
+    account_code VARCHAR(20) NOT NULL,
     account_name VARCHAR(100) NOT NULL,
-    account_type ENUM('ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE') NOT NULL,
+    account_type VARCHAR(20) NOT NULL CHECK (account_type IN ('ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE')),
     parent_account_id INT,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (account_id),
+    UNIQUE KEY (account_code),
     FOREIGN KEY (parent_account_id) REFERENCES chart_of_accounts(account_id)
 );
 
 -- Customers master data
 CREATE TABLE customers (
-    customer_id INT PRIMARY KEY AUTO_INCREMENT,
-    customer_code VARCHAR(20) UNIQUE NOT NULL,
+    customer_id INT AUTO_INCREMENT,
+    customer_code VARCHAR(20) NOT NULL,
     company_name VARCHAR(100) NOT NULL,
     contact_person VARCHAR(100),
     email VARCHAR(100),
@@ -303,15 +306,17 @@ CREATE TABLE customers (
     tax_id VARCHAR(50),
     credit_limit DECIMAL(15,2) DEFAULT 0,
     payment_terms INT DEFAULT 30,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (customer_id),
+    UNIQUE KEY (customer_code)
 );
 
 -- Vendors/Suppliers master data
 CREATE TABLE vendors (
-    vendor_id INT PRIMARY KEY AUTO_INCREMENT,
-    vendor_code VARCHAR(20) UNIQUE NOT NULL,
+    vendor_id INT AUTO_INCREMENT,
+    vendor_code VARCHAR(20) NOT NULL,
     company_name VARCHAR(100) NOT NULL,
     contact_person VARCHAR(100),
     email VARCHAR(100),
@@ -323,15 +328,17 @@ CREATE TABLE vendors (
     country VARCHAR(50),
     tax_id VARCHAR(50),
     payment_terms INT DEFAULT 30,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (vendor_id),
+    UNIQUE KEY (vendor_code)
 );
 
 -- Employee information
 CREATE TABLE employees (
-    employee_id INT PRIMARY KEY AUTO_INCREMENT,
-    employee_code VARCHAR(20) UNIQUE NOT NULL,
+    employee_id INT AUTO_INCREMENT,
+    employee_code VARCHAR(20) NOT NULL,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     email VARCHAR(100),
@@ -340,15 +347,17 @@ CREATE TABLE employees (
     salary DECIMAL(12,2),
     department VARCHAR(50),
     position VARCHAR(50),
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (employee_id),
+    UNIQUE KEY (employee_code)
 );
 
 -- Products and Services
 CREATE TABLE products (
-    product_id INT PRIMARY KEY AUTO_INCREMENT,
-    product_code VARCHAR(20) UNIQUE NOT NULL,
+    product_id INT AUTO_INCREMENT,
+    product_code VARCHAR(20) NOT NULL,
     product_name VARCHAR(100) NOT NULL,
     description TEXT,
     category VARCHAR(50),
@@ -356,82 +365,92 @@ CREATE TABLE products (
     unit_price DECIMAL(12,2),
     cost_price DECIMAL(12,2),
     tax_rate_id INT,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (product_id),
+    UNIQUE KEY (product_code)
 );
 
 -- Fiscal Periods
 CREATE TABLE fiscal_periods (
-    period_id INT PRIMARY KEY AUTO_INCREMENT,
+    period_id INT AUTO_INCREMENT,
     period_name VARCHAR(50) NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     fiscal_year INT NOT NULL,
-    is_closed BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    is_closed TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (period_id)
 );
 
 -- Cost Centers
 CREATE TABLE cost_centers (
-    cost_center_id INT PRIMARY KEY AUTO_INCREMENT,
-    cost_center_code VARCHAR(20) UNIQUE NOT NULL,
+    cost_center_id INT AUTO_INCREMENT,
+    cost_center_code VARCHAR(20) NOT NULL,
     cost_center_name VARCHAR(100) NOT NULL,
     description TEXT,
     manager_id INT,
-    is_active BOOLEAN DEFAULT TRUE,
+    is_active TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (cost_center_id),
+    UNIQUE KEY (cost_center_code),
     FOREIGN KEY (manager_id) REFERENCES employees(employee_id)
 );
 
 -- Bank Accounts
 CREATE TABLE bank_accounts (
-    bank_account_id INT PRIMARY KEY AUTO_INCREMENT,
+    bank_account_id INT AUTO_INCREMENT,
     account_name VARCHAR(100) NOT NULL,
     account_number VARCHAR(50) NOT NULL,
     bank_name VARCHAR(100) NOT NULL,
     account_type VARCHAR(20),
     current_balance DECIMAL(15,2) DEFAULT 0,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (bank_account_id)
 );
 
 -- Tax Rates
 CREATE TABLE tax_rates (
-    tax_rate_id INT PRIMARY KEY AUTO_INCREMENT,
+    tax_rate_id INT AUTO_INCREMENT,
     tax_name VARCHAR(50) NOT NULL,
     tax_rate DECIMAL(5,4) NOT NULL,
     tax_type VARCHAR(20),
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (tax_rate_id)
 );
 
 -- General Ledger Transactions
 CREATE TABLE transactions (
-    transaction_id INT PRIMARY KEY AUTO_INCREMENT,
-    transaction_number VARCHAR(50) UNIQUE NOT NULL,
+    transaction_id INT AUTO_INCREMENT,
+    transaction_number VARCHAR(50) NOT NULL,
     transaction_date DATE NOT NULL,
     description TEXT,
     reference VARCHAR(100),
     period_id INT,
     total_amount DECIMAL(15,2) NOT NULL,
-    is_posted BOOLEAN DEFAULT FALSE,
+    is_posted TINYINT(1) DEFAULT 0,
     created_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     posted_at TIMESTAMP NULL,
+    PRIMARY KEY (transaction_id),
+    UNIQUE KEY (transaction_number),
     FOREIGN KEY (period_id) REFERENCES fiscal_periods(period_id),
     FOREIGN KEY (created_by) REFERENCES employees(employee_id)
 );
 
 -- Transaction Details (Journal Entries)
 CREATE TABLE transaction_details (
-    detail_id INT PRIMARY KEY AUTO_INCREMENT,
+    detail_id INT AUTO_INCREMENT,
     transaction_id INT NOT NULL,
     account_id INT NOT NULL,
     debit_amount DECIMAL(15,2) DEFAULT 0,
     credit_amount DECIMAL(15,2) DEFAULT 0,
     description TEXT,
     cost_center_id INT,
+    PRIMARY KEY (detail_id),
     FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) ON DELETE CASCADE,
     FOREIGN KEY (account_id) REFERENCES chart_of_accounts(account_id),
     FOREIGN KEY (cost_center_id) REFERENCES cost_centers(cost_center_id)
@@ -439,8 +458,8 @@ CREATE TABLE transaction_details (
 
 -- Sales Invoices
 CREATE TABLE invoices (
-    invoice_id INT PRIMARY KEY AUTO_INCREMENT,
-    invoice_number VARCHAR(50) UNIQUE NOT NULL,
+    invoice_id INT AUTO_INCREMENT,
+    invoice_number VARCHAR(50) NOT NULL,
     customer_id INT NOT NULL,
     invoice_date DATE NOT NULL,
     due_date DATE NOT NULL,
@@ -448,15 +467,17 @@ CREATE TABLE invoices (
     tax_amount DECIMAL(15,2) DEFAULT 0,
     total_amount DECIMAL(15,2) NOT NULL,
     paid_amount DECIMAL(15,2) DEFAULT 0,
-    status ENUM('DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED') DEFAULT 'DRAFT',
+    status VARCHAR(20) DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED')),
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (invoice_id),
+    UNIQUE KEY (invoice_number),
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
 );
 
 -- Invoice Line Items
 CREATE TABLE invoice_items (
-    item_id INT PRIMARY KEY AUTO_INCREMENT,
+    item_id INT AUTO_INCREMENT,
     invoice_id INT NOT NULL,
     product_id INT,
     description VARCHAR(200) NOT NULL,
@@ -464,6 +485,7 @@ CREATE TABLE invoice_items (
     unit_price DECIMAL(12,2) NOT NULL,
     line_total DECIMAL(15,2) NOT NULL,
     tax_rate_id INT,
+    PRIMARY KEY (item_id),
     FOREIGN KEY (invoice_id) REFERENCES invoices(invoice_id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     FOREIGN KEY (tax_rate_id) REFERENCES tax_rates(tax_rate_id)
@@ -471,23 +493,25 @@ CREATE TABLE invoice_items (
 
 -- Purchase Orders
 CREATE TABLE purchase_orders (
-    po_id INT PRIMARY KEY AUTO_INCREMENT,
-    po_number VARCHAR(50) UNIQUE NOT NULL,
+    po_id INT AUTO_INCREMENT,
+    po_number VARCHAR(50) NOT NULL,
     vendor_id INT NOT NULL,
     po_date DATE NOT NULL,
     expected_date DATE,
     subtotal DECIMAL(15,2) NOT NULL,
     tax_amount DECIMAL(15,2) DEFAULT 0,
     total_amount DECIMAL(15,2) NOT NULL,
-    status ENUM('DRAFT', 'SENT', 'RECEIVED', 'CANCELLED') DEFAULT 'DRAFT',
+    status VARCHAR(20) DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'SENT', 'RECEIVED', 'CANCELLED')),
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (po_id),
+    UNIQUE KEY (po_number),
     FOREIGN KEY (vendor_id) REFERENCES vendors(vendor_id)
 );
 
 -- Purchase Order Items
 CREATE TABLE purchase_order_items (
-    po_item_id INT PRIMARY KEY AUTO_INCREMENT,
+    po_item_id INT AUTO_INCREMENT,
     po_id INT NOT NULL,
     product_id INT,
     description VARCHAR(200) NOT NULL,
@@ -495,16 +519,17 @@ CREATE TABLE purchase_order_items (
     unit_price DECIMAL(12,2) NOT NULL,
     line_total DECIMAL(15,2) NOT NULL,
     received_quantity DECIMAL(10,3) DEFAULT 0,
+    PRIMARY KEY (po_item_id),
     FOREIGN KEY (po_id) REFERENCES purchase_orders(po_id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
 -- Payments
 CREATE TABLE payments (
-    payment_id INT PRIMARY KEY AUTO_INCREMENT,
-    payment_number VARCHAR(50) UNIQUE NOT NULL,
+    payment_id INT AUTO_INCREMENT,
+    payment_number VARCHAR(50) NOT NULL,
     payment_date DATE NOT NULL,
-    payment_type ENUM('CUSTOMER', 'VENDOR', 'EMPLOYEE', 'OTHER') NOT NULL,
+    payment_type VARCHAR(20) NOT NULL CHECK (payment_type IN ('CUSTOMER', 'VENDOR', 'EMPLOYEE', 'OTHER')),
     entity_id INT,
     amount DECIMAL(15,2) NOT NULL,
     payment_method VARCHAR(50),
@@ -512,12 +537,14 @@ CREATE TABLE payments (
     reference VARCHAR(100),
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (payment_id),
+    UNIQUE KEY (payment_number),
     FOREIGN KEY (bank_account_id) REFERENCES bank_accounts(bank_account_id)
 );
 
 -- Inventory Management
 CREATE TABLE inventory (
-    inventory_id INT PRIMARY KEY AUTO_INCREMENT,
+    inventory_id INT AUTO_INCREMENT,
     product_id INT NOT NULL,
     location VARCHAR(50),
     quantity_on_hand DECIMAL(10,3) DEFAULT 0,
@@ -525,14 +552,15 @@ CREATE TABLE inventory (
     quantity_available DECIMAL(10,3) DEFAULT 0,
     reorder_level DECIMAL(10,3) DEFAULT 0,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (inventory_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id),
     UNIQUE KEY unique_product_location (product_id, location)
 );
 
 -- Fixed Assets
 CREATE TABLE assets (
-    asset_id INT PRIMARY KEY AUTO_INCREMENT,
-    asset_code VARCHAR(20) UNIQUE NOT NULL,
+    asset_id INT AUTO_INCREMENT,
+    asset_code VARCHAR(20) NOT NULL,
     asset_name VARCHAR(100) NOT NULL,
     category VARCHAR(50),
     purchase_date DATE,
@@ -541,26 +569,29 @@ CREATE TABLE assets (
     salvage_value DECIMAL(15,2) DEFAULT 0,
     depreciation_method VARCHAR(20) DEFAULT 'STRAIGHT_LINE',
     accumulated_depreciation DECIMAL(15,2) DEFAULT 0,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    is_active TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (asset_id),
+    UNIQUE KEY (asset_code)
 );
 
 -- Depreciation Schedule
 CREATE TABLE depreciation (
-    depreciation_id INT PRIMARY KEY AUTO_INCREMENT,
+    depreciation_id INT AUTO_INCREMENT,
     asset_id INT NOT NULL,
     period_id INT NOT NULL,
     depreciation_amount DECIMAL(15,2) NOT NULL,
     accumulated_depreciation DECIMAL(15,2) NOT NULL,
     book_value DECIMAL(15,2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (depreciation_id),
     FOREIGN KEY (asset_id) REFERENCES assets(asset_id),
     FOREIGN KEY (period_id) REFERENCES fiscal_periods(period_id)
 );
 
 -- Budget Planning
 CREATE TABLE budgets (
-    budget_id INT PRIMARY KEY AUTO_INCREMENT,
+    budget_id INT AUTO_INCREMENT,
     budget_name VARCHAR(100) NOT NULL,
     fiscal_year INT NOT NULL,
     account_id INT NOT NULL,
@@ -569,6 +600,7 @@ CREATE TABLE budgets (
     actual_amount DECIMAL(15,2) DEFAULT 0,
     variance DECIMAL(15,2) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (budget_id),
     FOREIGN KEY (account_id) REFERENCES chart_of_accounts(account_id),
     FOREIGN KEY (cost_center_id) REFERENCES cost_centers(cost_center_id)
 );
