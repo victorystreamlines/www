@@ -1664,7 +1664,7 @@ PHASE: Hostinger Edition
             <div class="card">
                 <h2 class="card-title">
                     <span class="card-title-icon">🤖</span>
-                    AI Connection Prompt Generator
+                    AI Assistant Helper
                 </h2>
                 <div id="aiPromptMessage"></div>
                 
@@ -1674,24 +1674,60 @@ PHASE: Hostinger Edition
                         <strong>📊 Selected Database:</strong> <span id="aiPromptDbNameDisplay" style="color: #fbbf24; font-weight: bold;">None</span>
                     </div>
                     <div style="font-size: 13px; color: rgba(254, 243, 199, 0.7); margin-top: 5px;">
-                        💡 Please select a database from the Dashboard to generate AI connection prompt
+                        💡 Please select a database from the Dashboard to generate AI prompts
                     </div>
                 </div>
 
-                <!-- Prompt Container -->
-                <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 style="color: #fbbf24; margin: 0;">📝 AI Connection Prompt</h3>
-                        <button class="btn btn-primary" onclick="copyAIPrompt()" id="copyAIPromptBtn" disabled>
-                            <span>📋</span> Copy to Clipboard
-                        </button>
-                    </div>
-                    
-                    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
-                        <strong style="color: #fbbf24;">💡 How to use:</strong> Copy this prompt and paste it into any AI code editor (Cursor, GitHub Copilot, etc.) to give the AI direct access to your database connection info.
-                    </div>
+                <!-- Tabs -->
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchAITab('connection')">🔌 Connection Prompt</button>
+                    <button class="tab-btn" onclick="switchAITab('description')">📊 Database Description</button>
+                </div>
 
-                    <textarea id="aiPromptText" readonly style="width: 100%; min-height: 350px; padding: 20px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(251, 191, 36, 0.3); border-radius: 8px; color: #86efac; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.6; resize: vertical;">Select a database from the Dashboard to generate AI connection prompt...</textarea>
+                <!-- Tab 1: Connection Prompt -->
+                <div id="aiConnectionTab" class="tab-content active">
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="color: #fbbf24; margin: 0;">📝 AI Connection Prompt</h3>
+                            <button class="btn btn-primary" onclick="copyAIConnectionPrompt()" id="copyAIPromptBtn" disabled>
+                                <span>📋</span> Copy to Clipboard
+                            </button>
+                        </div>
+                        
+                        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
+                            <strong style="color: #fbbf24;">💡 How to use:</strong> Copy this prompt and paste it into any AI code editor (Cursor, GitHub Copilot, etc.) to give the AI direct access to your database connection info.
+                        </div>
+
+                        <textarea id="aiPromptText" readonly style="width: 100%; min-height: 350px; padding: 20px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(251, 191, 36, 0.3); border-radius: 8px; color: #86efac; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.6; resize: vertical;">Select a database from the Dashboard to generate AI connection prompt...</textarea>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Database Description -->
+                <div id="aiDescriptionTab" class="tab-content">
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="color: #fbbf24; margin: 0;">📊 AI Database Description</h3>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-secondary" onclick="generateDatabaseDescription()" id="generateDescBtn" disabled>
+                                    <span>🔄</span> Generate Description
+                                </button>
+                                <button class="btn btn-primary" onclick="copyDatabaseDescription()" id="copyDescBtn" disabled>
+                                    <span>📋</span> Copy to Clipboard
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
+                            <strong style="color: #fbbf24;">💡 How to use:</strong> This generates a complete description of your database structure for AI context. Include this when asking AI to work with your database schema.
+                        </div>
+
+                        <div id="descriptionLoading" style="display: none; text-align: center; padding: 40px;">
+                            <div class="spinner"></div>
+                            <div style="margin-top: 15px; color: rgba(254, 243, 199, 0.8);">Analyzing database structure...</div>
+                        </div>
+
+                        <textarea id="aiDescriptionText" readonly style="width: 100%; min-height: 450px; padding: 20px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(251, 191, 36, 0.3); border-radius: 8px; color: #86efac; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.6; resize: vertical;">Click "Generate Description" button to analyze the database structure...</textarea>
+                    </div>
                 </div>
 
                 <!-- Quick Info Cards -->
@@ -2220,6 +2256,7 @@ PHASE: Hostinger Edition
             const displayEl = document.getElementById('aiPromptDbNameDisplay');
             const promptTextarea = document.getElementById('aiPromptText');
             const copyBtn = document.getElementById('copyAIPromptBtn');
+            const generateDescBtn = document.getElementById('generateDescBtn');
             const hostEl = document.getElementById('aiPromptHost');
             const dbNameEl = document.getElementById('aiPromptDbName');
             const userEl = document.getElementById('aiPromptUser');
@@ -2242,6 +2279,9 @@ PHASE: Hostinger Edition
                     if (dbNameEl) dbNameEl.textContent = conn.dbName;
                     if (userEl) userEl.textContent = conn.username;
                     if (portEl) portEl.textContent = conn.port;
+                    
+                    // Enable generate description button
+                    if (generateDescBtn) generateDescBtn.disabled = false;
                     
                     // Generate AI Prompt
                     const prompt = `DATABASE CONNECTION INFORMATION
@@ -2333,6 +2373,7 @@ Please confirm you can connect successfully before proceeding with any operation
                     displayEl.style.color = '#fca5a5';
                     promptTextarea.value = 'Select a database from the Dashboard to generate AI connection prompt...';
                     if (copyBtn) copyBtn.disabled = true;
+                    if (generateDescBtn) generateDescBtn.disabled = true;
                     if (hostEl) hostEl.textContent = '-';
                     if (dbNameEl) dbNameEl.textContent = '-';
                     if (userEl) userEl.textContent = '-';
@@ -2343,6 +2384,7 @@ Please confirm you can connect successfully before proceeding with any operation
                 displayEl.style.color = '#fca5a5';
                 promptTextarea.value = 'Select a database from the Dashboard to generate AI connection prompt...';
                 if (copyBtn) copyBtn.disabled = true;
+                if (generateDescBtn) generateDescBtn.disabled = true;
                 if (hostEl) hostEl.textContent = '-';
                 if (dbNameEl) dbNameEl.textContent = '-';
                 if (userEl) userEl.textContent = '-';
@@ -2350,8 +2392,27 @@ Please confirm you can connect successfully before proceeding with any operation
             }
         }
 
-        // Copy AI Prompt to clipboard
-        async function copyAIPrompt() {
+        // Switch between AI tabs
+        function switchAITab(tabName) {
+            // Only target AI section tabs
+            const aiSection = document.getElementById('aiPrompt');
+            if (!aiSection) return;
+
+            aiSection.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            if (tabName === 'connection') {
+                aiSection.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+                document.getElementById('aiConnectionTab').classList.add('active');
+                document.getElementById('aiDescriptionTab').classList.remove('active');
+            } else if (tabName === 'description') {
+                aiSection.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+                document.getElementById('aiDescriptionTab').classList.add('active');
+                document.getElementById('aiConnectionTab').classList.remove('active');
+            }
+        }
+
+        // Copy AI Connection Prompt to clipboard
+        async function copyAIConnectionPrompt() {
             const promptText = document.getElementById('aiPromptText').value;
             
             try {
@@ -2374,6 +2435,170 @@ Please confirm you can connect successfully before proceeding with any operation
                 textarea.select();
                 document.execCommand('copy');
                 showMessage('aiPromptMessage', '✅ AI Connection Prompt copied to clipboard!', 'success');
+            }
+        }
+
+        // Generate Database Description for AI
+        async function generateDatabaseDescription() {
+            if (!selectedDatabaseId) {
+                showMessage('aiPromptMessage', '❌ Please select a database first', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('aiPromptMessage', '❌ Connection not found', 'error');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('descriptionLoading').style.display = 'block';
+            document.getElementById('aiDescriptionText').value = 'Analyzing database structure...';
+            showMessage('aiPromptMessage', '🔄 Analyzing database structure...', 'info');
+
+            // Get list of tables
+            const tablesResult = await apiRequest('list_tables', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port
+            });
+
+            if (!tablesResult.success) {
+                document.getElementById('descriptionLoading').style.display = 'none';
+                showMessage('aiPromptMessage', `❌ ${tablesResult.message}`, 'error');
+                return;
+            }
+
+            // Start building description
+            let description = `DATABASE STRUCTURE ANALYSIS
+=====================================
+
+Connection Name: ${conn.name}
+Server Type: ${conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting'}
+Database Name: ${conn.dbName}
+Database Host: ${conn.host}
+
+OVERVIEW:
+- Total Tables: ${tablesResult.tables.length}
+- Database Engine: MySQL/MariaDB
+- Character Set: utf8mb4
+- Collation: utf8mb4_unicode_ci
+
+`;
+
+            if (tablesResult.tables.length === 0) {
+                description += `\nDATABASE STATUS: Empty (No tables found)\n`;
+                document.getElementById('aiDescriptionText').value = description;
+                document.getElementById('descriptionLoading').style.display = 'none';
+                document.getElementById('copyDescBtn').disabled = false;
+                showMessage('aiPromptMessage', '✅ Database description generated', 'success');
+                return;
+            }
+
+            description += `\nTABLES IN DATABASE:\n`;
+            description += `${'='.repeat(60)}\n\n`;
+
+            // Get structure for each table
+            let totalRecords = 0;
+            for (let i = 0; i < tablesResult.tables.length; i++) {
+                const tableName = tablesResult.tables[i];
+                
+                // Get table structure
+                const structureResult = await apiRequest('get_table_structure', {
+                    db_host: conn.host,
+                    db_name: conn.dbName,
+                    db_user: conn.username,
+                    db_pass: conn.password,
+                    db_port: conn.port,
+                    table_name: tableName
+                });
+
+                // Get table data count
+                const dataResult = await apiRequest('get_table_data', {
+                    db_host: conn.host,
+                    db_name: conn.dbName,
+                    db_user: conn.username,
+                    db_pass: conn.password,
+                    db_port: conn.port,
+                    table_name: tableName,
+                    page: 1,
+                    limit: 1
+                });
+
+                if (structureResult.success && dataResult.success) {
+                    const rowCount = dataResult.pagination.total_rows;
+                    totalRecords += rowCount;
+
+                    description += `TABLE ${i + 1}: ${tableName}\n`;
+                    description += `${'-'.repeat(60)}\n`;
+                    description += `Records: ${rowCount.toLocaleString()} rows\n`;
+                    description += `Columns: ${structureResult.columns.length}\n\n`;
+
+                    description += `Column Structure:\n`;
+                    structureResult.columns.forEach((col, idx) => {
+                        description += `  ${idx + 1}. ${col.Field}\n`;
+                        description += `     Type: ${col.Type}\n`;
+                        description += `     Null: ${col.Null}\n`;
+                        if (col.Key) description += `     Key: ${col.Key}\n`;
+                        if (col.Default !== null) description += `     Default: ${col.Default}\n`;
+                        if (col.Extra) description += `     Extra: ${col.Extra}\n`;
+                        description += `\n`;
+                    });
+
+                    description += `\n`;
+                }
+            }
+
+            description += `\n${'='.repeat(60)}\n`;
+            description += `\nSUMMARY:\n`;
+            description += `- Total Tables: ${tablesResult.tables.length}\n`;
+            description += `- Total Records Across All Tables: ${totalRecords.toLocaleString()}\n`;
+            description += `- Database Type: Relational (MySQL)\n`;
+            description += `- Server Environment: ${conn.type === 'vps' ? 'VPS (Full Control)' : 'Shared Hosting (Limited Privileges)'}\n\n`;
+
+            description += `RECOMMENDATIONS FOR AI:\n`;
+            description += `- Use this structure information when generating queries\n`;
+            description += `- Respect foreign key relationships if present\n`;
+            description += `- Consider table sizes when performing operations\n`;
+            description += `- Use appropriate indexes for optimization\n`;
+            description += `- Follow naming conventions observed in the schema\n`;
+
+            // Set the description
+            document.getElementById('aiDescriptionText').value = description;
+            document.getElementById('descriptionLoading').style.display = 'none';
+            document.getElementById('copyDescBtn').disabled = false;
+            showMessage('aiPromptMessage', `✅ Database description generated (${tablesResult.tables.length} tables analyzed)`, 'success');
+        }
+
+        // Copy Database Description to clipboard
+        async function copyDatabaseDescription() {
+            const descText = document.getElementById('aiDescriptionText').value;
+            
+            try {
+                await navigator.clipboard.writeText(descText);
+                showMessage('aiPromptMessage', '✅ Database description copied to clipboard!', 'success');
+                
+                // Visual feedback
+                const btn = document.getElementById('copyDescBtn');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<span>✅</span> Copied!';
+                btn.style.background = '#22c55e';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.style.background = '';
+                }, 2000);
+            } catch (err) {
+                // Fallback
+                const textarea = document.getElementById('aiDescriptionText');
+                textarea.select();
+                document.execCommand('copy');
+                showMessage('aiPromptMessage', '✅ Database description copied to clipboard!', 'success');
             }
         }
 
