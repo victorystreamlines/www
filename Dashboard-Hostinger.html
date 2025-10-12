@@ -1876,6 +1876,9 @@ PHASE: Hostinger Edition
                                 <button class="btn btn-secondary" onclick="clearSearch()">
                                     <span>✖️</span> Clear
                                 </button>
+                                <button class="btn btn-primary" onclick="injectRandomRecordsFromEdit()" style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);">
+                                    <span>🎲</span> Inject 10 Random
+                                </button>
                                 <button class="btn btn-primary" onclick="showRecordForm('add')" style="background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);">
                                     <span>➕</span> Add New Record
                                 </button>
@@ -4028,7 +4031,7 @@ PHASE: Hostinger Edition
             return records;
         }
 
-        // Inject random records into current table
+        // Inject random records into current table (from List Tables)
         async function injectRandomRecords() {
             if (!selectedDatabaseId || !currentTableName) {
                 showMessage('tableDataMessage', '❌ No table selected', 'error');
@@ -4089,6 +4092,60 @@ PHASE: Hostinger Edition
                 viewTableData(currentTableName, currentTablePage);
             } else {
                 showMessage('tableDataMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Inject random records from Edit Table (Manage Data tab)
+        async function injectRandomRecordsFromEdit() {
+            if (!selectedDatabaseId || !currentEditTableName) {
+                showMessage('editTableMessage', '❌ No table selected', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('editTableMessage', '❌ Connection not found', 'error');
+                return;
+            }
+
+            // Use existing columns structure if available
+            if (currentEditTableColumns.length === 0) {
+                showMessage('editTableMessage', '❌ Table structure not loaded', 'error');
+                return;
+            }
+
+            // Generate random records
+            showMessage('editTableMessage', '🔄 Generating random data...', 'info');
+            const randomRecords = generateRandomRecords(currentEditTableColumns, 10);
+
+            if (randomRecords.length === 0) {
+                showMessage('editTableMessage', '❌ Could not generate records (table has only auto-increment columns?)', 'error');
+                return;
+            }
+
+            // Insert records
+            showMessage('editTableMessage', '🔄 Injecting 10 random records...', 'info');
+
+            const result = await apiRequest('insert_random_data', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                table_name: currentEditTableName,
+                records_data: JSON.stringify(randomRecords),
+                record_count: 10
+            });
+
+            if (result.success) {
+                showMessage('editTableMessage', `✅ ${result.message}`, 'success');
+                // Reload data to show new records
+                loadTableRecordsForManagement(currentDataPage, currentSearchTerm);
+            } else {
+                showMessage('editTableMessage', `❌ ${result.message}`, 'error');
             }
         }
 
