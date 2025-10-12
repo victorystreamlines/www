@@ -1775,7 +1775,11 @@ PHASE: Hostinger Edition
 
         <!-- Edit Table Section - HIDDEN -->
         <section id="editTable" class="section hidden-section">
-            <div id="editTableConnectionStatus" class="connection-status"></div>
+            <!-- Selected Database Display -->
+            <div style="background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #86efac; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-weight: 500;">
+                ✅ Editing tables in: <strong id="editTableDbName" style="color: #fbbf24;">Database Name</strong>
+            </div>
+
             <div class="card">
                 <h2 class="card-title">
                     <span class="card-title-icon">✏️</span>
@@ -1788,6 +1792,7 @@ PHASE: Hostinger Edition
                     <select id="editTableSelect" class="form-select" onchange="loadTableStructure()" required>
                         <option value="">-- Select Table --</option>
                     </select>
+                    <div class="helper-text" id="editTableHelper">💡 Select a database from Dashboard to see available tables</div>
                 </div>
 
                 <div id="currentStructure" style="display: none;">
@@ -2012,6 +2017,12 @@ PHASE: Hostinger Edition
                 updateSelectedDatabaseDisplay();
             } else if (sectionId === 'createTable') {
                 updateCreateTableDatabaseDisplay();
+            } else if (sectionId === 'editTable') {
+                updateEditTableDatabaseDisplay();
+                // Auto-load tables for dropdown
+                if (selectedDatabaseId) {
+                    loadTablesForDropdowns();
+                }
             } else if (sectionId === 'listTables') {
                 // Auto-load tables when entering List Tables section
                 if (selectedDatabaseId) {
@@ -2025,6 +2036,26 @@ PHASE: Hostinger Edition
             setTimeout(() => {
                 loadSelectedDatabase();
             }, 50);
+        }
+
+        // Update selected database display in Edit Table section
+        function updateEditTableDatabaseDisplay() {
+            const displayEl = document.getElementById('editTableDbName');
+            if (!displayEl) return;
+
+            if (selectedDatabaseId) {
+                const connId = selectedDatabaseId.replace('conn_', '');
+                const connections = getHostingerConnections();
+                const conn = connections.find(c => c.id === connId);
+                
+                if (conn) {
+                    displayEl.textContent = `${conn.name} (${conn.dbName})`;
+                } else {
+                    displayEl.textContent = 'None - Please select from Dashboard';
+                }
+            } else {
+                displayEl.textContent = 'None - Please select from Dashboard';
+            }
         }
 
         // Update selected database display in Create Table section
@@ -2142,6 +2173,9 @@ PHASE: Hostinger Edition
                 // Update selected database display in Create Table section
                 updateCreateTableDatabaseDisplay();
 
+                // Update selected database display in Edit Table section
+                updateEditTableDatabaseDisplay();
+
                 // Show TABLE OPERATIONS in sidebar
                 showTableOperations();
             }
@@ -2198,6 +2232,9 @@ PHASE: Hostinger Edition
 
             // Update selected database display in Create Table section
             updateCreateTableDatabaseDisplay();
+
+            // Update selected database display in Edit Table section
+            updateEditTableDatabaseDisplay();
 
             // Show TABLE OPERATIONS in sidebar
             showTableOperations();
@@ -3896,9 +3933,21 @@ PHASE: Hostinger Edition
 
         // Load tables for dropdowns
         async function loadTablesForDropdowns() {
-            if (!currentDatabase) return;
+            if (!selectedDatabaseId) return;
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
             
-            const result = await apiRequest('list_tables', { db_name: currentDatabase });
+            if (!conn) return;
+            
+            const result = await apiRequest('list_tables', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port
+            });
             
             if (result.success) {
                 const options = result.tables.map(table => 
@@ -3993,13 +4042,26 @@ PHASE: Hostinger Edition
         async function loadTableStructure() {
             const tableName = document.getElementById('editTableSelect').value;
             
-            if (!tableName || !currentDatabase) {
+            if (!tableName || !selectedDatabaseId) {
                 document.getElementById('currentStructure').style.display = 'none';
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('editTableMessage', '❌ Connection not found', 'error');
                 return;
             }
             
             const result = await apiRequest('get_table_structure', {
-                db_name: currentDatabase,
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
                 table_name: tableName
             });
             
@@ -4033,8 +4095,17 @@ PHASE: Hostinger Edition
         async function addColumn() {
             const tableName = document.getElementById('editTableSelect').value;
             
-            if (!tableName || !currentDatabase) {
+            if (!tableName || !selectedDatabaseId) {
                 showMessage('editTableMessage', '❌ Please select a table first', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('editTableMessage', '❌ Connection not found', 'error');
                 return;
             }
             
@@ -4054,7 +4125,11 @@ PHASE: Hostinger Edition
             showMessage('editTableMessage', '🔄 Adding column...', 'info');
             
             const result = await apiRequest('alter_table', {
-                db_name: currentDatabase,
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
                 table_name: tableName,
                 alter_action: 'add',
                 column_data: JSON.stringify(columnData)
@@ -4076,11 +4151,29 @@ PHASE: Hostinger Edition
             if (!confirm(`Are you sure you want to drop column "${columnName}" from table "${tableName}"?\n\nThis action cannot be undone!`)) {
                 return;
             }
+
+            if (!selectedDatabaseId) {
+                showMessage('editTableMessage', '❌ No database selected', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('editTableMessage', '❌ Connection not found', 'error');
+                return;
+            }
             
             showMessage('editTableMessage', '🔄 Dropping column...', 'info');
             
             const result = await apiRequest('alter_table', {
-                db_name: currentDatabase,
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
                 table_name: tableName,
                 alter_action: 'drop',
                 column_data: JSON.stringify({ name: columnName })

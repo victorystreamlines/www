@@ -636,23 +636,41 @@ function renameTable($dbName, $oldName, $newName) {
 }
 
 /**
- * Alter table (add, modify, or drop column)
+ * Alter table (add, modify, or drop column) with Hostinger credentials
  */
-function alterTable($dbName, $tableName, $action, $columnDataJson) {
+function alterTable() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $tableName = $_POST['table_name'] ?? '';
+    $action = $_POST['alter_action'] ?? '';
+    $columnDataJson = $_POST['column_data'] ?? '';
+
+    if (empty($host) || empty($dbName) || empty($username) || empty($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required connection parameters');
+        return;
+    }
+
     if (!validateDatabaseName($dbName)) {
         http_response_code(400);
         sendResponse(false, 'Invalid database name');
+        return;
     }
 
     if (!validateTableName($tableName)) {
         http_response_code(400);
         sendResponse(false, 'Invalid table name');
+        return;
     }
 
-    $conn = getConnection($dbName);
+    $conn = getConnection($host, $dbName, $username, $password, $port);
     if (!$conn) {
         http_response_code(500);
         sendResponse(false, 'Failed to connect to database');
+        return;
     }
 
     try {
@@ -682,6 +700,8 @@ function alterTable($dbName, $tableName, $action, $columnDataJson) {
                 if (isset($columnData['defaultValue']) && $columnData['defaultValue'] !== '') {
                     if (strtoupper($columnData['defaultValue']) === 'NULL') {
                         $colDef .= ' DEFAULT NULL';
+                    } elseif (strtoupper($columnData['defaultValue']) === 'CURRENT_TIMESTAMP') {
+                        $colDef .= ' DEFAULT CURRENT_TIMESTAMP';
                     } else {
                         $colDef .= ' DEFAULT ' . $conn->quote($columnData['defaultValue']);
                     }
@@ -709,6 +729,8 @@ function alterTable($dbName, $tableName, $action, $columnDataJson) {
                 if (isset($columnData['defaultValue']) && $columnData['defaultValue'] !== '') {
                     if (strtoupper($columnData['defaultValue']) === 'NULL') {
                         $colDef .= ' DEFAULT NULL';
+                    } elseif (strtoupper($columnData['defaultValue']) === 'CURRENT_TIMESTAMP') {
+                        $colDef .= ' DEFAULT CURRENT_TIMESTAMP';
                     } else {
                         $colDef .= ' DEFAULT ' . $conn->quote($columnData['defaultValue']);
                     }
@@ -737,23 +759,39 @@ function alterTable($dbName, $tableName, $action, $columnDataJson) {
 }
 
 /**
- * Get table structure (columns info)
+ * Get table structure (columns info) with Hostinger credentials
  */
-function getTableStructure($dbName, $tableName) {
+function getTableStructure() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $tableName = $_POST['table_name'] ?? '';
+
+    if (empty($host) || empty($dbName) || empty($username) || empty($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required connection parameters');
+        return;
+    }
+
     if (!validateDatabaseName($dbName)) {
         http_response_code(400);
         sendResponse(false, 'Invalid database name');
+        return;
     }
 
     if (!validateTableName($tableName)) {
         http_response_code(400);
         sendResponse(false, 'Invalid table name');
+        return;
     }
 
-    $conn = getConnection($dbName);
+    $conn = getConnection($host, $dbName, $username, $password, $port);
     if (!$conn) {
         http_response_code(500);
         sendResponse(false, 'Failed to connect to database');
+        return;
     }
 
     try {
@@ -1338,17 +1376,11 @@ switch ($action) {
         break;
 
     case 'alter_table':
-        $dbName = $_POST['db_name'] ?? '';
-        $tableName = $_POST['table_name'] ?? '';
-        $action = $_POST['alter_action'] ?? '';
-        $columnData = $_POST['column_data'] ?? '';
-        alterTable($dbName, $tableName, $action, $columnData);
+        alterTable();
         break;
 
     case 'get_table_structure':
-        $dbName = $_POST['db_name'] ?? '';
-        $tableName = $_POST['table_name'] ?? '';
-        getTableStructure($dbName, $tableName);
+        getTableStructure();
         break;
 
     case 'export_connections':
