@@ -1924,16 +1924,17 @@ PHASE: Hostinger Edition
                     <div class="helper-text" id="editTableHelper">💡 Select a database from Dashboard to see available tables</div>
                 </div>
 
-                <!-- Tabs for Structure / Manage Data -->
+                <!-- Tabs for Structure / Manage Data / Table Info -->
                 <div id="editTableTabs" style="display: none;">
                     <div style="background: rgba(59, 130, 246, 0.1); padding: 12px 15px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3); margin-bottom: 15px;">
                         <div style="font-size: 13px; color: rgba(254, 243, 199, 0.9);">
-                            <strong>💡 Two Modes:</strong> <strong style="color: #fbbf24;">Table Structure</strong> to modify columns | <strong style="color: #22c55e;">Manage Data (CRUD)</strong> to add/edit/delete records
+                            <strong>💡 Three Modes:</strong> <strong style="color: #fbbf24;">Structure</strong> to modify columns | <strong style="color: #22c55e;">Manage Data</strong> to CRUD records | <strong style="color: #3b82f6;">Table Info</strong> for AI context
                         </div>
                     </div>
                     <div class="tab-buttons" style="margin: 20px 0;">
                         <button class="tab-btn active" onclick="switchEditTab('structure')">🏗️ Table Structure</button>
                         <button class="tab-btn" onclick="switchEditTab('manageData')">📝 Manage Data (CRUD)</button>
+                        <button class="tab-btn" onclick="switchEditTab('tableInfo')">🤖 Table Info for AI</button>
                     </div>
 
                     <!-- Structure Tab -->
@@ -2001,6 +2002,34 @@ PHASE: Hostinger Edition
 
                         <!-- Pagination for data -->
                         <div id="dataPagination" style="margin-top: 20px;"></div>
+                    </div>
+
+                    <!-- Table Info for AI Tab -->
+                    <div id="editTableInfoTab" class="tab-content">
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h3 style="color: #fbbf24; margin: 0;">🤖 Table Information for AI</h3>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="btn btn-secondary" onclick="generateTableInfo()">
+                                        <span>🔄</span> Refresh Info
+                                    </button>
+                                    <button class="btn btn-primary" onclick="copyTableInfo()">
+                                        <span>📋</span> Copy to Clipboard
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
+                                <strong style="color: #fbbf24;">💡 How to use:</strong> This generates a detailed description of this specific table for AI context. Perfect for asking AI to work with this table's data.
+                            </div>
+
+                            <div id="tableInfoLoading" style="display: none; text-align: center; padding: 40px;">
+                                <div class="spinner"></div>
+                                <div style="margin-top: 15px; color: rgba(254, 243, 199, 0.8);">Analyzing table structure...</div>
+                            </div>
+
+                            <textarea id="tableInfoText" readonly style="width: 100%; min-height: 450px; padding: 20px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(251, 191, 36, 0.3); border-radius: 8px; color: #86efac; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.6; resize: vertical;">Table information will be generated automatically when you select a table...</textarea>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -5052,17 +5081,28 @@ OVERVIEW:
 
         // Switch between tabs in Edit Table
         function switchEditTab(tabName) {
-            document.querySelectorAll('#editTableTabs .tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('#editTableTabs .tab-content').forEach(content => content.classList.remove('active'));
+            const editSection = document.getElementById('editTableTabs');
+            if (!editSection) return;
+
+            editSection.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById('editStructureTab').classList.remove('active');
+            document.getElementById('editDataTab').classList.remove('active');
+            document.getElementById('editTableInfoTab').classList.remove('active');
             
             if (tabName === 'structure') {
-                document.querySelector('#editTableTabs .tab-btn:nth-child(1)').classList.add('active');
+                editSection.querySelector('.tab-btn:nth-child(1)').classList.add('active');
                 document.getElementById('editStructureTab').classList.add('active');
             } else if (tabName === 'manageData') {
-                document.querySelector('#editTableTabs .tab-btn:nth-child(2)').classList.add('active');
+                editSection.querySelector('.tab-btn:nth-child(2)').classList.add('active');
                 document.getElementById('editDataTab').classList.add('active');
                 // Load data when switching to manage data tab
                 loadTableRecordsForManagement(1);
+            } else if (tabName === 'tableInfo') {
+                editSection.querySelector('.tab-btn:nth-child(3)').classList.add('active');
+                document.getElementById('editTableInfoTab').classList.add('active');
+                // Generate table info when switching to this tab
+                generateTableInfo();
             }
         }
 
@@ -5648,6 +5688,173 @@ OVERVIEW:
                 loadTableRecordsForManagement(currentDataPage, currentSearchTerm);
             } else {
                 showMessage('editTableMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Generate Table Info for AI
+        async function generateTableInfo() {
+            if (!selectedDatabaseId || !currentEditTableName) {
+                document.getElementById('tableInfoText').value = 'Please select a table first...';
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                document.getElementById('tableInfoText').value = 'Connection not found...';
+                return;
+            }
+
+            // Show loading
+            document.getElementById('tableInfoLoading').style.display = 'block';
+            document.getElementById('tableInfoText').value = 'Analyzing table structure...';
+
+            // Get table data with info
+            const dataResult = await apiRequest('get_table_data', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                table_name: currentEditTableName,
+                page: 1,
+                limit: 5  // Get first 5 rows as sample
+            });
+
+            if (!dataResult.success) {
+                document.getElementById('tableInfoLoading').style.display = 'none';
+                document.getElementById('tableInfoText').value = `Error: ${dataResult.message}`;
+                return;
+            }
+
+            // Build table info description
+            const info = dataResult.table_info;
+            const pagination = dataResult.pagination;
+            const columns = dataResult.columns;
+            const sampleData = dataResult.data;
+
+            let description = `TABLE INFORMATION FOR AI
+=====================================
+
+Database: ${conn.dbName}
+Table Name: ${currentEditTableName}
+Connection: ${conn.name}
+
+TABLE OVERVIEW:
+- Total Records: ${pagination.total_rows.toLocaleString()} rows
+- Total Columns: ${columns.length}
+- Engine: ${info.engine}
+- Collation: ${info.collation}
+- Data Size: ${formatBytes(info.data_length)}
+- Average Row Length: ${info.avg_row_length} bytes
+${info.created ? `- Created: ${new Date(info.created).toLocaleString()}` : ''}
+${info.updated ? `- Last Updated: ${new Date(info.updated).toLocaleString()}` : ''}
+
+COLUMN STRUCTURE:
+${'='.repeat(60)}
+
+`;
+
+            // List all columns with details
+            columns.forEach((col, idx) => {
+                description += `${idx + 1}. ${col.Field}\n`;
+                description += `   Type: ${col.Type}\n`;
+                description += `   Nullable: ${col.Null}\n`;
+                if (col.Key) {
+                    let keyType = '';
+                    if (col.Key === 'PRI') keyType = 'PRIMARY KEY';
+                    else if (col.Key === 'UNI') keyType = 'UNIQUE';
+                    else if (col.Key === 'MUL') keyType = 'INDEX';
+                    description += `   Key: ${keyType}\n`;
+                }
+                if (col.Default !== null) description += `   Default: ${col.Default}\n`;
+                if (col.Extra) description += `   Extra: ${col.Extra}\n`;
+                description += `\n`;
+            });
+
+            // Sample data (first 5 rows)
+            if (sampleData.length > 0) {
+                description += `\nSAMPLE DATA (First ${sampleData.length} rows):\n`;
+                description += `${'='.repeat(60)}\n\n`;
+                
+                sampleData.forEach((row, idx) => {
+                    description += `Record ${idx + 1}:\n`;
+                    columns.forEach(col => {
+                        const value = row[col.Field];
+                        const displayValue = value === null ? 'NULL' : 
+                                           typeof value === 'string' && value.length > 100 ? value.substring(0, 100) + '...' : 
+                                           value;
+                        description += `  ${col.Field}: ${displayValue}\n`;
+                    });
+                    description += `\n`;
+                });
+            }
+
+            description += `\nDATA STATISTICS:\n`;
+            description += `${'='.repeat(60)}\n`;
+            description += `- Total Rows: ${pagination.total_rows.toLocaleString()}\n`;
+            description += `- Table Size: ${formatBytes(info.data_length)}\n`;
+            description += `- Average Row Size: ${info.avg_row_length} bytes\n`;
+            description += `- Estimated Total Size: ${formatBytes(info.data_length)}\n\n`;
+
+            description += `COLUMN SUMMARY:\n`;
+            description += `- Total Columns: ${columns.length}\n`;
+            
+            // Count column types
+            const primaryKeys = columns.filter(c => c.Key === 'PRI').map(c => c.Field);
+            const uniqueKeys = columns.filter(c => c.Key === 'UNI').map(c => c.Field);
+            const requiredCols = columns.filter(c => c.Null === 'NO').length;
+            const autoIncrementCols = columns.filter(c => c.Extra && c.Extra.includes('auto_increment')).map(c => c.Field);
+            
+            if (primaryKeys.length > 0) description += `- Primary Keys: ${primaryKeys.join(', ')}\n`;
+            if (uniqueKeys.length > 0) description += `- Unique Keys: ${uniqueKeys.join(', ')}\n`;
+            if (autoIncrementCols.length > 0) description += `- Auto Increment: ${autoIncrementCols.join(', ')}\n`;
+            description += `- Required Fields: ${requiredCols} columns\n`;
+            description += `- Optional Fields: ${columns.length - requiredCols} columns\n\n`;
+
+            description += `RECOMMENDATIONS FOR AI:\n`;
+            description += `- Use column names exactly as shown above\n`;
+            description += `- Respect NOT NULL constraints\n`;
+            description += `- Auto-increment columns should not be included in INSERT statements\n`;
+            description += `- Primary key is: ${primaryKeys.length > 0 ? primaryKeys[0] : 'Not defined'}\n`;
+            description += `- Consider data types when generating INSERT/UPDATE queries\n`;
+            description += `- Sample data above shows actual data patterns in this table\n`;
+
+            // Set the description
+            document.getElementById('tableInfoText').value = description;
+            document.getElementById('tableInfoLoading').style.display = 'none';
+        }
+
+        // Copy Table Info to clipboard
+        async function copyTableInfo() {
+            const infoText = document.getElementById('tableInfoText').value;
+            
+            try {
+                await navigator.clipboard.writeText(infoText);
+                showMessage('editTableMessage', '✅ Table information copied to clipboard!', 'success');
+                
+                // Visual feedback
+                const btns = document.querySelectorAll('#editTableInfoTab .btn-primary');
+                btns.forEach(btn => {
+                    if (btn.textContent.includes('Copy')) {
+                        const originalHtml = btn.innerHTML;
+                        btn.innerHTML = '<span>✅</span> Copied!';
+                        btn.style.background = '#22c55e';
+                        
+                        setTimeout(() => {
+                            btn.innerHTML = originalHtml;
+                            btn.style.background = '';
+                        }, 2000);
+                    }
+                });
+            } catch (err) {
+                // Fallback
+                const textarea = document.getElementById('tableInfoText');
+                textarea.select();
+                document.execCommand('copy');
+                showMessage('editTableMessage', '✅ Table information copied to clipboard!', 'success');
             }
         }
 
