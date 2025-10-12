@@ -1619,6 +1619,7 @@ PHASE: Hostinger Edition
                 <div class="tab-buttons">
                     <button class="tab-btn active" onclick="switchDatabaseSQLTab('generate')">🗄️ Generate SQL Dump</button>
                     <button class="tab-btn" onclick="switchDatabaseSQLTab('executor')">⚡ SQL Executor</button>
+                    <button class="tab-btn" onclick="switchDatabaseSQLTab('migration')">🔄 Database Migration</button>
                 </div>
 
                 <!-- Tab 1: Generation Options -->
@@ -1841,6 +1842,110 @@ PHASE: Hostinger Edition
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Database Migration -->
+                <div id="migrationTab" class="tab-content">
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h3 style="color: #fbbf24; margin-bottom: 15px;">🔄 Database Migration</h3>
+                        
+                        <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 13px;">
+                            <strong style="color: #93c5fd;">💡 Migration:</strong> Copy all tables and data from the selected (source) database to another (destination) database.
+                        </div>
+
+                        <!-- Source Database -->
+                        <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <h4 style="color: #86efac; margin: 0 0 10px 0;">📤 Source Database (Selected)</h4>
+                            <div style="font-size: 16px; color: #fef3c7; font-weight: bold;" id="migrationSourceDb">None selected</div>
+                            <div style="font-size: 13px; color: rgba(254, 243, 199, 0.7); margin-top: 5px;" id="migrationSourceInfo">Please select a database from Dashboard</div>
+                        </div>
+
+                        <!-- Destination Database -->
+                        <div class="form-group">
+                            <label class="form-label">📥 Destination Database</label>
+                            <select id="migrationDestinationDb" class="form-select" onchange="updateMigrationDestinationInfo()">
+                                <option value="">-- Select Destination Database --</option>
+                            </select>
+                            <div class="helper-text" id="migrationDestInfo">Choose where to migrate the data</div>
+                        </div>
+
+                        <!-- Migration Type -->
+                        <div class="form-group">
+                            <label class="form-label">🔧 Migration Type</label>
+                            
+                            <!-- Option 1: Overwrite -->
+                            <div style="background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; border-radius: 10px; padding: 15px; margin-bottom: 15px; cursor: pointer; transition: all 0.3s;" onclick="selectMigrationType('overwrite')" id="migrationType_overwrite">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <input type="radio" name="migrationType" value="overwrite" id="migrationOverwrite" style="width: 20px; height: 20px; cursor: pointer;">
+                                    <div style="flex: 1;">
+                                        <h4 style="color: #fca5a5; margin: 0 0 8px 0;">⚠️ Overwrite (Replace All)</h4>
+                                        <p style="margin: 0; font-size: 13px; color: rgba(254, 243, 199, 0.8);">
+                                            <strong>Deletes ALL tables</strong> in destination, then creates fresh copy from source.<br>
+                                            ⚠️ <strong>Warning:</strong> All existing data in destination will be LOST!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Option 2: Append -->
+                            <div style="background: rgba(34, 197, 94, 0.1); border: 2px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.3s;" onclick="selectMigrationType('append')" id="migrationType_append">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <input type="radio" name="migrationType" value="append" id="migrationAppend" style="width: 20px; height: 20px; cursor: pointer;">
+                                    <div style="flex: 1;">
+                                        <h4 style="color: #86efac; margin: 0 0 8px 0;">✅ Append (Merge Data)</h4>
+                                        <p style="margin: 0; font-size: 13px; color: rgba(254, 243, 199, 0.8);">
+                                            <strong>Adds data</strong> from source to destination without deleting existing tables.<br>
+                                            ✅ <strong>Safe:</strong> Existing data preserved. New tables created if missing.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Migration Options -->
+                        <div id="migrationOptions" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 8px; padding: 15px; margin-bottom: 20px; display: none;">
+                            <h4 style="color: #fbbf24; margin: 0 0 15px 0;">⚙️ Migration Options</h4>
+                            
+                            <div class="checkbox-group" style="margin-bottom: 10px;">
+                                <input type="checkbox" id="migrationIncludeData" checked>
+                                <label for="migrationIncludeData">Include table data (INSERT statements)</label>
+                            </div>
+                            
+                            <div class="checkbox-group" style="margin-bottom: 10px;">
+                                <input type="checkbox" id="migrationCreateDatabase">
+                                <label for="migrationCreateDatabase">Create destination database if not exists (requires ROOT)</label>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 15px;">
+                                <label class="form-label">Batch Size (records per transaction)</label>
+                                <input type="number" id="migrationBatchSize" class="form-input" value="100" min="1" max="1000">
+                                <div class="helper-text">Lower for slower servers, higher for faster migration</div>
+                            </div>
+                        </div>
+
+                        <!-- Migrate Button -->
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary" onclick="startDatabaseMigration()" id="startMigrationBtn" disabled style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);">
+                                <span>🚀</span> Start Migration
+                            </button>
+                            <button class="btn btn-secondary" onclick="showMigrationOptions()">
+                                <span>⚙️</span> Advanced Options
+                            </button>
+                        </div>
+
+                        <!-- Migration Progress -->
+                        <div id="migrationProgress" style="display: none; margin-top: 20px; background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 8px; padding: 20px;">
+                            <h4 style="color: #93c5fd; margin: 0 0 15px 0;">📊 Migration Progress</h4>
+                            <div id="migrationProgressDetails"></div>
+                            <div style="background: rgba(0,0,0,0.3); height: 30px; border-radius: 15px; overflow: hidden; margin-top: 15px;">
+                                <div id="migrationProgressBar" style="height: 100%; background: linear-gradient(90deg, #22c55e 0%, #15803d 100%); width: 0%; transition: width 0.3s;"></div>
+                            </div>
+                            <div id="migrationProgressText" style="text-align: center; margin-top: 10px; color: #fef3c7; font-weight: bold;">0%</div>
+                        </div>
+
+                        <!-- Migration Results -->
+                        <div id="migrationResults" style="display: none; margin-top: 20px;"></div>
                     </div>
                 </div>
             </div>
@@ -2938,16 +3043,23 @@ OVERVIEW:
 
             section.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             
+            document.getElementById('generateSQLTab').classList.remove('active');
+            document.getElementById('sqlExecutorTab').classList.remove('active');
+            document.getElementById('migrationTab').classList.remove('active');
+            
             if (tabName === 'generate') {
                 section.querySelector('.tab-btn:nth-child(1)').classList.add('active');
                 document.getElementById('generateSQLTab').classList.add('active');
-                document.getElementById('sqlExecutorTab').classList.remove('active');
             } else if (tabName === 'executor') {
                 section.querySelector('.tab-btn:nth-child(2)').classList.add('active');
                 document.getElementById('sqlExecutorTab').classList.add('active');
-                document.getElementById('generateSQLTab').classList.remove('active');
                 // Initialize autocomplete when switching to executor tab
                 initSQLAutocomplete();
+            } else if (tabName === 'migration') {
+                section.querySelector('.tab-btn:nth-child(3)').classList.add('active');
+                document.getElementById('migrationTab').classList.add('active');
+                // Initialize migration tab
+                initMigrationTab();
             }
         }
 
@@ -3981,6 +4093,357 @@ OVERVIEW:
                     ghost.style.padding = styles.padding;
                 }
             }, 100);
+        }
+
+        // ========================================
+        // DATABASE MIGRATION FUNCTIONS
+        // ========================================
+
+        // Initialize migration tab
+        function initMigrationTab() {
+            // Update source database display
+            if (selectedDatabaseId) {
+                const connId = selectedDatabaseId.replace('conn_', '');
+                const connections = getHostingerConnections();
+                const conn = connections.find(c => c.id === connId);
+                
+                if (conn) {
+                    document.getElementById('migrationSourceDb').textContent = `${conn.name} (${conn.dbName})`;
+                    document.getElementById('migrationSourceInfo').textContent = `Host: ${conn.host} | Type: ${conn.type}`;
+                    
+                    // Load destination options (all connections except source)
+                    const destSelect = document.getElementById('migrationDestinationDb');
+                    destSelect.innerHTML = '<option value="">-- Select Destination Database --</option>';
+                    
+                    connections.forEach(c => {
+                        if (c.id !== connId) {
+                            destSelect.innerHTML += `<option value="${c.id}">${c.name} (${c.dbName}) - ${c.host}</option>`;
+                        }
+                    });
+                } else {
+                    document.getElementById('migrationSourceDb').textContent = 'None selected';
+                    document.getElementById('migrationSourceInfo').textContent = 'Please select a database from Dashboard';
+                }
+            } else {
+                document.getElementById('migrationSourceDb').textContent = 'None selected';
+                document.getElementById('migrationSourceInfo').textContent = 'Please select a database from Dashboard';
+            }
+        }
+
+        // Update destination info
+        function updateMigrationDestinationInfo() {
+            const destId = document.getElementById('migrationDestinationDb').value;
+            const infoEl = document.getElementById('migrationDestInfo');
+            const startBtn = document.getElementById('startMigrationBtn');
+            
+            if (destId) {
+                const connections = getHostingerConnections();
+                const conn = connections.find(c => c.id === destId);
+                if (conn) {
+                    infoEl.textContent = `📥 Destination: ${conn.host} | ${conn.type} | ${conn.dbName}`;
+                    infoEl.style.color = '#22c55e';
+                    if (startBtn) startBtn.disabled = false;
+                }
+            } else {
+                infoEl.textContent = 'Choose where to migrate the data';
+                infoEl.style.color = '';
+                if (startBtn) startBtn.disabled = true;
+            }
+        }
+
+        // Select migration type
+        function selectMigrationType(type) {
+            document.getElementById('migrationOverwrite').checked = (type === 'overwrite');
+            document.getElementById('migrationAppend').checked = (type === 'append');
+            
+            // Visual feedback
+            const overwriteCard = document.getElementById('migrationType_overwrite');
+            const appendCard = document.getElementById('migrationType_append');
+            
+            if (type === 'overwrite') {
+                overwriteCard.style.borderColor = '#ef4444';
+                overwriteCard.style.background = 'rgba(239, 68, 68, 0.2)';
+                appendCard.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+                appendCard.style.background = 'rgba(34, 197, 94, 0.1)';
+            } else {
+                appendCard.style.borderColor = '#22c55e';
+                appendCard.style.background = 'rgba(34, 197, 94, 0.2)';
+                overwriteCard.style.borderColor = '#ef4444';
+                overwriteCard.style.background = 'rgba(239, 68, 68, 0.1)';
+            }
+        }
+
+        // Show/Hide migration options
+        function showMigrationOptions() {
+            const optionsDiv = document.getElementById('migrationOptions');
+            if (optionsDiv.style.display === 'none' || !optionsDiv.style.display) {
+                optionsDiv.style.display = 'block';
+            } else {
+                optionsDiv.style.display = 'none';
+            }
+        }
+
+        // Start database migration
+        async function startDatabaseMigration() {
+            const sourceId = selectedDatabaseId;
+            const destId = document.getElementById('migrationDestinationDb').value;
+            const migrationType = document.querySelector('input[name="migrationType"]:checked')?.value;
+
+            if (!sourceId || !destId) {
+                showMessage('generateDatabaseMessage', '❌ Please select both source and destination databases', 'error');
+                return;
+            }
+
+            if (!migrationType) {
+                showMessage('generateDatabaseMessage', '❌ Please select migration type (Overwrite or Append)', 'error');
+                return;
+            }
+
+            const sourceConnId = sourceId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const sourceConn = connections.find(c => c.id === sourceConnId);
+            const destConn = connections.find(c => c.id === destId);
+
+            if (!sourceConn || !destConn) {
+                showMessage('generateDatabaseMessage', '❌ Connection not found', 'error');
+                return;
+            }
+
+            // Confirmation
+            const confirmMsg = migrationType === 'overwrite' 
+                ? `⚠️ OVERWRITE Migration\n\nThis will DELETE ALL tables in:\n"${destConn.name} (${destConn.dbName})"\n\nAnd replace with tables from:\n"${sourceConn.name} (${sourceConn.dbName})"\n\nAll existing data in destination will be LOST!\n\nAre you absolutely sure?`
+                : `✅ APPEND Migration\n\nThis will ADD tables and data from:\n"${sourceConn.name} (${sourceConn.dbName})"\n\nTo:\n"${destConn.name} (${destConn.dbName})"\n\nExisting data will be preserved.\n\nContinue?`;
+
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+
+            // Show progress
+            document.getElementById('migrationProgress').style.display = 'block';
+            document.getElementById('migrationResults').style.display = 'none';
+            document.getElementById('startMigrationBtn').disabled = true;
+            
+            updateMigrationProgress(0, 'Starting migration...');
+
+            const migrationLog = [];
+
+            try {
+                // Get source tables
+                updateMigrationProgress(5, 'Fetching source tables...');
+                const tablesResult = await apiRequest('list_tables', {
+                    db_host: sourceConn.host,
+                    db_name: sourceConn.dbName,
+                    db_user: sourceConn.username,
+                    db_pass: sourceConn.password,
+                    db_port: sourceConn.port
+                });
+
+                if (!tablesResult.success) {
+                    throw new Error(`Failed to get source tables: ${tablesResult.message}`);
+                }
+
+                const tables = tablesResult.tables;
+                const totalTables = tables.length;
+                
+                if (totalTables === 0) {
+                    throw new Error('Source database has no tables to migrate');
+                }
+
+                let migratedTables = 0;
+                let totalRecords = 0;
+                let failedTables = [];
+                const includeData = document.getElementById('migrationIncludeData').checked;
+
+                // Migrate each table
+                for (let i = 0; i < tables.length; i++) {
+                    const tableName = tables[i];
+                    const progress = 5 + ((i + 1) / totalTables) * 90; // 5-95%
+                    
+                    updateMigrationProgress(progress, `Migrating table ${i + 1}/${totalTables}: ${tableName}`);
+                    migrationLog.push(`\n📋 Processing: ${tableName}`);
+
+                    try {
+                        // Step 1: Get table SQL from source
+                        migrationLog.push(`  - Generating SQL from source...`);
+                        const sqlResult = await apiRequest('generate_table_sql', {
+                            db_host: sourceConn.host,
+                            db_name: sourceConn.dbName,
+                            db_user: sourceConn.username,
+                            db_pass: sourceConn.password,
+                            db_port: sourceConn.port,
+                            table_name: tableName,
+                            include_data: includeData ? 'true' : 'false'
+                        });
+
+                        if (!sqlResult.success) {
+                            migrationLog.push(`  ❌ Failed to generate SQL: ${sqlResult.message}`);
+                            failedTables.push({ table: tableName, error: sqlResult.message });
+                            continue;
+                        }
+
+                        migrationLog.push(`  ✅ SQL generated (${sqlResult.row_count || 0} rows)`);
+                        let sql = sqlResult.sql;
+
+                        // Step 2: Modify SQL based on migration type
+                        if (migrationType === 'append') {
+                            // For append, comment out DROP and use IF NOT EXISTS
+                            sql = sql.replace(/DROP TABLE IF EXISTS `\w+`;/gi, '-- $&');
+                            sql = sql.replace(/CREATE TABLE `/gi, 'CREATE TABLE IF NOT EXISTS `');
+                            migrationLog.push(`  - Modified for APPEND mode`);
+                        } else {
+                            migrationLog.push(`  - Using OVERWRITE mode (with DROP)`);
+                        }
+
+                        // Step 3: Split SQL into statements if needed
+                        const statements = sql.split(';').filter(s => s.trim().length > 0 && !s.trim().startsWith('--'));
+                        migrationLog.push(`  - Executing ${statements.length} SQL statement(s)...`);
+
+                        // Step 4: Execute each statement on destination
+                        for (const statement of statements) {
+                            const trimmedStmt = statement.trim();
+                            if (!trimmedStmt || trimmedStmt.startsWith('--')) continue;
+
+                            const execResult = await apiRequest('execute_sql', {
+                                db_host: destConn.host,
+                                db_name: destConn.dbName,
+                                db_user: destConn.username,
+                                db_pass: destConn.password,
+                                db_port: destConn.port,
+                                sql_query: trimmedStmt + ';'
+                            });
+
+                            if (!execResult.success) {
+                                migrationLog.push(`  ⚠️ Statement failed: ${execResult.message.substring(0, 100)}`);
+                                // Continue with other statements
+                            }
+                        }
+
+                        // Table migrated successfully
+                        migratedTables++;
+                        if (sqlResult.row_count) {
+                            totalRecords += sqlResult.row_count;
+                        }
+                        migrationLog.push(`  ✅ Table migrated successfully!`);
+
+                    } catch (tableError) {
+                        migrationLog.push(`  ❌ Error: ${tableError.message}`);
+                        failedTables.push({ table: tableName, error: tableError.message });
+                    }
+                }
+
+                // Complete
+                updateMigrationProgress(100, 'Migration completed!');
+                
+                // Show detailed results
+                const resultsMsg = migrationLog.join('\n');
+                console.log('Migration Log:\n', resultsMsg);
+                
+                showMigrationResults(true, migratedTables, totalTables, totalRecords, migrationType, failedTables);
+                
+            } catch (error) {
+                const errorDetails = migrationLog.join('\n') + '\n\n❌ Fatal Error: ' + error.message;
+                console.error('Migration Error:', errorDetails);
+                showMigrationResults(false, 0, 0, 0, migrationType, '', errorDetails);
+            } finally {
+                document.getElementById('startMigrationBtn').disabled = false;
+            }
+        }
+
+        // Update migration progress
+        function updateMigrationProgress(percentage, message) {
+            document.getElementById('migrationProgressBar').style.width = percentage + '%';
+            document.getElementById('migrationProgressText').textContent = Math.round(percentage) + '%';
+            document.getElementById('migrationProgressDetails').innerHTML = `
+                <div style="font-size: 14px; color: rgba(254, 243, 199, 0.9);">${message}</div>
+            `;
+        }
+
+        // Show migration results
+        function showMigrationResults(success, migratedTables, totalTables, totalRecords, type, failedTables = [], errorDetails = '') {
+            const container = document.getElementById('migrationResults');
+            container.style.display = 'block';
+
+            if (success && migratedTables > 0) {
+                let failedSection = '';
+                if (failedTables.length > 0) {
+                    failedSection = `
+                        <div style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; border-radius: 6px; padding: 15px; margin-top: 15px;">
+                            <h4 style="color: #fbbf24; margin: 0 0 10px 0;">⚠️ ${failedTables.length} Table(s) Failed:</h4>
+                            ${failedTables.map(f => `
+                                <div style="font-size: 13px; color: rgba(254, 243, 199, 0.8); margin-bottom: 8px;">
+                                    ❌ <strong>${f.table}</strong>: ${f.error.substring(0, 100)}
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = `
+                    <div style="background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; border-radius: 8px; padding: 20px;">
+                        <div style="font-size: 48px; text-align: center; margin-bottom: 15px;">${migratedTables === totalTables ? '✅' : '⚠️'}</div>
+                        <h3 style="color: #86efac; text-align: center; margin: 0 0 20px 0;">Migration ${migratedTables === totalTables ? 'Completed' : 'Partially Completed'}!</h3>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 6px;">
+                                <div style="font-size: 12px; color: rgba(254, 243, 199, 0.7);">Migration Type</div>
+                                <div style="font-size: 18px; color: #fbbf24; font-weight: bold;">${type === 'overwrite' ? '⚠️ Overwrite' : '✅ Append'}</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 6px;">
+                                <div style="font-size: 12px; color: rgba(254, 243, 199, 0.7);">Tables Migrated</div>
+                                <div style="font-size: 18px; color: ${migratedTables === totalTables ? '#22c55e' : '#f59e0b'}; font-weight: bold;">${migratedTables} / ${totalTables}</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 6px;">
+                                <div style="font-size: 12px; color: rgba(254, 243, 199, 0.7);">Records Migrated</div>
+                                <div style="font-size: 18px; color: #fbbf24; font-weight: bold;">${totalRecords.toLocaleString()}</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 20px; text-align: center; font-size: 14px; color: rgba(254, 243, 199, 0.9);">
+                            ${migratedTables === totalTables 
+                                ? `🎉 All data has been successfully ${type === 'overwrite' ? 'replaced' : 'merged'} in the destination database!`
+                                : `⚠️ ${migratedTables} of ${totalTables} tables migrated. Check console for details.`
+                            }
+                        </div>
+
+                        ${failedSection}
+
+                        <div style="margin-top: 15px; text-align: center;">
+                            <button class="btn btn-secondary" onclick="showMigrationLog()" style="padding: 8px 16px; font-size: 13px;">
+                                📋 View Migration Log
+                            </button>
+                        </div>
+                    </div>
+                `;
+                showMessage('generateDatabaseMessage', `✅ Migration completed! ${migratedTables}/${totalTables} tables migrated.`, migratedTables === totalTables ? 'success' : 'info');
+            } else {
+                container.innerHTML = `
+                    <div style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; border-radius: 8px; padding: 20px;">
+                        <div style="font-size: 48px; text-align: center; margin-bottom: 15px;">❌</div>
+                        <h3 style="color: #fca5a5; text-align: center; margin: 0 0 20px 0;">Migration Failed</h3>
+                        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 6px; font-family: monospace; font-size: 12px; color: #fef3c7; max-height: 300px; overflow-y: auto; white-space: pre-wrap;">
+${errorDetails || 'Unknown error occurred'}
+                        </div>
+                        <div style="margin-top: 15px; text-align: center;">
+                            <button class="btn btn-secondary" onclick="showMigrationLog()" style="padding: 8px 16px; font-size: 13px;">
+                                📋 View Full Log
+                            </button>
+                        </div>
+                    </div>
+                `;
+                showMessage('generateDatabaseMessage', `❌ Migration failed`, 'error');
+            }
+
+            setTimeout(() => {
+                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+
+        // Show migration log in console
+        function showMigrationLog() {
+            alert('📋 Migration log has been written to browser console.\n\nPress F12 and check the Console tab for detailed migration log.');
+            console.log('='.repeat(60));
+            console.log('MIGRATION LOG - Check messages above');
+            console.log('='.repeat(60));
         }
 
         // Expandable section toggle
