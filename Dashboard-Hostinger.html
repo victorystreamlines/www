@@ -734,6 +734,9 @@ PHASE: Hostinger Edition
             border-radius: 10px;
             padding: 20px;
             transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
         .table-item:hover {
@@ -741,6 +744,25 @@ PHASE: Hostinger Edition
             border-color: #fbbf24;
             transform: translateY(-3px);
             box-shadow: 0 5px 20px rgba(251, 191, 36, 0.3);
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 8px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(251, 191, 36, 0.15);
+        }
+
+        .table-actions .btn {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .table-actions .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .table-name {
@@ -806,6 +828,125 @@ PHASE: Hostinger Edition
         /* Hidden sections - for temporary hiding */
         .hidden-section {
             display: none !important;
+        }
+
+        /* Table Data Viewer Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+            font-size: 13px;
+        }
+
+        .data-table thead {
+            background: rgba(251, 191, 36, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table th {
+            padding: 12px 15px;
+            text-align: left;
+            color: #fbbf24;
+            font-weight: bold;
+            border-bottom: 2px solid rgba(251, 191, 36, 0.3);
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 10px 15px;
+            color: #fef3c7;
+            border-bottom: 1px solid rgba(251, 191, 36, 0.1);
+            word-wrap: break-word;
+            max-width: 300px;
+        }
+
+        .data-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        .data-table tbody tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .data-table tbody tr:nth-child(even):hover {
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:hover {
+            background: rgba(251, 191, 36, 0.1);
+            border-color: #fbbf24;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: rgba(254, 243, 199, 0.7);
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            color: #fbbf24;
+            font-weight: bold;
+        }
+
+        .pagination-info {
+            color: rgba(254, 243, 199, 0.8);
+            font-size: 14px;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .page-input {
+            width: 60px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 6px;
+            color: #fef3c7;
+            text-align: center;
+        }
+
+        /* SQL Modal specific styles */
+        #sqlCode {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(251, 191, 36, 0.5) rgba(0, 0, 0, 0.3);
+        }
+
+        #sqlCode::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        #sqlCode::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+        }
+
+        #sqlCode::-webkit-scrollbar-thumb {
+            background: rgba(251, 191, 36, 0.5);
+            border-radius: 5px;
+        }
+
+        #sqlCode::-webkit-scrollbar-thumb:hover {
+            background: rgba(251, 191, 36, 0.7);
         }
 
         /* Selected database card - Shiny/Glowing effect */
@@ -1338,11 +1479,33 @@ PHASE: Hostinger Edition
                     <div id="hostingerConnectionsTable"></div>
                 </div>
 
-                <!-- Clear All Button -->
-                <div style="margin-top: 30px;">
+                <!-- Export/Import Buttons -->
+                <div style="margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="exportConnectionsToFile()">
+                        <span>📤</span> Export (Save to File)
+                    </button>
+                    <button class="btn btn-primary" onclick="showImportModal()">
+                        <span>📥</span> Import (Load from File)
+                    </button>
                     <button class="btn btn-danger" onclick="clearAllHostingerConnections()">
                         <span>🗑️</span> Clear All Connections
                     </button>
+                </div>
+
+                <!-- Export/Import Info -->
+                <div style="margin-top: 20px; background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <span style="font-size: 24px;">💾</span>
+                        <div>
+                            <strong style="color: #fbbf24; font-size: 16px;">Backup & Restore with File Picker</strong>
+                        </div>
+                    </div>
+                    <div style="font-size: 13px; color: rgba(254, 243, 199, 0.7); line-height: 1.6;">
+                        <strong>📤 Export:</strong> Opens file picker - Choose where to save your backup (JSON file)<br>
+                        <strong>📥 Import:</strong> Opens file picker - Select a backup file to restore<br>
+                        <strong>💡 Smart Merge:</strong> Import merges with existing connections (no data loss)<br>
+                        <strong>🔒 Secure:</strong> Files saved on your computer with full control
+                    </div>
                 </div>
             </div>
         </section>
@@ -1350,7 +1513,9 @@ PHASE: Hostinger Edition
         <!-- List Tables Section - HIDDEN -->
         <section id="listTables" class="section hidden-section">
             <div id="tableConnectionStatus" class="connection-status"></div>
-            <div class="card">
+            
+            <!-- Tables List View -->
+            <div id="tablesListView" class="card">
                 <h2 class="card-title">
                     <span class="card-title-icon">📄</span>
                     Tables in Database
@@ -1360,6 +1525,41 @@ PHASE: Hostinger Edition
                     <span>🔄</span> Refresh Tables
                 </button>
                 <div id="tableList" class="table-grid"></div>
+            </div>
+
+            <!-- Table Data View -->
+            <div id="tableDataView" class="card" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                    <h2 class="card-title" style="margin: 0;">
+                        <span class="card-title-icon">📊</span>
+                        <span id="currentTableName">Table Data</span>
+                    </h2>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="generateSQL(false)">
+                            <span>🏗️</span> Generate Structure
+                        </button>
+                        <button class="btn btn-primary" onclick="generateSQL(true)">
+                            <span>📦</span> Generate Structure + Data
+                        </button>
+                        <button class="btn btn-secondary" onclick="backToTablesList()">
+                            <span>⬅️</span> Back to Tables
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Table Info Stats -->
+                <div id="tableInfoStats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;"></div>
+                
+                <div id="tableDataMessage"></div>
+                
+                <!-- Pagination Controls (Top) -->
+                <div id="paginationTop" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;"></div>
+                
+                <!-- Table Data -->
+                <div id="tableDataContainer" style="overflow-x: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;"></div>
+                
+                <!-- Pagination Controls (Bottom) -->
+                <div id="paginationBottom" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;"></div>
             </div>
         </section>
 
@@ -1581,6 +1781,41 @@ PHASE: Hostinger Edition
                 <button class="btn btn-secondary" onclick="closeConnectionModal()">Cancel</button>
                 <button class="btn btn-primary" onclick="submitConnection()">
                     <span>🔌</span> Connect
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SQL Generator Modal -->
+    <div id="sqlModal" class="modal">
+        <div class="modal-content" style="max-width: 900px; max-height: 90vh;">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <span>📝</span> Generated SQL for <span id="sqlTableName"></span>
+                </h3>
+                <button class="modal-close" onclick="closeSQLModal()">×</button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow: hidden; display: flex; flex-direction: column;">
+                <div id="sqlMessage" style="margin-bottom: 15px;"></div>
+                
+                <!-- SQL Info -->
+                <div id="sqlInfo" style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;"></div>
+                
+                <!-- SQL Code Container -->
+                <div style="position: relative; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div style="color: rgba(254, 243, 199, 0.8); font-size: 13px;">💡 Copy the SQL below and run it in any MySQL database</div>
+                        <button class="btn btn-primary" onclick="copySQLToClipboard()" style="padding: 8px 16px;">
+                            <span>📋</span> Copy to Clipboard
+                        </button>
+                    </div>
+                    <textarea id="sqlCode" readonly style="width: 100%; flex: 1; min-height: 400px; padding: 15px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 8px; color: #86efac; font-family: 'Courier New', monospace; font-size: 13px; resize: vertical; line-height: 1.5;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSQLModal()">Close</button>
+                <button class="btn btn-primary" onclick="downloadSQL()">
+                    <span>💾</span> Download SQL File
                 </button>
             </div>
         </div>
@@ -2918,6 +3153,10 @@ PHASE: Hostinger Edition
             }
         }
 
+        // Global variable for current table view
+        let currentTableName = null;
+        let currentTablePage = 1;
+
         // Load tables from selected database
         async function loadTables() {
             // Check if database is selected
@@ -2956,9 +3195,17 @@ PHASE: Hostinger Edition
                 } else {
                     listEl.innerHTML = result.tables.map(table => `
                         <div class="table-item">
-                            <div class="table-name">
+                            <div class="table-name" onclick="viewTableData('${table}')" style="cursor: pointer;">
                                 <span class="table-icon">📄</span>
                                 <span>${table}</span>
+                            </div>
+                            <div class="table-actions">
+                                <button class="btn btn-primary" onclick="event.stopPropagation(); generateSQLFromList('${table}', false)" title="Generate CREATE TABLE only">
+                                    <span>🏗️</span> Structure
+                                </button>
+                                <button class="btn btn-primary" onclick="event.stopPropagation(); generateSQLFromList('${table}', true)" title="Generate CREATE TABLE + INSERT data">
+                                    <span>📦</span> + Data
+                                </button>
                             </div>
                         </div>
                     `).join('');
@@ -2968,6 +3215,335 @@ PHASE: Hostinger Edition
                 listEl.innerHTML = '';
                 showMessage('listTablesMessage', '❌ ' + result.message, 'error');
             }
+        }
+
+        // View table data
+        async function viewTableData(tableName, page = 1) {
+            if (!selectedDatabaseId) {
+                showMessage('tableDataMessage', '❌ No database selected', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('tableDataMessage', '❌ Connection not found', 'error');
+                return;
+            }
+
+            currentTableName = tableName;
+            currentTablePage = page;
+
+            // Show table data view, hide tables list
+            document.getElementById('tablesListView').style.display = 'none';
+            document.getElementById('tableDataView').style.display = 'block';
+            document.getElementById('currentTableName').textContent = tableName;
+
+            // Show loading
+            document.getElementById('tableDataContainer').innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner"></div><div style="margin-top: 15px;">Loading table data...</div></div>';
+            document.getElementById('tableInfoStats').innerHTML = '';
+            document.getElementById('paginationTop').innerHTML = '';
+            document.getElementById('paginationBottom').innerHTML = '';
+
+            // Fetch table data
+            const result = await apiRequest('get_table_data', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                table_name: tableName,
+                page: page,
+                limit: 50
+            });
+
+            if (result.success) {
+                // Render table info stats
+                renderTableStats(result.table_info, result.pagination);
+                
+                // Render table data
+                renderTableData(result.columns, result.data);
+                
+                // Render pagination
+                renderPagination(result.pagination);
+                
+                showMessage('tableDataMessage', `✅ Showing ${result.pagination.showing_from} - ${result.pagination.showing_to} of ${result.pagination.total_rows} rows`, 'success');
+            } else {
+                document.getElementById('tableDataContainer').innerHTML = `<div style="text-align: center; padding: 40px; color: #fca5a5;">❌ ${result.message}</div>`;
+                showMessage('tableDataMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Render table statistics
+        function renderTableStats(info, pagination) {
+            const statsHtml = `
+                <div class="stat-box">
+                    <div class="stat-label">📊 Total Rows</div>
+                    <div class="stat-value">${pagination.total_rows.toLocaleString()}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">⚙️ Engine</div>
+                    <div class="stat-value">${info.engine}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">💾 Data Size</div>
+                    <div class="stat-value">${formatBytes(info.data_length)}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">🔤 Collation</div>
+                    <div class="stat-value" style="font-size: 12px;">${info.collation}</div>
+                </div>
+                ${info.created ? `
+                <div class="stat-box">
+                    <div class="stat-label">📅 Created</div>
+                    <div class="stat-value" style="font-size: 12px;">${new Date(info.created).toLocaleDateString()}</div>
+                </div>` : ''}
+                ${info.updated ? `
+                <div class="stat-box">
+                    <div class="stat-label">🔄 Updated</div>
+                    <div class="stat-value" style="font-size: 12px;">${new Date(info.updated).toLocaleDateString()}</div>
+                </div>` : ''}
+            `;
+            document.getElementById('tableInfoStats').innerHTML = statsHtml;
+        }
+
+        // Render table data
+        function renderTableData(columns, data) {
+            if (data.length === 0) {
+                document.getElementById('tableDataContainer').innerHTML = '<div style="text-align: center; padding: 40px; color: rgba(254, 243, 199, 0.6);">📭 No data in this table</div>';
+                return;
+            }
+
+            const tableHtml = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            ${columns.map(col => `<th title="${col.Type}">${col.Field}${col.Key === 'PRI' ? ' 🔑' : ''}${col.Key === 'UNI' ? ' ⭐' : ''}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(row => `
+                            <tr>
+                                ${columns.map(col => {
+                                    const value = row[col.Field];
+                                    const displayValue = value === null ? '<span style="color: #fca5a5; font-style: italic;">NULL</span>' : 
+                                                       typeof value === 'string' && value.length > 100 ? value.substring(0, 100) + '...' : 
+                                                       value;
+                                    return `<td title="${value}">${displayValue}</td>`;
+                                }).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('tableDataContainer').innerHTML = tableHtml;
+        }
+
+        // Render pagination controls
+        function renderPagination(pagination) {
+            const paginationHtml = `
+                <div class="pagination-info">
+                    Showing <strong>${pagination.showing_from}</strong> - <strong>${pagination.showing_to}</strong> of <strong>${pagination.total_rows.toLocaleString()}</strong> rows
+                    (Page <strong>${pagination.current_page}</strong> of <strong>${pagination.total_pages}</strong>)
+                </div>
+                <div class="pagination-buttons">
+                    <button class="btn btn-secondary" onclick="viewTableData('${currentTableName}', 1)" ${pagination.current_page === 1 ? 'disabled' : ''}>
+                        ⏮️ First
+                    </button>
+                    <button class="btn btn-secondary" onclick="viewTableData('${currentTableName}', ${pagination.current_page - 1})" ${pagination.current_page === 1 ? 'disabled' : ''}>
+                        ◀️ Prev
+                    </button>
+                    <input type="number" class="page-input" value="${pagination.current_page}" min="1" max="${pagination.total_pages}" onchange="viewTableData('${currentTableName}', parseInt(this.value))">
+                    <button class="btn btn-secondary" onclick="viewTableData('${currentTableName}', ${pagination.current_page + 1})" ${pagination.current_page === pagination.total_pages ? 'disabled' : ''}>
+                        Next ▶️
+                    </button>
+                    <button class="btn btn-secondary" onclick="viewTableData('${currentTableName}', ${pagination.total_pages})" ${pagination.current_page === pagination.total_pages ? 'disabled' : ''}>
+                        Last ⏭️
+                    </button>
+                </div>
+            `;
+            document.getElementById('paginationTop').innerHTML = paginationHtml;
+            document.getElementById('paginationBottom').innerHTML = paginationHtml;
+        }
+
+        // Back to tables list
+        function backToTablesList() {
+            document.getElementById('tablesListView').style.display = 'block';
+            document.getElementById('tableDataView').style.display = 'none';
+            currentTableName = null;
+            currentTablePage = 1;
+        }
+
+        // Format bytes helper
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // ========================================
+        // SQL GENERATOR FUNCTIONS
+        // ========================================
+
+        let generatedSQL = '';
+
+        // Generate SQL from table list (when clicking buttons on table cards)
+        async function generateSQLFromList(tableName, includeData) {
+            if (!selectedDatabaseId) {
+                alert('❌ No database selected');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                alert('❌ Connection not found');
+                return;
+            }
+
+            // Show loading message
+            showMessage('listTablesMessage', `🔄 Generating SQL for ${tableName} ${includeData ? 'with data' : 'structure only'}...`, 'info');
+
+            const result = await apiRequest('generate_table_sql', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                table_name: tableName,
+                include_data: includeData ? 'true' : 'false'
+            });
+
+            if (result.success) {
+                generatedSQL = result.sql;
+                showSQLModal(result);
+                showMessage('listTablesMessage', `✅ SQL generated successfully for ${tableName}!`, 'success');
+            } else {
+                showMessage('listTablesMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Generate SQL for table (from table data view)
+        async function generateSQL(includeData) {
+            if (!selectedDatabaseId || !currentTableName) {
+                alert('❌ No table selected');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                alert('❌ Connection not found');
+                return;
+            }
+
+            // Show loading message
+            showMessage('tableDataMessage', `🔄 Generating SQL ${includeData ? 'with data' : 'structure only'}...`, 'info');
+
+            const result = await apiRequest('generate_table_sql', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                table_name: currentTableName,
+                include_data: includeData ? 'true' : 'false'
+            });
+
+            if (result.success) {
+                generatedSQL = result.sql;
+                showSQLModal(result);
+                showMessage('tableDataMessage', `✅ SQL generated successfully!`, 'success');
+            } else {
+                showMessage('tableDataMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Show SQL modal
+        function showSQLModal(result) {
+            document.getElementById('sqlTableName').textContent = result.table_name;
+            document.getElementById('sqlCode').value = result.sql;
+            
+            // Show info
+            const infoHtml = `
+                <div class="stat-box" style="flex: 1; min-width: 150px;">
+                    <div class="stat-label">${result.has_data ? '📦 Structure + Data' : '🏗️ Structure Only'}</div>
+                    <div class="stat-value" style="font-size: 14px;">${result.has_data ? result.row_count + ' rows' : 'No data'}</div>
+                </div>
+                <div class="stat-box" style="flex: 1; min-width: 150px;">
+                    <div class="stat-label">📏 SQL Size</div>
+                    <div class="stat-value" style="font-size: 14px;">${formatBytes(result.sql_length)}</div>
+                </div>
+            `;
+            document.getElementById('sqlInfo').innerHTML = infoHtml;
+            
+            // Show success message
+            const messageHtml = `
+                <div class="message success" style="display: block;">
+                    ✅ SQL generated successfully! You can now copy or download it.
+                </div>
+            `;
+            document.getElementById('sqlMessage').innerHTML = messageHtml;
+            
+            document.getElementById('sqlModal').classList.add('active');
+        }
+
+        // Close SQL modal
+        function closeSQLModal() {
+            document.getElementById('sqlModal').classList.remove('active');
+            generatedSQL = '';
+        }
+
+        // Copy SQL to clipboard
+        async function copySQLToClipboard() {
+            const sqlCode = document.getElementById('sqlCode').value;
+            
+            try {
+                await navigator.clipboard.writeText(sqlCode);
+                showMessage('tableDataMessage', '✅ SQL copied to clipboard!', 'success');
+                
+                // Visual feedback
+                const messageEl = document.getElementById('sqlMessage');
+                messageEl.innerHTML = '<div class="message success" style="display: block;">✅ SQL copied to clipboard successfully!</div>';
+                
+                setTimeout(() => {
+                    messageEl.innerHTML = '<div class="message success" style="display: block;">✅ SQL generated successfully! You can now copy or download it.</div>';
+                }, 2000);
+            } catch (err) {
+                // Fallback for older browsers
+                const textarea = document.getElementById('sqlCode');
+                textarea.select();
+                document.execCommand('copy');
+                showMessage('tableDataMessage', '✅ SQL copied to clipboard!', 'success');
+            }
+        }
+
+        // Download SQL file
+        function downloadSQL() {
+            const sqlCode = document.getElementById('sqlCode').value;
+            const tableName = document.getElementById('sqlTableName').textContent;
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `${tableName}_${timestamp}.sql`;
+            
+            const blob = new Blob([sqlCode], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showMessage('tableDataMessage', `✅ SQL file downloaded: ${filename}`, 'success');
         }
 
         // Load tables for dropdowns
@@ -3175,6 +3751,223 @@ PHASE: Hostinger Edition
             // Add initial column row
             addColumnRow();
         });
+
+        // ========================================
+        // EXPORT/IMPORT CONNECTIONS FUNCTIONS
+        // ========================================
+
+        const PREFERRED_EXPORT_PATH_KEY = 'preferred_export_path';
+
+        // Export connections to file (Direct Download)
+        async function exportConnectionsToFile() {
+            const connections = getHostingerConnections();
+            
+            if (connections.length === 0) {
+                showMessage('settingsMessage', '❌ No connections to export', 'error');
+                return;
+            }
+
+            showMessage('settingsMessage', '🔄 Preparing export...', 'info');
+
+            // Create export data
+            const exportData = {
+                exported_at: new Date().toLocaleString(),
+                total_connections: connections.length,
+                connections: connections
+            };
+
+            // Generate filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `hostinger_connections_${timestamp}.json`;
+            
+            // Convert to JSON
+            const jsonData = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonData], { type: 'application/json' });
+
+            // Check if File System Access API is supported
+            if ('showSaveFilePicker' in window) {
+                try {
+                    // Get preferred directory from localStorage
+                    const preferredPath = localStorage.getItem(PREFERRED_EXPORT_PATH_KEY);
+                    
+                    const options = {
+                        suggestedName: filename,
+                        types: [{
+                            description: 'JSON Files',
+                            accept: { 'application/json': ['.json'] }
+                        }]
+                    };
+
+                    // Show file picker
+                    const fileHandle = await window.showSaveFilePicker(options);
+                    
+                    // Write file
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+
+                    // Save the directory path for next time (if possible)
+                    try {
+                        const dirHandle = await fileHandle.getParent?.();
+                        if (dirHandle) {
+                            localStorage.setItem(PREFERRED_EXPORT_PATH_KEY, dirHandle.name);
+                        }
+                    } catch (e) {
+                        // Ignore if getParent is not supported
+                    }
+
+                    showMessage('settingsMessage', 
+                        `✅ Connections exported successfully!\n📁 File: ${filename}\n📊 Total: ${connections.length} connections`, 
+                        'success'
+                    );
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        // Fallback to download if user didn't cancel
+                        downloadFile(blob, filename);
+                        showMessage('settingsMessage', 
+                            `✅ Export started! Check your downloads folder.\n📁 File: ${filename}\n📊 Total: ${connections.length} connections`, 
+                            'success'
+                        );
+                    }
+                }
+            } else {
+                // Fallback: Direct download
+                downloadFile(blob, filename);
+                showMessage('settingsMessage', 
+                    `✅ Export started! Check your downloads folder.\n📁 File: ${filename}\n📊 Total: ${connections.length} connections`, 
+                    'success'
+                );
+            }
+        }
+
+        // Helper function to download file
+        function downloadFile(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Import connections using File Picker
+        async function showImportModal() {
+            // Check if File System Access API is supported
+            if ('showOpenFilePicker' in window) {
+                importConnectionsWithFilePicker();
+            } else {
+                // Fallback: Use hidden input file
+                importConnectionsWithInputFile();
+            }
+        }
+
+        // Import using File System Access API
+        async function importConnectionsWithFilePicker() {
+            try {
+                const options = {
+                    types: [{
+                        description: 'JSON Files',
+                        accept: { 'application/json': ['.json'] }
+                    }],
+                    multiple: false
+                };
+
+                showMessage('settingsMessage', '📂 Opening file picker...', 'info');
+
+                const [fileHandle] = await window.showOpenFilePicker(options);
+                const file = await fileHandle.getFile();
+                
+                await processImportFile(file);
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    showMessage('settingsMessage', `❌ Error: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Import using traditional input file (fallback)
+        function importConnectionsWithInputFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json,application/json';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    await processImportFile(file);
+                }
+            };
+            
+            input.click();
+        }
+
+        // Process the imported file
+        async function processImportFile(file) {
+            try {
+                showMessage('settingsMessage', `🔄 Reading file: ${file.name}...`, 'info');
+
+                const text = await file.text();
+                const importData = JSON.parse(text);
+
+                // Validate structure
+                if (!importData.connections || !Array.isArray(importData.connections)) {
+                    showMessage('settingsMessage', '❌ Invalid file format. Expected connections array.', 'error');
+                    return;
+                }
+
+                // Confirm import
+                if (!confirm(`Import ${importData.connections.length} connections from:\n${file.name}\n\nThis will MERGE with your existing connections. Continue?`)) {
+                    return;
+                }
+
+                showMessage('settingsMessage', '🔄 Importing connections...', 'info');
+
+                // Get current connections
+                let currentConnections = getHostingerConnections();
+                const importedConnections = importData.connections;
+
+                // Merge strategy: Update existing by ID or add new
+                let updatedCount = 0;
+                let addedCount = 0;
+
+                importedConnections.forEach(imported => {
+                    const existingIndex = currentConnections.findIndex(c => c.id === imported.id);
+                    if (existingIndex !== -1) {
+                        // Update existing
+                        currentConnections[existingIndex] = imported;
+                        updatedCount++;
+                    } else {
+                        // Add new
+                        currentConnections.push(imported);
+                        addedCount++;
+                    }
+                });
+
+                // Save merged connections
+                saveHostingerConnections(currentConnections);
+
+                // Refresh UI
+                loadHostingerConnectionsTable();
+                loadDashboardConnections();
+
+                showMessage('settingsMessage', 
+                    `✅ Import successful!\n📊 Total: ${importData.connections.length}\n✏️ Updated: ${updatedCount}\n➕ Added: ${addedCount}\n📅 Exported: ${importData.exported_at || 'Unknown'}`, 
+                    'success'
+                );
+            } catch (error) {
+                showMessage('settingsMessage', `❌ Import failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Close import modal (not needed anymore but keeping for compatibility)
+        function closeImportModal() {
+            const modal = document.getElementById('importModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
     </script>
 </body>
 </html>

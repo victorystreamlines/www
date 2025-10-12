@@ -749,6 +749,349 @@ function getTableStructure($dbName, $tableName) {
     }
 }
 
+/**
+ * Get table data with pagination
+ */
+function getTableData() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $tableName = $_POST['table_name'] ?? '';
+    $page = intval($_POST['page'] ?? 1);
+    $limit = intval($_POST['limit'] ?? 50);
+
+    if (empty($host) || empty($dbName) || empty($username) || empty($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required parameters');
+        return;
+    }
+
+    if (!validateTableName($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Invalid table name');
+        return;
+    }
+
+    $conn = getConnection($host, $dbName, $username, $password, $port);
+    if (!$conn) {
+        http_response_code(500);
+        sendResponse(false, 'Failed to connect to database');
+        return;
+    }
+
+    try {
+        $safeTableName = sanitizeTableName($tableName);
+        
+        // Get total rows count
+        $countStmt = $conn->query("SELECT COUNT(*) as total FROM $safeTableName");
+        $totalRows = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+        
+        // Calculate pagination
+        $totalPages = ceil($totalRows / $limit);
+        $offset = ($page - 1) * $limit;
+        
+        // Get table columns
+        $columnsStmt = $conn->query("SHOW COLUMNS FROM $safeTableName");
+        $columns = $columnsStmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Get table data with limit
+        $dataStmt = $conn->query("SELECT * FROM $safeTableName LIMIT $limit OFFSET $offset");
+        $data = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Get table info
+        $infoStmt = $conn->query("SHOW TABLE STATUS WHERE Name = " . $conn->quote($tableName));
+        $tableInfo = $infoStmt->fetch(PDO::FETCH_ASSOC);
+        
+        sendResponse(true, 'Table data retrieved successfully', [
+            'table_name' => $tableName,
+            'columns' => $columns,
+            'data' => $data,
+            'pagination' => [
+                'current_page' => $page,
+                'total_pages' => $totalPages,
+                'total_rows' => $totalRows,
+                'per_page' => $limit,
+                'showing_from' => $offset + 1,
+                'showing_to' => min($offset + $limit, $totalRows)
+            ],
+            'table_info' => [
+                'engine' => $tableInfo['Engine'] ?? 'Unknown',
+                'collation' => $tableInfo['Collation'] ?? 'Unknown',
+                'rows' => $tableInfo['Rows'] ?? 0,
+                'avg_row_length' => $tableInfo['Avg_row_length'] ?? 0,
+                'data_length' => $tableInfo['Data_length'] ?? 0,
+                'created' => $tableInfo['Create_time'] ?? null,
+                'updated' => $tableInfo['Update_time'] ?? null
+            ]
+        ]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        sendResponse(false, 'Error retrieving table data: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Generate SQL for table structure
+ */
+function generateTableSQL() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $tableName = $_POST['table_name'] ?? '';
+    $includeData = $_POST['include_data'] ?? 'false';
+
+    if (empty($host) || empty($dbName) || empty($username) || empty($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required parameters');
+        return;
+    }
+
+    if (!validateTableName($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Invalid table name');
+        return;
+    }
+
+    $conn = getConnection($host, $dbName, $username, $password, $port);
+    if (!$conn) {
+        http_response_code(500);
+        sendResponse(false, 'Failed to connect to database');
+        return;
+    }
+
+    try {
+        $safeTableName = sanitizeTableName($tableName);
+        
+        // Get CREATE TABLE statement
+        $createStmt = $conn->query("SHOW CREATE TABLE $safeTableName");
+        $createResult = $createStmt->fetch(PDO::FETCH_ASSOC);
+        $createTableSQL = $createResult['Create Table'] ?? '';
+        
+        // Start building the SQL
+        $sql = "-- Table structure for `{$tableName}`\n";
+        $sql .= "-- Generated on: " . date('Y-m-d H:i:s') . "\n\n";
+        $sql .= "DROP TABLE IF EXISTS `{$tableName}`;\n\n";
+        $sql .= $createTableSQL . ";\n\n";
+        
+        // Get data if requested
+        $dataSQL = '';
+        $rowCount = 0;
+        
+        if ($includeData === 'true') {
+            // Get all rows
+            $dataStmt = $conn->query("SELECT * FROM $safeTableName");
+            $rows = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
+            $rowCount = count($rows);
+            
+            if ($rowCount > 0) {
+                // Get column names
+                $columnsStmt = $conn->query("SHOW COLUMNS FROM $safeTableName");
+                $columns = $columnsStmt->fetchAll(PDO::FETCH_COLUMN);
+                
+                $dataSQL = "-- Dumping data for table `{$tableName}`\n";
+                $dataSQL .= "-- {$rowCount} rows\n\n";
+                
+                // Build INSERT statements (batch by 100 rows)
+                $batchSize = 100;
+                $batches = array_chunk($rows, $batchSize);
+                
+                foreach ($batches as $batch) {
+                    $dataSQL .= "INSERT INTO `{$tableName}` (`" . implode('`, `', $columns) . "`) VALUES\n";
+                    
+                    $values = [];
+                    foreach ($batch as $row) {
+                        $rowValues = [];
+                        foreach ($columns as $col) {
+                            $value = $row[$col];
+                            if ($value === null) {
+                                $rowValues[] = 'NULL';
+                            } else {
+                                $rowValues[] = $conn->quote($value);
+                            }
+                        }
+                        $values[] = '(' . implode(', ', $rowValues) . ')';
+                    }
+                    
+                    $dataSQL .= implode(",\n", $values) . ";\n\n";
+                }
+            }
+        }
+        
+        $fullSQL = $sql . $dataSQL;
+        
+        sendResponse(true, 'SQL generated successfully', [
+            'sql' => $fullSQL,
+            'table_name' => $tableName,
+            'has_data' => $includeData === 'true',
+            'row_count' => $rowCount,
+            'sql_length' => strlen($fullSQL)
+        ]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        sendResponse(false, 'Error generating SQL: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Export connections to JSON file
+ */
+function exportConnections() {
+    $connections = $_POST['connections'] ?? '';
+    
+    if (empty($connections)) {
+        http_response_code(400);
+        sendResponse(false, 'No connections data provided');
+    }
+
+    // Store directory path - relative to Backend-Hostinger.php file
+    $storeDir = __DIR__ . DIRECTORY_SEPARATOR . 'Store';
+    
+    // Create Store directory if it doesn't exist
+    if (!file_exists($storeDir)) {
+        if (!mkdir($storeDir, 0777, true)) {
+            http_response_code(500);
+            sendResponse(false, 'Failed to create Store directory: ' . $storeDir);
+        }
+    }
+
+    // Generate filename with timestamp
+    $filename = 'hostinger_connections_' . date('Y-m-d_H-i-s') . '.json';
+    $filepath = $storeDir . DIRECTORY_SEPARATOR . $filename;
+
+    // Validate and decode JSON
+    $connectionsArray = json_decode($connections, true);
+    if ($connectionsArray === null) {
+        http_response_code(400);
+        sendResponse(false, 'Invalid JSON data');
+    }
+
+    // Add export metadata
+    $exportData = [
+        'exported_at' => date('Y-m-d H:i:s'),
+        'total_connections' => count($connectionsArray),
+        'connections' => $connectionsArray
+    ];
+
+    // Write to file
+    $jsonData = json_encode($exportData, JSON_PRETTY_PRINT);
+    if (file_put_contents($filepath, $jsonData) !== false) {
+        sendResponse(true, 'Connections exported successfully', [
+            'filename' => $filename,
+            'filepath' => $filepath,
+            'total' => count($connectionsArray)
+        ]);
+    } else {
+        http_response_code(500);
+        sendResponse(false, 'Failed to write export file');
+    }
+}
+
+/**
+ * Import connections from JSON file
+ */
+function importConnections() {
+    $filename = $_POST['filename'] ?? '';
+    
+    if (empty($filename)) {
+        http_response_code(400);
+        sendResponse(false, 'No filename provided');
+    }
+
+    // Store directory path - relative to Backend-Hostinger.php file
+    $storeDir = __DIR__ . DIRECTORY_SEPARATOR . 'Store';
+    $filepath = $storeDir . DIRECTORY_SEPARATOR . $filename;
+
+    // Check if file exists
+    if (!file_exists($filepath)) {
+        http_response_code(404);
+        sendResponse(false, 'Import file not found: ' . $filename);
+    }
+
+    // Read file
+    $jsonData = file_get_contents($filepath);
+    if ($jsonData === false) {
+        http_response_code(500);
+        sendResponse(false, 'Failed to read import file');
+    }
+
+    // Parse JSON
+    $importData = json_decode($jsonData, true);
+    if ($importData === null) {
+        http_response_code(400);
+        sendResponse(false, 'Invalid JSON format in import file');
+    }
+
+    // Validate structure
+    if (!isset($importData['connections']) || !is_array($importData['connections'])) {
+        http_response_code(400);
+        sendResponse(false, 'Invalid import file structure');
+    }
+
+    sendResponse(true, 'Connections imported successfully', [
+        'connections' => $importData['connections'],
+        'total' => count($importData['connections']),
+        'exported_at' => $importData['exported_at'] ?? 'Unknown'
+    ]);
+}
+
+/**
+ * List available import files
+ */
+function listImportFiles() {
+    // Store directory path - relative to Backend-Hostinger.php file
+    $storeDir = __DIR__ . DIRECTORY_SEPARATOR . 'Store';
+    
+    // Check if directory exists
+    if (!file_exists($storeDir)) {
+        sendResponse(true, 'No import files found', ['files' => []]);
+        return;
+    }
+
+    // Get all JSON files
+    $files = glob($storeDir . DIRECTORY_SEPARATOR . 'hostinger_connections_*.json');
+    
+    if ($files === false || empty($files)) {
+        sendResponse(true, 'No import files found', ['files' => []]);
+        return;
+    }
+
+    // Sort by modification time (newest first)
+    usort($files, function($a, $b) {
+        return filemtime($b) - filemtime($a);
+    });
+
+    // Prepare file list
+    $fileList = [];
+    foreach ($files as $filepath) {
+        $filename = basename($filepath);
+        $filesize = filesize($filepath);
+        $modified = date('Y-m-d H:i:s', filemtime($filepath));
+        
+        // Try to read file to get connection count
+        $jsonData = file_get_contents($filepath);
+        $data = json_decode($jsonData, true);
+        $connectionCount = isset($data['connections']) ? count($data['connections']) : 0;
+        
+        $fileList[] = [
+            'filename' => $filename,
+            'filepath' => $filepath,
+            'size' => $filesize,
+            'size_formatted' => number_format($filesize / 1024, 2) . ' KB',
+            'modified' => $modified,
+            'connection_count' => $connectionCount
+        ];
+    }
+
+    sendResponse(true, 'Import files retrieved successfully', [
+        'files' => $fileList,
+        'total' => count($fileList)
+    ]);
+}
+
 // Main request handler
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
@@ -831,8 +1174,28 @@ switch ($action) {
         getTableStructure($dbName, $tableName);
         break;
 
+    case 'export_connections':
+        exportConnections();
+        break;
+
+    case 'import_connections':
+        importConnections();
+        break;
+
+    case 'list_import_files':
+        listImportFiles();
+        break;
+
+    case 'get_table_data':
+        getTableData();
+        break;
+
+    case 'generate_table_sql':
+        generateTableSQL();
+        break;
+
     default:
         http_response_code(400);
-        sendResponse(false, 'Invalid action specified. Supported actions: check_connection, list_databases, connect_database, create_database, delete_database, rename_database, set_database_credentials, list_tables, create_table, delete_table, rename_table, alter_table, get_table_structure');
+        sendResponse(false, 'Invalid action specified. Supported actions: check_connection, list_databases, connect_database, create_database, delete_database, rename_database, set_database_credentials, list_tables, create_table, delete_table, rename_table, alter_table, get_table_structure, export_connections, import_connections, list_import_files, get_table_data, generate_table_sql');
 }
 ?>

@@ -1,0 +1,83 @@
+{
+  "exported_at": "10/12/2025, 4:11:54 PM",
+  "total_connections": 7,
+  "connections": [
+    {
+      "id": "1760268466615",
+      "name": "u419999707_VzarF",
+      "type": "shared",
+      "host": "srv1788.hstgr.io",
+      "dbName": "u419999707_VzarF",
+      "username": "u419999707_gRwO5",
+      "password": "P@master5007",
+      "port": "3306",
+      "createdAt": "2025-10-12T11:27:46.615Z"
+    },
+    {
+      "id": "1760268821830",
+      "name": "u419999707_victorystreaml",
+      "type": "shared",
+      "host": "srv1788.hstgr.io",
+      "dbName": "u419999707_victorystreaml",
+      "username": "u419999707_victorystreaml",
+      "password": "P@master5007",
+      "port": "3306",
+      "createdAt": "2025-10-12T11:33:41.830Z"
+    },
+    {
+      "id": "1760268950894",
+      "name": "u419999707_Mohamed",
+      "type": "shared",
+      "host": "srv1788.hstgr.io",
+      "dbName": "u419999707_Mohamed",
+      "username": "u419999707_Abuammar",
+      "password": "P@master5007",
+      "port": "3306",
+      "createdAt": "2025-10-12T11:35:50.895Z"
+    },
+    {
+      "id": "1760269070992",
+      "name": "u419999707_naif1",
+      "type": "shared",
+      "host": "srv1788.hstgr.io",
+      "dbName": "u419999707_naif1",
+      "username": "u419999707_essa1",
+      "password": "P@master5007",
+      "port": "3306",
+      "createdAt": "2025-10-12T11:37:50.992Z"
+    },
+    {
+      "id": "1760269168801",
+      "name": "u419999707_naif",
+      "type": "shared",
+      "host": "srv1788.hstgr.io",
+      "dbName": "u419999707_naif",
+      "username": "u419999707_essa",
+      "password": "P@master5007",
+      "port": "3306",
+      "createdAt": "2025-10-12T11:39:28.802Z"
+    },
+    {
+      "id": "1760269278080",
+      "name": "u419999707_YmYtI",
+      "type": "shared",
+      "host": "srv1788.hstgr.io",
+      "dbName": "u419999707_YmYtI",
+      "username": "u419999707_A9ZQc",
+      "password": "P@master5007",
+      "port": "3306",
+      "createdAt": "2025-10-12T11:41:18.080Z"
+    },
+    {
+      "id": "1760269470770",
+      "name": "u419999707_mW2yG",
+      "type": "shared",
+      "host": "srv1788.hstgr.io",
+      "dbName": "u419999707_mW2yG",
+      "username": "u419999707_gOShd",
+      "password": "P@master5007",
+      "port": "3306",
+      "createdAt": "2025-10-12T11:44:30.770Z"
+    }
+  ]
+}
