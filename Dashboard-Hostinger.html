@@ -1839,7 +1839,11 @@ PHASE: Hostinger Edition
 
         <!-- Delete Table Section - HIDDEN -->
         <section id="deleteTable" class="section hidden-section">
-            <div id="deleteTableConnectionStatus" class="connection-status"></div>
+            <!-- Selected Database Display -->
+            <div style="background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #86efac; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-weight: 500;">
+                ✅ Deleting tables from: <strong id="deleteTableDbName" style="color: #fbbf24;">Database Name</strong>
+            </div>
+
             <div class="card">
                 <h2 class="card-title">
                     <span class="card-title-icon">🗑️</span>
@@ -1863,7 +1867,11 @@ PHASE: Hostinger Edition
 
         <!-- Rename Table Section - HIDDEN -->
         <section id="renameTable" class="section hidden-section">
-            <div id="renameTableConnectionStatus" class="connection-status"></div>
+            <!-- Selected Database Display -->
+            <div style="background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #86efac; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-weight: 500;">
+                ✅ Renaming tables in: <strong id="renameTableDbName" style="color: #fbbf24;">Database Name</strong>
+            </div>
+
             <div class="card">
                 <h2 class="card-title">
                     <span class="card-title-icon">✏️</span>
@@ -2023,6 +2031,18 @@ PHASE: Hostinger Edition
                 if (selectedDatabaseId) {
                     loadTablesForDropdowns();
                 }
+            } else if (sectionId === 'deleteTable') {
+                updateDeleteTableDatabaseDisplay();
+                // Auto-load tables for dropdown
+                if (selectedDatabaseId) {
+                    loadTablesForDropdowns();
+                }
+            } else if (sectionId === 'renameTable') {
+                updateRenameTableDatabaseDisplay();
+                // Auto-load tables for dropdown
+                if (selectedDatabaseId) {
+                    loadTablesForDropdowns();
+                }
             } else if (sectionId === 'listTables') {
                 // Auto-load tables when entering List Tables section
                 if (selectedDatabaseId) {
@@ -2036,6 +2056,46 @@ PHASE: Hostinger Edition
             setTimeout(() => {
                 loadSelectedDatabase();
             }, 50);
+        }
+
+        // Update selected database display in Delete Table section
+        function updateDeleteTableDatabaseDisplay() {
+            const displayEl = document.getElementById('deleteTableDbName');
+            if (!displayEl) return;
+
+            if (selectedDatabaseId) {
+                const connId = selectedDatabaseId.replace('conn_', '');
+                const connections = getHostingerConnections();
+                const conn = connections.find(c => c.id === connId);
+                
+                if (conn) {
+                    displayEl.textContent = `${conn.name} (${conn.dbName})`;
+                } else {
+                    displayEl.textContent = 'None - Please select from Dashboard';
+                }
+            } else {
+                displayEl.textContent = 'None - Please select from Dashboard';
+            }
+        }
+
+        // Update selected database display in Rename Table section
+        function updateRenameTableDatabaseDisplay() {
+            const displayEl = document.getElementById('renameTableDbName');
+            if (!displayEl) return;
+
+            if (selectedDatabaseId) {
+                const connId = selectedDatabaseId.replace('conn_', '');
+                const connections = getHostingerConnections();
+                const conn = connections.find(c => c.id === connId);
+                
+                if (conn) {
+                    displayEl.textContent = `${conn.name} (${conn.dbName})`;
+                } else {
+                    displayEl.textContent = 'None - Please select from Dashboard';
+                }
+            } else {
+                displayEl.textContent = 'None - Please select from Dashboard';
+            }
         }
 
         // Update selected database display in Edit Table section
@@ -2176,6 +2236,12 @@ PHASE: Hostinger Edition
                 // Update selected database display in Edit Table section
                 updateEditTableDatabaseDisplay();
 
+                // Update selected database display in Delete Table section
+                updateDeleteTableDatabaseDisplay();
+
+                // Update selected database display in Rename Table section
+                updateRenameTableDatabaseDisplay();
+
                 // Show TABLE OPERATIONS in sidebar
                 showTableOperations();
             }
@@ -2235,6 +2301,12 @@ PHASE: Hostinger Edition
 
             // Update selected database display in Edit Table section
             updateEditTableDatabaseDisplay();
+
+            // Update selected database display in Delete Table section
+            updateDeleteTableDatabaseDisplay();
+
+            // Update selected database display in Rename Table section
+            updateRenameTableDatabaseDisplay();
 
             // Show TABLE OPERATIONS in sidebar
             showTableOperations();
@@ -3964,8 +4036,17 @@ PHASE: Hostinger Edition
         async function deleteTableAction(event) {
             event.preventDefault();
             
-            if (!currentDatabase) {
-                showMessage('deleteTableMessage', '❌ Please connect to a database first', 'error');
+            if (!selectedDatabaseId) {
+                showMessage('deleteTableMessage', '❌ Please select a database from Dashboard first', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('deleteTableMessage', '❌ Connection not found', 'error');
                 return;
             }
             
@@ -3983,7 +4064,11 @@ PHASE: Hostinger Edition
             showMessage('deleteTableMessage', '🔄 Deleting table...', 'info');
             
             const result = await apiRequest('delete_table', {
-                db_name: currentDatabase,
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
                 table_name: tableName
             });
             
@@ -3991,7 +4076,10 @@ PHASE: Hostinger Edition
                 showMessage('deleteTableMessage', `✅ ${result.message}`, 'success');
                 document.getElementById('deleteTableSelect').value = '';
                 loadTablesForDropdowns();
-                loadTables();
+                // Refresh table list if we're in that section
+                if (document.getElementById('listTables').classList.contains('active')) {
+                    loadTables();
+                }
             } else {
                 showMessage('deleteTableMessage', `❌ ${result.message}`, 'error');
             }
@@ -4001,8 +4089,17 @@ PHASE: Hostinger Edition
         async function renameTableAction(event) {
             event.preventDefault();
             
-            if (!currentDatabase) {
-                showMessage('renameTableMessage', '❌ Please connect to a database first', 'error');
+            if (!selectedDatabaseId) {
+                showMessage('renameTableMessage', '❌ Please select a database from Dashboard first', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('renameTableMessage', '❌ Connection not found', 'error');
                 return;
             }
             
@@ -4022,7 +4119,11 @@ PHASE: Hostinger Edition
             showMessage('renameTableMessage', '🔄 Renaming table...', 'info');
             
             const result = await apiRequest('rename_table', {
-                db_name: currentDatabase,
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
                 old_table_name: oldName,
                 new_table_name: newName
             });
@@ -4032,7 +4133,10 @@ PHASE: Hostinger Edition
                 document.getElementById('renameTableOldSelect').value = '';
                 document.getElementById('renameTableNewName').value = '';
                 loadTablesForDropdowns();
-                loadTables();
+                // Refresh table list if we're in that section
+                if (document.getElementById('listTables').classList.contains('active')) {
+                    loadTables();
+                }
             } else {
                 showMessage('renameTableMessage', `❌ ${result.message}`, 'error');
             }

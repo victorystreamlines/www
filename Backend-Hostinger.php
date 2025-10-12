@@ -567,23 +567,39 @@ function createTable() {
 }
 
 /**
- * Delete a table
+ * Delete a table with Hostinger credentials
  */
-function deleteTable($dbName, $tableName) {
+function deleteTable() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $tableName = $_POST['table_name'] ?? '';
+
+    if (empty($host) || empty($dbName) || empty($username) || empty($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required connection parameters');
+        return;
+    }
+
     if (!validateDatabaseName($dbName)) {
         http_response_code(400);
         sendResponse(false, 'Invalid database name');
+        return;
     }
 
     if (!validateTableName($tableName)) {
         http_response_code(400);
         sendResponse(false, 'Invalid table name');
+        return;
     }
 
-    $conn = getConnection($dbName);
+    $conn = getConnection($host, $dbName, $username, $password, $port);
     if (!$conn) {
         http_response_code(500);
         sendResponse(false, 'Failed to connect to database');
+        return;
     }
 
     try {
@@ -598,28 +614,46 @@ function deleteTable($dbName, $tableName) {
 }
 
 /**
- * Rename a table
+ * Rename a table with Hostinger credentials
  */
-function renameTable($dbName, $oldName, $newName) {
+function renameTable() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $oldName = $_POST['old_table_name'] ?? '';
+    $newName = $_POST['new_table_name'] ?? '';
+
+    if (empty($host) || empty($dbName) || empty($username) || empty($oldName) || empty($newName)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required connection parameters');
+        return;
+    }
+
     if (!validateDatabaseName($dbName)) {
         http_response_code(400);
         sendResponse(false, 'Invalid database name');
+        return;
     }
 
     if (!validateTableName($oldName) || !validateTableName($newName)) {
         http_response_code(400);
         sendResponse(false, 'Invalid table name(s)');
+        return;
     }
 
     if ($oldName === $newName) {
         http_response_code(400);
         sendResponse(false, 'New name must be different from old name');
+        return;
     }
 
-    $conn = getConnection($dbName);
+    $conn = getConnection($host, $dbName, $username, $password, $port);
     if (!$conn) {
         http_response_code(500);
         sendResponse(false, 'Failed to connect to database');
+        return;
     }
 
     try {
@@ -1363,16 +1397,11 @@ switch ($action) {
         break;
 
     case 'delete_table':
-        $dbName = $_POST['db_name'] ?? '';
-        $tableName = $_POST['table_name'] ?? '';
-        deleteTable($dbName, $tableName);
+        deleteTable();
         break;
 
     case 'rename_table':
-        $dbName = $_POST['db_name'] ?? '';
-        $oldName = $_POST['old_table_name'] ?? '';
-        $newName = $_POST['new_table_name'] ?? '';
-        renameTable($dbName, $oldName, $newName);
+        renameTable();
         break;
 
     case 'alter_table':
