@@ -1669,17 +1669,61 @@ PHASE: Hostinger Edition
                 <!-- Tab 2: SQL Executor -->
                 <div id="sqlExecutorTab" class="tab-content">
                     <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                        <h3 style="color: #fbbf24; margin-bottom: 15px;">⚡ Execute Custom SQL Query</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="color: #fbbf24; margin: 0;">⚡ SQL Query Builder & Executor</h3>
+                            <button class="btn btn-secondary" onclick="toggleVisualBuilder()" id="toggleBuilderBtn">
+                                <span>🎨</span> <span id="builderToggleText">Show Visual Builder</span>
+                            </button>
+                        </div>
                         
                         <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
-                            <strong style="color: #93c5fd;">💡 SQL Executor:</strong> Run any SQL query on the selected database. Works like phpMyAdmin SQL console.
+                            <strong style="color: #93c5fd;">💡 Two Ways:</strong> Use Visual Builder for easy query creation OR write SQL directly in the textarea below.
+                        </div>
+
+                        <!-- Visual Query Builder -->
+                        <div id="visualQueryBuilder" style="display: none; background: rgba(34, 197, 94, 0.05); border: 2px solid #22c55e; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+                            <h4 style="color: #22c55e; margin: 0 0 20px 0;">🎨 Visual Query Builder</h4>
+                            
+                            <!-- Step 1: Select Operation -->
+                            <div class="form-group">
+                                <label class="form-label">1️⃣ Select Operation</label>
+                                <select id="queryOperation" class="form-select" onchange="updateQueryBuilder()">
+                                    <option value="">-- Choose Operation --</option>
+                                    <option value="SELECT">🔍 SELECT - Read data</option>
+                                    <option value="INSERT">➕ INSERT - Add new record</option>
+                                    <option value="UPDATE">✏️ UPDATE - Modify records</option>
+                                    <option value="DELETE">🗑️ DELETE - Remove records</option>
+                                </select>
+                            </div>
+
+                            <!-- Step 2: Select Table -->
+                            <div class="form-group">
+                                <label class="form-label">2️⃣ Select Table</label>
+                                <select id="queryTable" class="form-select" onchange="loadTableColumnsForQuery()">
+                                    <option value="">-- Choose Table --</option>
+                                </select>
+                                <div class="helper-text" id="tableRecordCount"></div>
+                            </div>
+
+                            <!-- Dynamic Query Options (changes based on operation) -->
+                            <div id="queryOptionsContainer"></div>
+
+                            <!-- Build Query Button -->
+                            <div style="margin-top: 20px;">
+                                <button class="btn btn-primary" onclick="buildQueryFromVisual()" style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);">
+                                    <span>🔨</span> Build SQL Query
+                                </button>
+                                <button class="btn btn-secondary" onclick="resetQueryBuilder()">
+                                    <span>🔄</span> Reset Builder
+                                </button>
+                            </div>
                         </div>
 
                         <!-- SQL Input -->
                         <div class="form-group">
                             <label class="form-label">SQL Query</label>
-                            <textarea id="customSQLInput" class="form-input" rows="8" placeholder="Enter your SQL query here...&#10;&#10;Examples:&#10;SELECT * FROM users WHERE status = 'active';&#10;INSERT INTO products (name, price) VALUES ('New Product', 99.99);&#10;UPDATE users SET email = 'new@email.com' WHERE id = 1;&#10;DELETE FROM logs WHERE created_at < '2024-01-01';&#10;CREATE TABLE test (id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(100));&#10;SHOW TABLES;&#10;DESCRIBE users;" style="font-family: 'Courier New', monospace; font-size: 14px;"></textarea>
-                            <div class="helper-text">⚡ Supported: SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, SHOW, DESCRIBE</div>
+                            <textarea id="customSQLInput" class="form-input" rows="8" placeholder="Enter your SQL query here or use Visual Builder above...&#10;&#10;Examples:&#10;SELECT * FROM users WHERE status = 'active';&#10;INSERT INTO products (name, price) VALUES ('New Product', 99.99);&#10;UPDATE users SET email = 'new@email.com' WHERE id = 1;&#10;DELETE FROM logs WHERE created_at < '2024-01-01';" style="font-family: 'Courier New', monospace; font-size: 14px;"></textarea>
+                            <div class="helper-text">⚡ Supported: SELECT, INSERT, UPDATE, DELETE, and more</div>
                         </div>
 
                         <!-- Execute Button -->
@@ -3008,6 +3052,588 @@ OVERVIEW:
         function insertSQLExample(example) {
             document.getElementById('customSQLInput').value = example;
             document.getElementById('sqlExamplesContainer').style.display = 'none';
+        }
+
+        // ========================================
+        // VISUAL QUERY BUILDER
+        // ========================================
+
+        let queryBuilderColumns = [];
+        let queryBuilderTableData = null;
+
+        // Toggle Visual Builder
+        function toggleVisualBuilder() {
+            const builder = document.getElementById('visualQueryBuilder');
+            const toggleText = document.getElementById('builderToggleText');
+            
+            if (builder.style.display === 'none' || !builder.style.display) {
+                builder.style.display = 'block';
+                toggleText.textContent = 'Hide Visual Builder';
+                loadTablesForQueryBuilder();
+            } else {
+                builder.style.display = 'none';
+                toggleText.textContent = 'Show Visual Builder';
+            }
+        }
+
+        // Load tables for query builder
+        async function loadTablesForQueryBuilder() {
+            if (!selectedDatabaseId) {
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) return;
+
+            const result = await apiRequest('list_tables', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port
+            });
+
+            if (result.success && result.tables.length > 0) {
+                const select = document.getElementById('queryTable');
+                select.innerHTML = '<option value="">-- Choose Table --</option>' + 
+                    result.tables.map(t => `<option value="${t}">${t}</option>`).join('');
+            }
+        }
+
+        // Load columns for selected table
+        async function loadTableColumnsForQuery() {
+            const tableName = document.getElementById('queryTable').value;
+            
+            if (!tableName || !selectedDatabaseId) {
+                queryBuilderColumns = [];
+                document.getElementById('tableRecordCount').textContent = '';
+                updateQueryBuilder();
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) return;
+
+            // Get table structure
+            const structResult = await apiRequest('get_table_structure', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                table_name: tableName
+            });
+
+            // Get record count
+            const dataResult = await apiRequest('get_table_data', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                table_name: tableName,
+                page: 1,
+                limit: 1
+            });
+
+            if (structResult.success) {
+                queryBuilderColumns = structResult.columns;
+                if (dataResult.success) {
+                    queryBuilderTableData = dataResult;
+                    document.getElementById('tableRecordCount').textContent = `📊 ${dataResult.pagination.total_rows.toLocaleString()} records in this table`;
+                }
+                updateQueryBuilder();
+            }
+        }
+
+        // Update query builder based on operation
+        function updateQueryBuilder() {
+            const operation = document.getElementById('queryOperation').value;
+            const tableName = document.getElementById('queryTable').value;
+            const container = document.getElementById('queryOptionsContainer');
+
+            if (!operation || !tableName || queryBuilderColumns.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+
+            if (operation === 'SELECT') {
+                html = buildSELECTOptions();
+            } else if (operation === 'INSERT') {
+                html = buildINSERTOptions();
+            } else if (operation === 'UPDATE') {
+                html = buildUPDATEOptions();
+            } else if (operation === 'DELETE') {
+                html = buildDELETEOptions();
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Build SELECT options
+        function buildSELECTOptions() {
+            let html = '<div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; margin-top: 15px;">';
+            
+            // Select columns
+            html += '<div class="form-group">';
+            html += '<label class="form-label">3️⃣ Select Columns</label>';
+            html += '<div style="max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">';
+            html += '<div class="checkbox-group" style="margin-bottom: 10px;"><input type="checkbox" id="selectAllCols" onchange="toggleAllColumns(this.checked)"><label for="selectAllCols" style="margin-left: 8px; color: #22c55e; font-weight: bold;">✨ SELECT * (All Columns)</label></div>';
+            
+            queryBuilderColumns.forEach((col, idx) => {
+                html += `<div class="checkbox-group" style="margin-bottom: 8px;">`;
+                html += `<input type="checkbox" id="col_${idx}" class="query-column-check" value="${col.Field}">`;
+                html += `<label for="col_${idx}" style="margin-left: 8px;">${col.Field} <span style="color: rgba(254, 243, 199, 0.6); font-size: 12px;">(${col.Type})</span></label>`;
+                html += `</div>`;
+            });
+            html += '</div></div>';
+
+            // WHERE clause
+            html += '<div class="form-group">';
+            html += '<label class="form-label">4️⃣ WHERE Condition (Optional)</label>';
+            html += '<div id="whereConditions"></div>';
+            html += '<button type="button" class="btn btn-secondary" onclick="addWhereCondition()" style="padding: 8px 16px; font-size: 13px; margin-top: 10px;">➕ Add Condition</button>';
+            html += '</div>';
+
+            // ORDER BY
+            html += '<div class="form-group">';
+            html += '<label class="form-label">5️⃣ ORDER BY (Optional)</label>';
+            html += '<div style="display: flex; gap: 10px;">';
+            html += '<select id="orderByColumn" class="form-select" style="flex: 2;"><option value="">-- No sorting --</option>';
+            queryBuilderColumns.forEach(col => {
+                html += `<option value="${col.Field}">${col.Field}</option>`;
+            });
+            html += '</select>';
+            html += '<select id="orderByDirection" class="form-select" style="flex: 1;"><option value="ASC">⬆️ ASC</option><option value="DESC">⬇️ DESC</option></select>';
+            html += '</div></div>';
+
+            // LIMIT
+            html += '<div class="form-group">';
+            html += '<label class="form-label">6️⃣ LIMIT (Optional)</label>';
+            html += '<input type="number" id="queryLimit" class="form-input" placeholder="e.g., 10, 100, 1000" min="1">';
+            html += '</div>';
+
+            html += '</div>';
+            
+            // Auto-add first WHERE condition
+            setTimeout(() => addWhereCondition(), 100);
+            
+            return html;
+        }
+
+        // Build INSERT options
+        function buildINSERTOptions() {
+            let html = '<div style="background: rgba(34, 197, 94, 0.1); padding: 15px; border-radius: 8px; margin-top: 15px;">';
+            html += '<div class="form-group"><label class="form-label">3️⃣ Enter Values for Each Column</label></div>';
+            
+            queryBuilderColumns.forEach(col => {
+                const isAutoIncrement = col.Extra && col.Extra.toLowerCase().includes('auto_increment');
+                if (isAutoIncrement) return; // Skip auto-increment
+                
+                html += `<div class="form-group">`;
+                html += `<label class="form-label">${col.Field} ${col.Null === 'NO' ? '<span style="color: #ef4444;">*</span>' : ''}</label>`;
+                html += `<input type="text" id="insert_${col.Field}" class="form-input" placeholder="${col.Type}" ${col.Null === 'NO' ? 'required' : ''}>`;
+                html += `<div class="helper-text">${col.Type}${col.Null === 'YES' ? ' (Optional - leave empty for NULL)' : ' (Required)'}</div>`;
+                html += `</div>`;
+            });
+            
+            html += '</div>';
+            return html;
+        }
+
+        // Build UPDATE options
+        function buildUPDATEOptions() {
+            let html = '<div style="background: rgba(245, 158, 11, 0.1); padding: 15px; border-radius: 8px; margin-top: 15px;">';
+            
+            // SET clause
+            html += '<div class="form-group">';
+            html += '<label class="form-label">3️⃣ SET (Columns to Update)</label>';
+            html += '<div id="updateSetFields"></div>';
+            html += '<button type="button" class="btn btn-secondary" onclick="addUpdateField()" style="padding: 8px 16px; font-size: 13px; margin-top: 10px;">➕ Add Field to Update</button>';
+            html += '</div>';
+
+            // WHERE clause
+            html += '<div class="form-group">';
+            html += '<label class="form-label">4️⃣ WHERE Condition (Required for safety)</label>';
+            html += '<div id="updateWhereConditions"></div>';
+            html += '<button type="button" class="btn btn-secondary" onclick="addUpdateWhereCondition()" style="padding: 8px 16px; font-size: 13px; margin-top: 10px;">➕ Add Condition</button>';
+            html += '</div>';
+
+            html += '</div>';
+            
+            setTimeout(() => {
+                addUpdateField();
+                addUpdateWhereCondition();
+            }, 100);
+            
+            return html;
+        }
+
+        // Build DELETE options  
+        function buildDELETEOptions() {
+            let html = '<div style="background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 8px; margin-top: 15px;">';
+            
+            html += '<div style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; border-radius: 6px; padding: 10px; margin-bottom: 15px; font-size: 13px;">';
+            html += '<strong>⚠️ Warning:</strong> DELETE is permanent! Always use WHERE condition to avoid deleting all records.';
+            html += '</div>';
+
+            // WHERE clause
+            html += '<div class="form-group">';
+            html += '<label class="form-label">3️⃣ WHERE Condition (REQUIRED)</label>';
+            html += '<div id="deleteWhereConditions"></div>';
+            html += '<button type="button" class="btn btn-secondary" onclick="addDeleteWhereCondition()" style="padding: 8px 16px; font-size: 13px; margin-top: 10px;">➕ Add Condition</button>';
+            html += '</div>';
+
+            // LIMIT (safety)
+            html += '<div class="form-group">';
+            html += '<label class="form-label">4️⃣ LIMIT (Safety limit)</label>';
+            html += '<input type="number" id="deleteLimit" class="form-input" placeholder="e.g., 1, 10, 100" min="1" value="1">';
+            html += '<div class="helper-text">⚠️ Recommended: Set a limit to prevent accidental mass deletion</div>';
+            html += '</div>';
+
+            html += '</div>';
+            
+            setTimeout(() => addDeleteWhereCondition(), 100);
+            
+            return html;
+        }
+
+        // Add WHERE condition for SELECT
+        function addWhereCondition() {
+            const container = document.getElementById('whereConditions');
+            if (!container) return;
+
+            const conditionId = 'where_' + Date.now();
+            const html = `
+                <div id="${conditionId}" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: end;">
+                    <select class="form-select where-column" style="flex: 2;">
+                        <option value="">-- Column --</option>
+                        ${queryBuilderColumns.map(c => `<option value="${c.Field}">${c.Field}</option>`).join('')}
+                    </select>
+                    <select class="form-select where-operator" style="flex: 1;">
+                        <option value="=">=</option>
+                        <option value="!=">!=</option>
+                        <option value=">">></option>
+                        <option value="<"><</option>
+                        <option value=">=">>=</option>
+                        <option value="<="><=</option>
+                        <option value="LIKE">LIKE</option>
+                        <option value="NOT LIKE">NOT LIKE</option>
+                        <option value="IN">IN</option>
+                        <option value="IS NULL">IS NULL</option>
+                        <option value="IS NOT NULL">IS NOT NULL</option>
+                    </select>
+                    <input type="text" class="form-input where-value" placeholder="Value" style="flex: 2;">
+                    <select class="form-select where-logic" style="flex: 1;">
+                        <option value="AND">AND</option>
+                        <option value="OR">OR</option>
+                    </select>
+                    <button type="button" class="btn btn-danger btn-icon" onclick="document.getElementById('${conditionId}').remove()">×</button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        // Add UPDATE field
+        function addUpdateField() {
+            const container = document.getElementById('updateSetFields');
+            if (!container) return;
+
+            const fieldId = 'update_' + Date.now();
+            const html = `
+                <div id="${fieldId}" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: end;">
+                    <select class="form-select update-column" style="flex: 1;">
+                        <option value="">-- Column --</option>
+                        ${queryBuilderColumns.map(c => `<option value="${c.Field}">${c.Field} (${c.Type})</option>`).join('')}
+                    </select>
+                    <input type="text" class="form-input update-value" placeholder="New Value" style="flex: 2;">
+                    <button type="button" class="btn btn-danger btn-icon" onclick="document.getElementById('${fieldId}').remove()">×</button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        // Add UPDATE WHERE condition
+        function addUpdateWhereCondition() {
+            const container = document.getElementById('updateWhereConditions');
+            if (!container) return;
+
+            const conditionId = 'upwhere_' + Date.now();
+            const html = `
+                <div id="${conditionId}" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: end;">
+                    <select class="form-select update-where-column" style="flex: 2;">
+                        <option value="">-- Column --</option>
+                        ${queryBuilderColumns.map(c => `<option value="${c.Field}">${c.Field}</option>`).join('')}
+                    </select>
+                    <select class="form-select update-where-operator" style="flex: 1;">
+                        <option value="=">=</option>
+                        <option value="!=">!=</option>
+                        <option value=">">></option>
+                        <option value="<"><</option>
+                        <option value="LIKE">LIKE</option>
+                    </select>
+                    <input type="text" class="form-input update-where-value" placeholder="Value" style="flex: 2;">
+                    <select class="form-select update-where-logic" style="flex: 1;">
+                        <option value="AND">AND</option>
+                        <option value="OR">OR</option>
+                    </select>
+                    <button type="button" class="btn btn-danger btn-icon" onclick="document.getElementById('${conditionId}').remove()">×</button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        // Add DELETE WHERE condition
+        function addDeleteWhereCondition() {
+            const container = document.getElementById('deleteWhereConditions');
+            if (!container) return;
+
+            const conditionId = 'delwhere_' + Date.now();
+            const html = `
+                <div id="${conditionId}" style="display: flex; gap: 10px; margin-bottom: 10px; align-items: end;">
+                    <select class="form-select delete-where-column" style="flex: 2;">
+                        <option value="">-- Column --</option>
+                        ${queryBuilderColumns.map(c => `<option value="${c.Field}">${c.Field}</option>`).join('')}
+                    </select>
+                    <select class="form-select delete-where-operator" style="flex: 1;">
+                        <option value="=">=</option>
+                        <option value="!=">!=</option>
+                        <option value=">">></option>
+                        <option value="<"><</option>
+                        <option value="LIKE">LIKE</option>
+                    </select>
+                    <input type="text" class="form-input delete-where-value" placeholder="Value" style="flex: 2;">
+                    <select class="form-select delete-where-logic" style="flex: 1;">
+                        <option value="AND">AND</option>
+                        <option value="OR">OR</option>
+                    </select>
+                    <button type="button" class="btn btn-danger btn-icon" onclick="document.getElementById('${conditionId}').remove()">×</button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        // Toggle all columns
+        function toggleAllColumns(checked) {
+            document.querySelectorAll('.query-column-check').forEach(cb => {
+                cb.checked = checked;
+            });
+        }
+
+        // Build SQL query from visual inputs
+        function buildQueryFromVisual() {
+            const operation = document.getElementById('queryOperation').value;
+            const tableName = document.getElementById('queryTable').value;
+
+            if (!operation || !tableName) {
+                showMessage('generateDatabaseMessage', '❌ Please select operation and table', 'error');
+                return;
+            }
+
+            let sql = '';
+
+            if (operation === 'SELECT') {
+                sql = buildSELECTQuery(tableName);
+            } else if (operation === 'INSERT') {
+                sql = buildINSERTQuery(tableName);
+            } else if (operation === 'UPDATE') {
+                sql = buildUPDATEQuery(tableName);
+            } else if (operation === 'DELETE') {
+                sql = buildDELETEQuery(tableName);
+            }
+
+            if (sql) {
+                document.getElementById('customSQLInput').value = sql;
+                showMessage('generateDatabaseMessage', '✅ SQL query built successfully! Review and execute below.', 'success');
+                // Scroll to SQL textarea
+                document.getElementById('customSQLInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // Build SELECT query
+        function buildSELECTQuery(tableName) {
+            // Get selected columns
+            const selectAll = document.getElementById('selectAllCols').checked;
+            let columns = '*';
+            
+            if (!selectAll) {
+                const selectedCols = Array.from(document.querySelectorAll('.query-column-check:checked')).map(cb => cb.value);
+                if (selectedCols.length === 0) {
+                    showMessage('generateDatabaseMessage', '❌ Please select at least one column or use SELECT *', 'error');
+                    return null;
+                }
+                columns = selectedCols.map(c => `\`${c}\``).join(', ');
+            }
+
+            let sql = `SELECT ${columns} FROM \`${tableName}\``;
+
+            // WHERE clause
+            const whereClauses = buildWhereClause('.where-column', '.where-operator', '.where-value', '.where-logic');
+            if (whereClauses) {
+                sql += ` WHERE ${whereClauses}`;
+            }
+
+            // ORDER BY
+            const orderBy = document.getElementById('orderByColumn').value;
+            if (orderBy) {
+                const direction = document.getElementById('orderByDirection').value;
+                sql += ` ORDER BY \`${orderBy}\` ${direction}`;
+            }
+
+            // LIMIT
+            const limit = document.getElementById('queryLimit').value;
+            if (limit) {
+                sql += ` LIMIT ${limit}`;
+            }
+
+            sql += ';';
+            return sql;
+        }
+
+        // Build INSERT query
+        function buildINSERTQuery(tableName) {
+            const columns = [];
+            const values = [];
+
+            queryBuilderColumns.forEach(col => {
+                const isAutoIncrement = col.Extra && col.Extra.toLowerCase().includes('auto_increment');
+                if (isAutoIncrement) return;
+
+                const input = document.getElementById(`insert_${col.Field}`);
+                if (input) {
+                    const value = input.value.trim();
+                    if (value) {
+                        columns.push(`\`${col.Field}\``);
+                        values.push(`'${value.replace(/'/g, "\\'")}'`);
+                    } else if (col.Null === 'NO') {
+                        showMessage('generateDatabaseMessage', `❌ ${col.Field} is required (NOT NULL)`, 'error');
+                        return null;
+                    }
+                }
+            });
+
+            if (columns.length === 0) {
+                showMessage('generateDatabaseMessage', '❌ Please fill at least one field', 'error');
+                return null;
+            }
+
+            return `INSERT INTO \`${tableName}\` (${columns.join(', ')}) VALUES (${values.join(', ')});`;
+        }
+
+        // Build UPDATE query
+        function buildUPDATEQuery(tableName) {
+            // Get SET fields
+            const setColumns = document.querySelectorAll('.update-column');
+            const setValues = document.querySelectorAll('.update-value');
+            const setParts = [];
+
+            for (let i = 0; i < setColumns.length; i++) {
+                const col = setColumns[i].value;
+                const val = setValues[i].value.trim();
+                if (col && val) {
+                    setParts.push(`\`${col}\` = '${val.replace(/'/g, "\\'")}'`);
+                }
+            }
+
+            if (setParts.length === 0) {
+                showMessage('generateDatabaseMessage', '❌ Please specify at least one field to update', 'error');
+                return null;
+            }
+
+            let sql = `UPDATE \`${tableName}\` SET ${setParts.join(', ')}`;
+
+            // WHERE clause
+            const whereClauses = buildWhereClause('.update-where-column', '.update-where-operator', '.update-where-value', '.update-where-logic');
+            if (whereClauses) {
+                sql += ` WHERE ${whereClauses}`;
+            } else {
+                showMessage('generateDatabaseMessage', '⚠️ No WHERE clause! This will update ALL records. Add condition for safety.', 'error');
+                return null;
+            }
+
+            sql += ';';
+            return sql;
+        }
+
+        // Build DELETE query
+        function buildDELETEQuery(tableName) {
+            let sql = `DELETE FROM \`${tableName}\``;
+
+            // WHERE clause
+            const whereClauses = buildWhereClause('.delete-where-column', '.delete-where-operator', '.delete-where-value', '.delete-where-logic');
+            if (whereClauses) {
+                sql += ` WHERE ${whereClauses}`;
+            } else {
+                showMessage('generateDatabaseMessage', '⚠️ No WHERE clause! This will delete ALL records. Add condition for safety.', 'error');
+                return null;
+            }
+
+            // LIMIT
+            const limit = document.getElementById('deleteLimit').value;
+            if (limit) {
+                sql += ` LIMIT ${limit}`;
+            }
+
+            sql += ';';
+            return sql;
+        }
+
+        // Build WHERE clause helper
+        function buildWhereClause(colSelector, opSelector, valSelector, logicSelector) {
+            const columns = document.querySelectorAll(colSelector);
+            const operators = document.querySelectorAll(opSelector);
+            const values = document.querySelectorAll(valSelector);
+            const logics = document.querySelectorAll(logicSelector);
+
+            const conditions = [];
+
+            for (let i = 0; i < columns.length; i++) {
+                const col = columns[i].value;
+                const op = operators[i].value;
+                const val = values[i].value.trim();
+
+                if (col && op) {
+                    let condition = `\`${col}\` ${op}`;
+                    
+                    if (op === 'IS NULL' || op === 'IS NOT NULL') {
+                        // No value needed
+                    } else if (op === 'IN') {
+                        condition += ` (${val})`;
+                    } else if (val) {
+                        if (op === 'LIKE' || op === 'NOT LIKE') {
+                            condition += ` '%${val.replace(/'/g, "\\'")}%'`;
+                        } else {
+                            condition += ` '${val.replace(/'/g, "\\'")}'`;
+                        }
+                    }
+
+                    if (i < columns.length - 1 && logics[i]) {
+                        condition += ` ${logics[i].value}`;
+                    }
+
+                    conditions.push(condition);
+                }
+            }
+
+            return conditions.join(' ');
+        }
+
+        // Reset query builder
+        function resetQueryBuilder() {
+            document.getElementById('queryOperation').value = '';
+            document.getElementById('queryTable').value = '';
+            document.getElementById('queryOptionsContainer').innerHTML = '';
+            document.getElementById('tableRecordCount').textContent = '';
+            queryBuilderColumns = [];
+            queryBuilderTableData = null;
         }
 
         // Expandable section toggle
