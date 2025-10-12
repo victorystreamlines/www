@@ -765,6 +765,17 @@ PHASE: Hostinger Edition
             cursor: not-allowed;
         }
 
+        /* CRUD Action buttons */
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn:disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
         .table-name {
             font-size: 16px;
             font-weight: bold;
@@ -876,6 +887,11 @@ PHASE: Hostinger Edition
 
         .data-table tbody tr:nth-child(even):hover {
             background: rgba(251, 191, 36, 0.1);
+        }
+
+        /* Actions column hover effect */
+        .data-table tbody tr:hover td:first-child {
+            background: rgba(251, 191, 36, 0.15) !important;
         }
 
         .stat-box {
@@ -1800,9 +1816,14 @@ PHASE: Hostinger Edition
 
                 <!-- Tabs for Structure / Manage Data -->
                 <div id="editTableTabs" style="display: none;">
+                    <div style="background: rgba(59, 130, 246, 0.1); padding: 12px 15px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3); margin-bottom: 15px;">
+                        <div style="font-size: 13px; color: rgba(254, 243, 199, 0.9);">
+                            <strong>💡 Two Modes:</strong> <strong style="color: #fbbf24;">Table Structure</strong> to modify columns | <strong style="color: #22c55e;">Manage Data (CRUD)</strong> to add/edit/delete records
+                        </div>
+                    </div>
                     <div class="tab-buttons" style="margin: 20px 0;">
-                        <button class="tab-btn active" onclick="switchEditTab('structure')">Table Structure</button>
-                        <button class="tab-btn" onclick="switchEditTab('manageData')">Manage Data (CRUD)</button>
+                        <button class="tab-btn active" onclick="switchEditTab('structure')">🏗️ Table Structure</button>
+                        <button class="tab-btn" onclick="switchEditTab('manageData')">📝 Manage Data (CRUD)</button>
                     </div>
 
                     <!-- Structure Tab -->
@@ -1848,16 +1869,18 @@ PHASE: Hostinger Edition
 
                     <!-- Manage Data Tab -->
                     <div id="editDataTab" class="tab-content">
-                        <!-- Search Bar -->
-                        <div style="margin-bottom: 20px;">
-                            <div style="display: flex; gap: 10px;">
-                                <input type="text" id="dataSearchInput" class="form-input" placeholder="🔍 Search in all text columns..." style="flex: 1;">
-                                <button class="btn btn-primary" onclick="searchTableRecords()">Search</button>
-                                <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
-                                <button class="btn btn-primary" onclick="showRecordForm('add')" style="background: #22c55e;">
+                        <!-- Action Bar -->
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                <input type="text" id="dataSearchInput" class="form-input" placeholder="🔍 Type to search instantly..." style="flex: 1; min-width: 250px;" oninput="searchTableRecordsInstant()">
+                                <button class="btn btn-secondary" onclick="clearSearch()">
+                                    <span>✖️</span> Clear
+                                </button>
+                                <button class="btn btn-primary" onclick="showRecordForm('add')" style="background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);">
                                     <span>➕</span> Add New Record
                                 </button>
                             </div>
+                            <div id="searchStatus" style="margin-top: 10px; font-size: 13px; color: rgba(254, 243, 199, 0.7);"></div>
                         </div>
 
                         <!-- Data Container -->
@@ -4637,11 +4660,11 @@ PHASE: Hostinger Edition
                 return;
             }
 
-            let html = '<div style="overflow-x: auto;"><table class="data-table">';
+            let html = '<div style="overflow-x: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px;"><table class="data-table">';
             
             // Header
             html += '<thead><tr>';
-            html += '<th style="width: 150px;">Actions</th>';
+            html += '<th style="width: 180px; text-align: center; position: sticky; left: 0; background: rgba(251, 191, 36, 0.2); z-index: 5;">Actions</th>';
             columns.forEach(col => {
                 html += `<th title="${col.Type}">${col.Field}${col.Key === 'PRI' ? ' 🔑' : ''}</th>`;
             });
@@ -4649,24 +4672,33 @@ PHASE: Hostinger Edition
             
             // Body
             html += '<tbody>';
-            data.forEach(row => {
-                const primaryValue = currentEditTablePrimaryKey ? row[currentEditTablePrimaryKey] : null;
+            data.forEach((row, index) => {
+                const rowId = `row_${index}`;
+                
+                // Store row data in a global object for access
+                if (!window.tableRowsData) window.tableRowsData = {};
+                window.tableRowsData[rowId] = row;
+                
                 html += '<tr>';
                 
-                // Actions column
-                html += '<td><div style="display: flex; gap: 5px;">';
-                if (primaryValue) {
-                    html += `<button class="btn btn-primary" onclick='editRecord(${JSON.stringify(row)})' style="padding: 6px 12px; font-size: 12px;">✏️ Edit</button>`;
-                    html += `<button class="btn btn-danger" onclick="deleteRecordAction('${primaryValue}')" style="padding: 6px 12px; font-size: 12px;">🗑️</button>`;
-                }
+                // Actions column (sticky) - ALWAYS show buttons
+                html += `<td style="position: sticky; left: 0; background: rgba(0, 0, 0, 0.4); z-index: 4; backdrop-filter: blur(5px);">`;
+                html += '<div style="display: flex; gap: 5px; justify-content: center;">';
+                html += `<button class="btn btn-primary" onclick="editRecordById('${rowId}')" style="padding: 8px 14px; font-size: 13px; white-space: nowrap;">✏️ Edit</button>`;
+                html += `<button class="btn btn-danger" onclick="deleteRecordByRow('${rowId}')" style="padding: 8px 14px; font-size: 13px;">🗑️</button>`;
                 html += '</div></td>';
                 
                 // Data columns
                 columns.forEach(col => {
                     const value = row[col.Field];
-                    const displayValue = value === null ? '<span style="color: #fca5a5; font-style: italic;">NULL</span>' : 
-                                       typeof value === 'string' && value.length > 50 ? value.substring(0, 50) + '...' : 
-                                       value;
+                    let displayValue;
+                    if (value === null) {
+                        displayValue = '<span style="color: #fca5a5; font-style: italic;">NULL</span>';
+                    } else if (typeof value === 'string' && value.length > 50) {
+                        displayValue = value.substring(0, 50) + '...';
+                    } else {
+                        displayValue = value;
+                    }
                     html += `<td title="${value}">${displayValue}</td>`;
                 });
                 
@@ -4675,6 +4707,98 @@ PHASE: Hostinger Edition
             html += '</tbody></table></div>';
             
             document.getElementById('dataManagementContainer').innerHTML = html;
+        }
+
+        // Edit record by row ID
+        function editRecordById(rowId) {
+            if (window.tableRowsData && window.tableRowsData[rowId]) {
+                showRecordForm('edit', window.tableRowsData[rowId]);
+            }
+        }
+
+        // Delete record by row (works with or without PK)
+        function deleteRecordByRow(rowId) {
+            if (!window.tableRowsData || !window.tableRowsData[rowId]) {
+                showMessage('editTableMessage', '❌ Record data not found', 'error');
+                return;
+            }
+
+            const record = window.tableRowsData[rowId];
+            
+            if (!confirm('Are you sure you want to delete this record?\n\nThis action cannot be undone!')) {
+                return;
+            }
+
+            // If table has primary key, use it
+            if (currentEditTablePrimaryKey && record[currentEditTablePrimaryKey]) {
+                deleteRecordAction(record[currentEditTablePrimaryKey]);
+            } else {
+                // No primary key - use all columns as WHERE condition
+                deleteRecordByAllColumns(record);
+            }
+        }
+
+        // Delete record using all columns (when no PK)
+        async function deleteRecordByAllColumns(record) {
+            if (!selectedDatabaseId || !currentEditTableName) {
+                showMessage('editTableMessage', '❌ No table selected', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) return;
+
+            showMessage('editTableMessage', '🔄 Deleting record...', 'info');
+
+            // Build WHERE clause using all columns
+            const whereConditions = [];
+            const whereValues = [];
+            
+            currentEditTableColumns.forEach(col => {
+                const value = record[col.Field];
+                whereConditions.push(`\`${col.Field}\` = ?`);
+                whereValues.push(value);
+            });
+
+            // For tables without PK, we'll delete using LIMIT 1 to be safe
+            const whereSql = whereConditions.join(' AND ');
+
+            // Since we can't send complex WHERE via our current API,
+            // let's use the primary key method but with first column as fallback
+            let identifierKey = currentEditTablePrimaryKey;
+            let identifierValue = currentEditTablePrimaryKey ? record[currentEditTablePrimaryKey] : null;
+
+            // Fallback: use first column
+            if (!identifierValue && currentEditTableColumns.length > 0) {
+                identifierKey = currentEditTableColumns[0].Field;
+                identifierValue = record[identifierKey];
+            }
+
+            if (!identifierValue) {
+                showMessage('editTableMessage', '❌ Cannot delete: No identifier found', 'error');
+                return;
+            }
+
+            const result = await apiRequest('delete_record', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                table_name: currentEditTableName,
+                primary_key: identifierKey,
+                primary_value: identifierValue
+            });
+
+            if (result.success) {
+                showMessage('editTableMessage', `✅ ${result.message}`, 'success');
+                loadTableRecordsForManagement(currentDataPage, currentSearchTerm);
+            } else {
+                showMessage('editTableMessage', `❌ ${result.message}`, 'error');
+            }
         }
 
         // Render data pagination
@@ -4696,7 +4820,36 @@ PHASE: Hostinger Edition
             document.getElementById('dataPagination').innerHTML = html;
         }
 
-        // Search table records
+        // Instant search (real-time)
+        let searchTimeout = null;
+        function searchTableRecordsInstant() {
+            // Clear previous timeout
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+
+            const searchInput = document.getElementById('dataSearchInput');
+            const searchTerm = searchInput.value.trim();
+            const statusEl = document.getElementById('searchStatus');
+
+            if (searchTerm) {
+                statusEl.textContent = '🔍 Searching...';
+            } else {
+                statusEl.textContent = '';
+            }
+
+            // Debounce search (wait 300ms after user stops typing)
+            searchTimeout = setTimeout(() => {
+                loadTableRecordsForManagement(1, searchTerm);
+                if (searchTerm) {
+                    statusEl.textContent = `🔍 Search results for: "${searchTerm}"`;
+                } else {
+                    statusEl.textContent = '';
+                }
+            }, 300);
+        }
+
+        // Search table records (button click)
         function searchTableRecords() {
             const searchTerm = document.getElementById('dataSearchInput').value.trim();
             loadTableRecordsForManagement(1, searchTerm);
@@ -4705,6 +4858,7 @@ PHASE: Hostinger Edition
         // Clear search
         function clearSearch() {
             document.getElementById('dataSearchInput').value = '';
+            document.getElementById('searchStatus').textContent = '';
             loadTableRecordsForManagement(1, '');
         }
 
@@ -4725,6 +4879,17 @@ PHASE: Hostinger Edition
 
             // Generate form fields dynamically
             let formHtml = '';
+            
+            // Add hidden field for identifier in edit mode
+            if (mode === 'edit') {
+                const identifierKey = currentEditTablePrimaryKey || (currentEditTableColumns.length > 0 ? currentEditTableColumns[0].Field : null);
+                const identifierValue = identifierKey && record ? record[identifierKey] : '';
+                if (identifierKey) {
+                    formHtml += `<input type="hidden" id="recordIdentifierKey" value="${identifierKey}">`;
+                    formHtml += `<input type="hidden" id="recordIdentifierValue" value="${identifierValue}">`;
+                }
+            }
+
             currentEditTableColumns.forEach(col => {
                 const isAutoIncrement = col.Extra && col.Extra.toLowerCase().includes('auto_increment');
                 const value = record ? record[col.Field] : '';
@@ -4734,18 +4899,22 @@ PHASE: Hostinger Edition
                     return;
                 }
 
-                // Read-only for primary key in edit mode
-                const isReadOnly = mode === 'edit' && col.Key === 'PRI';
+                // Determine identifier (PK or first column)
+                const identifierKey = currentEditTablePrimaryKey || (currentEditTableColumns.length > 0 ? currentEditTableColumns[0].Field : null);
+                
+                // Read-only for identifier in edit mode ONLY if it's auto-increment
+                const isReadOnly = mode === 'edit' && col.Field === identifierKey && isAutoIncrement;
 
                 formHtml += `
                     <div class="form-group">
                         <label class="form-label">
                             ${col.Field}
                             ${col.Key === 'PRI' ? ' 🔑' : ''}
-                            ${col.Null === 'NO' ? ' <span style="color: #ef4444;">*</span>' : ''}
+                            ${col.Field === identifierKey && mode === 'edit' ? ' <span style="color: #3b82f6;">(Identifier)</span>' : ''}
+                            ${col.Null === 'NO' && !isAutoIncrement ? ' <span style="color: #ef4444;">*</span>' : ''}
                         </label>
                         ${generateFormInput(col, value, isReadOnly)}
-                        <div class="helper-text">${col.Type}${col.Null === 'YES' ? ' (Optional)' : ' (Required)'}</div>
+                        <div class="helper-text">${col.Type}${col.Null === 'YES' ? ' (Optional)' : col.Null === 'NO' && !isAutoIncrement ? ' (Required)' : ''}</div>
                     </div>
                 `;
             });
@@ -4759,33 +4928,34 @@ PHASE: Hostinger Edition
         function generateFormInput(col, value, isReadOnly) {
             const typeUpper = col.Type.toUpperCase();
             const required = col.Null === 'NO' && !col.Extra?.includes('auto_increment') ? 'required' : '';
-            const readonly = isReadOnly ? 'readonly style="background: rgba(255, 255, 255, 0.05); cursor: not-allowed;"' : '';
+            const readonlyAttr = isReadOnly ? 'readonly' : '';
+            const readonlyStyle = isReadOnly ? 'style="background: rgba(255, 255, 255, 0.05); cursor: not-allowed;"' : '';
             
             // TEXT/LONGTEXT
             if (typeUpper.includes('TEXT') && !typeUpper.includes('TINY')) {
-                return `<textarea name="${col.Field}" class="form-input" rows="4" ${required} ${readonly}>${value || ''}</textarea>`;
+                return `<textarea name="${col.Field}" class="form-input" rows="4" ${required} ${readonlyAttr} ${readonlyStyle}>${value || ''}</textarea>`;
             }
             
             // DATE
             if (typeUpper.includes('DATE') && !typeUpper.includes('TIME')) {
-                return `<input type="date" name="${col.Field}" class="form-input" value="${value || ''}" ${required} ${readonly}>`;
+                return `<input type="date" name="${col.Field}" class="form-input" value="${value || ''}" ${required} ${readonlyAttr} ${readonlyStyle}>`;
             }
             
             // DATETIME/TIMESTAMP
             if (typeUpper.includes('DATETIME') || typeUpper.includes('TIMESTAMP')) {
                 const datetimeValue = value ? value.replace(' ', 'T').slice(0, 16) : '';
-                return `<input type="datetime-local" name="${col.Field}" class="form-input" value="${datetimeValue}" ${required} ${readonly}>`;
+                return `<input type="datetime-local" name="${col.Field}" class="form-input" value="${datetimeValue}" ${required} ${readonlyAttr} ${readonlyStyle}>`;
             }
             
             // TIME
             if (typeUpper.includes('TIME') && !typeUpper.includes('DATE')) {
-                return `<input type="time" name="${col.Field}" class="form-input" value="${value || ''}" ${required} ${readonly}>`;
+                return `<input type="time" name="${col.Field}" class="form-input" value="${value || ''}" ${required} ${readonlyAttr} ${readonlyStyle}>`;
             }
             
             // BOOLEAN/TINYINT(1)
             if (typeUpper.includes('TINYINT(1)') || typeUpper.includes('BOOLEAN') || typeUpper.includes('BOOL')) {
                 return `
-                    <select name="${col.Field}" class="form-select" ${required} ${readonly}>
+                    <select name="${col.Field}" class="form-select" ${required} ${readonlyAttr} ${readonlyStyle}>
                         <option value="">-- Select --</option>
                         <option value="1" ${value == 1 ? 'selected' : ''}>✅ True (1)</option>
                         <option value="0" ${value == 0 ? 'selected' : ''}>❌ False (0)</option>
@@ -4793,11 +4963,14 @@ PHASE: Hostinger Edition
                 `;
             }
             
-            // ENUM (if we can detect it)
-            // For now, use text input
+            // INT/DECIMAL/FLOAT - use number input
+            if (typeUpper.includes('INT') || typeUpper.includes('DECIMAL') || typeUpper.includes('FLOAT') || typeUpper.includes('DOUBLE')) {
+                const step = typeUpper.includes('DECIMAL') || typeUpper.includes('FLOAT') || typeUpper.includes('DOUBLE') ? '0.01' : '1';
+                return `<input type="number" name="${col.Field}" class="form-input" value="${value || ''}" step="${step}" ${required} ${readonlyAttr} ${readonlyStyle}>`;
+            }
             
             // Default: text input
-            return `<input type="text" name="${col.Field}" class="form-input" value="${value || ''}" ${required} ${readonly}>`;
+            return `<input type="text" name="${col.Field}" class="form-input" value="${value || ''}" ${required} ${readonlyAttr} ${readonlyStyle}>`;
         }
 
         // Edit record
@@ -4865,9 +5038,9 @@ PHASE: Hostinger Edition
                 }
             } else {
                 // Update existing record
-                if (!currentEditTablePrimaryKey || !currentEditingRecord) {
+                if (!currentEditingRecord) {
                     messageEl.className = 'message error';
-                    messageEl.textContent = '❌ Cannot update: No primary key found';
+                    messageEl.textContent = '❌ Cannot update: No record data';
                     return;
                 }
 
@@ -4875,7 +5048,21 @@ PHASE: Hostinger Edition
                 messageEl.textContent = '🔄 Updating record...';
                 messageEl.style.display = 'block';
 
-                const primaryValue = currentEditingRecord[currentEditTablePrimaryKey];
+                // Determine identifier (Primary Key or first column)
+                let identifierKey = currentEditTablePrimaryKey;
+                let identifierValue = currentEditTablePrimaryKey ? currentEditingRecord[currentEditTablePrimaryKey] : null;
+
+                // Fallback: use first column as identifier
+                if (!identifierValue && currentEditTableColumns.length > 0) {
+                    identifierKey = currentEditTableColumns[0].Field;
+                    identifierValue = currentEditingRecord[identifierKey];
+                }
+
+                if (!identifierValue) {
+                    messageEl.className = 'message error';
+                    messageEl.textContent = '❌ Cannot update: No identifier found';
+                    return;
+                }
 
                 const result = await apiRequest('update_record', {
                     db_host: conn.host,
@@ -4885,8 +5072,8 @@ PHASE: Hostinger Edition
                     db_port: conn.port,
                     table_name: currentEditTableName,
                     record_data: JSON.stringify(recordData),
-                    primary_key: currentEditTablePrimaryKey,
-                    primary_value: primaryValue
+                    primary_key: identifierKey,
+                    primary_value: identifierValue
                 });
 
                 if (result.success) {
