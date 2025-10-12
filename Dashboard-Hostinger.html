@@ -1169,6 +1169,12 @@ PHASE: Hostinger Edition
                     <span>Generate Database SQL</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="showSection('aiPrompt')">
+                    <span class="nav-icon">🤖</span>
+                    <span>AI Connection Prompt</span>
+                </a>
+            </li>
             <!-- TABLE OPERATIONS - HIDDEN -->
             <li class="nav-item hidden-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(251, 191, 36, 0.3);">
                 <div style="color: rgba(251, 191, 36, 0.7); font-size: 12px; padding: 0 15px; margin-bottom: 10px;">TABLE OPERATIONS</div>
@@ -1653,6 +1659,74 @@ PHASE: Hostinger Edition
             </div>
         </section>
 
+        <!-- AI Connection Prompt Section -->
+        <section id="aiPrompt" class="section">
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">🤖</span>
+                    AI Connection Prompt Generator
+                </h2>
+                <div id="aiPromptMessage"></div>
+                
+                <!-- Selected Database Info -->
+                <div id="aiPromptDbInfo" style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3); margin-bottom: 20px;">
+                    <div style="font-size: 14px; color: rgba(254, 243, 199, 0.9);">
+                        <strong>📊 Selected Database:</strong> <span id="aiPromptDbNameDisplay" style="color: #fbbf24; font-weight: bold;">None</span>
+                    </div>
+                    <div style="font-size: 13px; color: rgba(254, 243, 199, 0.7); margin-top: 5px;">
+                        💡 Please select a database from the Dashboard to generate AI connection prompt
+                    </div>
+                </div>
+
+                <!-- Prompt Container -->
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="color: #fbbf24; margin: 0;">📝 AI Connection Prompt</h3>
+                        <button class="btn btn-primary" onclick="copyAIPrompt()" id="copyAIPromptBtn" disabled>
+                            <span>📋</span> Copy to Clipboard
+                        </button>
+                    </div>
+                    
+                    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
+                        <strong style="color: #fbbf24;">💡 How to use:</strong> Copy this prompt and paste it into any AI code editor (Cursor, GitHub Copilot, etc.) to give the AI direct access to your database connection info.
+                    </div>
+
+                    <textarea id="aiPromptText" readonly style="width: 100%; min-height: 350px; padding: 20px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(251, 191, 36, 0.3); border-radius: 8px; color: #86efac; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.6; resize: vertical;">Select a database from the Dashboard to generate AI connection prompt...</textarea>
+                </div>
+
+                <!-- Quick Info Cards -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    <div class="stat-box">
+                        <div class="stat-label">🖥️ Database Host</div>
+                        <div class="stat-value" style="font-size: 14px; word-break: break-all;" id="aiPromptHost">-</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">📁 Database Name</div>
+                        <div class="stat-value" style="font-size: 14px; word-break: break-all;" id="aiPromptDbName">-</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">👤 Username</div>
+                        <div class="stat-value" style="font-size: 14px; word-break: break-all;" id="aiPromptUser">-</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">🔌 Port</div>
+                        <div class="stat-value" style="font-size: 14px;" id="aiPromptPort">-</div>
+                    </div>
+                </div>
+
+                <!-- Security Notice -->
+                <div style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; border-radius: 8px; padding: 15px; margin-top: 20px;">
+                    <strong style="color: #fca5a5;">⚠️ Security Warning:</strong>
+                    <ul style="margin: 10px 0 0 20px; line-height: 1.8; font-size: 13px; color: rgba(254, 243, 199, 0.8);">
+                        <li>This prompt contains your <strong>database password</strong> in plain text</li>
+                        <li>Only share with trusted AI assistants in secure environments</li>
+                        <li>Do not paste in public channels or forums</li>
+                        <li>Consider using temporary credentials for AI interactions</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
         <!-- List Tables Section - HIDDEN -->
         <section id="listTables" class="section hidden-section">
             <div id="tableConnectionStatus" class="connection-status"></div>
@@ -2104,6 +2178,8 @@ PHASE: Hostinger Edition
                 loadHostingerConnectionsTable();
             } else if (sectionId === 'generateDatabase') {
                 updateSelectedDatabaseDisplay();
+            } else if (sectionId === 'aiPrompt') {
+                updateAIPromptDisplay();
             } else if (sectionId === 'createTable') {
                 updateCreateTableDatabaseDisplay();
             } else if (sectionId === 'editTable') {
@@ -2137,6 +2213,168 @@ PHASE: Hostinger Edition
             setTimeout(() => {
                 loadSelectedDatabase();
             }, 50);
+        }
+
+        // Update AI Prompt display
+        function updateAIPromptDisplay() {
+            const displayEl = document.getElementById('aiPromptDbNameDisplay');
+            const promptTextarea = document.getElementById('aiPromptText');
+            const copyBtn = document.getElementById('copyAIPromptBtn');
+            const hostEl = document.getElementById('aiPromptHost');
+            const dbNameEl = document.getElementById('aiPromptDbName');
+            const userEl = document.getElementById('aiPromptUser');
+            const portEl = document.getElementById('aiPromptPort');
+
+            if (!displayEl || !promptTextarea) return;
+
+            if (selectedDatabaseId) {
+                const connId = selectedDatabaseId.replace('conn_', '');
+                const connections = getHostingerConnections();
+                const conn = connections.find(c => c.id === connId);
+                
+                if (conn) {
+                    // Update display
+                    displayEl.textContent = `${conn.name} (${conn.dbName})`;
+                    displayEl.style.color = '#22c55e';
+                    
+                    // Update quick info cards
+                    if (hostEl) hostEl.textContent = conn.host;
+                    if (dbNameEl) dbNameEl.textContent = conn.dbName;
+                    if (userEl) userEl.textContent = conn.username;
+                    if (portEl) portEl.textContent = conn.port;
+                    
+                    // Generate AI Prompt
+                    const prompt = `DATABASE CONNECTION INFORMATION
+=====================================
+
+I need you to connect to my MySQL database with the following credentials:
+
+Connection Name: ${conn.name}
+Server Type: ${conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting'}
+
+Database Host: ${conn.host}
+Database Name: ${conn.dbName}
+Database Username: ${conn.username}
+Database Password: ${conn.password}
+Database Port: ${conn.port}
+
+IMPORTANT INSTRUCTIONS FOR AI:
+- Use these exact credentials to establish database connection
+- Default charset: utf8mb4
+- Default collation: utf8mb4_unicode_ci
+- Connection method: PDO (PHP) or appropriate driver for your language
+- Always use prepared statements for security
+
+SAMPLE CONNECTION CODE (PHP):
+\`\`\`php
+$host = '${conn.host}';
+$dbname = '${conn.dbName}';
+$username = '${conn.username}';
+$password = '${conn.password}';
+$port = '${conn.port}';
+
+try {
+    $dsn = "mysql:host=\$host;port=\$port;dbname=\$dbname;charset=utf8mb4";
+    $pdo = new PDO($dsn, $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+    echo "Connected successfully!";
+} catch(PDOException $e) {
+    echo "Connection failed: " . $e->getMessage();
+}
+\`\`\`
+
+SAMPLE CONNECTION CODE (Node.js):
+\`\`\`javascript
+const mysql = require('mysql2/promise');
+
+const connection = await mysql.createConnection({
+    host: '${conn.host}',
+    port: ${conn.port},
+    user: '${conn.username}',
+    password: '${conn.password}',
+    database: '${conn.dbName}',
+    charset: 'utf8mb4'
+});
+
+console.log('Connected successfully!');
+\`\`\`
+
+SAMPLE CONNECTION CODE (Python):
+\`\`\`python
+import mysql.connector
+
+connection = mysql.connector.connect(
+    host='${conn.host}',
+    port=${conn.port},
+    user='${conn.username}',
+    password='${conn.password}',
+    database='${conn.dbName}',
+    charset='utf8mb4'
+)
+
+print("Connected successfully!")
+\`\`\`
+
+You can now use this connection to:
+- Query tables and data
+- Create/modify database schema
+- Execute SQL statements
+- Perform CRUD operations
+- Generate reports and analytics
+
+Please confirm you can connect successfully before proceeding with any operations.
+`;
+                    
+                    promptTextarea.value = prompt;
+                    if (copyBtn) copyBtn.disabled = false;
+                } else {
+                    displayEl.textContent = 'None - Please select from Dashboard';
+                    displayEl.style.color = '#fca5a5';
+                    promptTextarea.value = 'Select a database from the Dashboard to generate AI connection prompt...';
+                    if (copyBtn) copyBtn.disabled = true;
+                    if (hostEl) hostEl.textContent = '-';
+                    if (dbNameEl) dbNameEl.textContent = '-';
+                    if (userEl) userEl.textContent = '-';
+                    if (portEl) portEl.textContent = '-';
+                }
+            } else {
+                displayEl.textContent = 'None - Please select from Dashboard';
+                displayEl.style.color = '#fca5a5';
+                promptTextarea.value = 'Select a database from the Dashboard to generate AI connection prompt...';
+                if (copyBtn) copyBtn.disabled = true;
+                if (hostEl) hostEl.textContent = '-';
+                if (dbNameEl) dbNameEl.textContent = '-';
+                if (userEl) userEl.textContent = '-';
+                if (portEl) portEl.textContent = '-';
+            }
+        }
+
+        // Copy AI Prompt to clipboard
+        async function copyAIPrompt() {
+            const promptText = document.getElementById('aiPromptText').value;
+            
+            try {
+                await navigator.clipboard.writeText(promptText);
+                showMessage('aiPromptMessage', '✅ AI Connection Prompt copied to clipboard!', 'success');
+                
+                // Visual feedback
+                const btn = document.getElementById('copyAIPromptBtn');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<span>✅</span> Copied!';
+                btn.style.background = '#22c55e';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.style.background = '';
+                }, 2000);
+            } catch (err) {
+                // Fallback
+                const textarea = document.getElementById('aiPromptText');
+                textarea.select();
+                document.execCommand('copy');
+                showMessage('aiPromptMessage', '✅ AI Connection Prompt copied to clipboard!', 'success');
+            }
         }
 
         // Update selected database display in Delete Table section
@@ -2323,6 +2561,9 @@ PHASE: Hostinger Edition
                 // Update selected database display in Rename Table section
                 updateRenameTableDatabaseDisplay();
 
+                // Update AI Prompt display
+                updateAIPromptDisplay();
+
                 // Show TABLE OPERATIONS in sidebar
                 showTableOperations();
             }
@@ -2388,6 +2629,9 @@ PHASE: Hostinger Edition
 
             // Update selected database display in Rename Table section
             updateRenameTableDatabaseDisplay();
+
+            // Update AI Prompt display
+            updateAIPromptDisplay();
 
             // Show TABLE OPERATIONS in sidebar
             showTableOperations();
