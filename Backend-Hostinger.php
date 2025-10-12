@@ -937,6 +937,167 @@ function generateTableSQL() {
 }
 
 /**
+ * Generate full database SQL dump
+ */
+function generateDatabaseSQL() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $includeCreateDB = $_POST['include_create_db'] ?? 'false';
+    $includeData = $_POST['include_data'] ?? 'false';
+
+    if (empty($host) || empty($dbName) || empty($username)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required parameters');
+        return;
+    }
+
+    if (!validateDatabaseName($dbName)) {
+        http_response_code(400);
+        sendResponse(false, 'Invalid database name');
+        return;
+    }
+
+    $conn = getConnection($host, $dbName, $username, $password, $port);
+    if (!$conn) {
+        http_response_code(500);
+        sendResponse(false, 'Failed to connect to database');
+        return;
+    }
+
+    try {
+        $sql = "-- =====================================================\n";
+        $sql .= "-- Full Database SQL Dump\n";
+        $sql .= "-- Database: `{$dbName}`\n";
+        $sql .= "-- Generated on: " . date('Y-m-d H:i:s') . "\n";
+        $sql .= "-- Host: {$host}\n";
+        $sql .= "-- =====================================================\n\n";
+
+        // Add CREATE DATABASE if requested
+        if ($includeCreateDB === 'true') {
+            $sql .= "-- Create database\n";
+            $sql .= "CREATE DATABASE IF NOT EXISTS `{$dbName}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\n";
+            $sql .= "USE `{$dbName}`;\n\n";
+        } else {
+            $sql .= "-- Make sure you're using the correct database\n";
+            $sql .= "-- USE `{$dbName}`;\n\n";
+        }
+
+        $sql .= "SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\n";
+        $sql .= "SET time_zone = \"+00:00\";\n\n";
+
+        // Get all tables
+        $tablesStmt = $conn->query("SHOW TABLES");
+        $tables = $tablesStmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        $totalTables = count($tables);
+        $totalRows = 0;
+
+        if ($totalTables === 0) {
+            $sql .= "-- No tables found in database\n";
+            sendResponse(true, 'SQL generated successfully (empty database)', [
+                'sql' => $sql,
+                'database_name' => $dbName,
+                'total_tables' => 0,
+                'total_rows' => 0,
+                'sql_length' => strlen($sql),
+                'has_create_db' => $includeCreateDB === 'true',
+                'has_data' => false
+            ]);
+            return;
+        }
+
+        // Loop through each table
+        foreach ($tables as $index => $table) {
+            $safeTableName = sanitizeDatabaseName($table);
+            
+            $sql .= "-- =====================================================\n";
+            $sql .= "-- Table structure for `{$table}`\n";
+            $sql .= "-- =====================================================\n\n";
+            
+            $sql .= "DROP TABLE IF EXISTS `{$table}`;\n\n";
+            
+            // Get CREATE TABLE statement
+            $createStmt = $conn->query("SHOW CREATE TABLE $safeTableName");
+            $createResult = $createStmt->fetch(PDO::FETCH_ASSOC);
+            $sql .= $createResult['Create Table'] . ";\n\n";
+            
+            // Add data if requested
+            if ($includeData === 'true') {
+                // Get row count
+                $countStmt = $conn->query("SELECT COUNT(*) as total FROM $safeTableName");
+                $rowCount = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+                $totalRows += $rowCount;
+                
+                if ($rowCount > 0) {
+                    $sql .= "-- Dumping data for table `{$table}`\n";
+                    $sql .= "-- {$rowCount} rows\n\n";
+                    
+                    // Get all data
+                    $dataStmt = $conn->query("SELECT * FROM $safeTableName");
+                    $rows = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
+                    
+                    if (!empty($rows)) {
+                        // Get column names from first row
+                        $columns = array_keys($rows[0]);
+                        
+                        // Build INSERT statements (batch by 100 rows)
+                        $batchSize = 100;
+                        $batches = array_chunk($rows, $batchSize);
+                        
+                        foreach ($batches as $batch) {
+                            $sql .= "INSERT INTO `{$table}` (`" . implode('`, `', $columns) . "`) VALUES\n";
+                            
+                            $values = [];
+                            foreach ($batch as $row) {
+                                $rowValues = [];
+                                foreach ($columns as $col) {
+                                    $value = $row[$col];
+                                    if ($value === null) {
+                                        $rowValues[] = 'NULL';
+                                    } else {
+                                        $rowValues[] = $conn->quote($value);
+                                    }
+                                }
+                                $values[] = '(' . implode(', ', $rowValues) . ')';
+                            }
+                            
+                            $sql .= implode(",\n", $values) . ";\n\n";
+                        }
+                    }
+                } else {
+                    $sql .= "-- Table is empty\n\n";
+                }
+            }
+            
+            // Add separator between tables
+            if ($index < $totalTables - 1) {
+                $sql .= "\n";
+            }
+        }
+
+        $sql .= "-- =====================================================\n";
+        $sql .= "-- End of dump\n";
+        $sql .= "-- =====================================================\n";
+
+        sendResponse(true, 'Database SQL generated successfully', [
+            'sql' => $sql,
+            'database_name' => $dbName,
+            'total_tables' => $totalTables,
+            'total_rows' => $totalRows,
+            'sql_length' => strlen($sql),
+            'has_create_db' => $includeCreateDB === 'true',
+            'has_data' => $includeData === 'true'
+        ]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        sendResponse(false, 'Error generating database SQL: ' . $e->getMessage());
+    }
+}
+
+/**
  * Export connections to JSON file
  */
 function exportConnections() {
@@ -1194,8 +1355,12 @@ switch ($action) {
         generateTableSQL();
         break;
 
+    case 'generate_database_sql':
+        generateDatabaseSQL();
+        break;
+
     default:
         http_response_code(400);
-        sendResponse(false, 'Invalid action specified. Supported actions: check_connection, list_databases, connect_database, create_database, delete_database, rename_database, set_database_credentials, list_tables, create_table, delete_table, rename_table, alter_table, get_table_structure, export_connections, import_connections, list_import_files, get_table_data, generate_table_sql');
+        sendResponse(false, 'Invalid action specified. Supported actions: check_connection, list_databases, connect_database, create_database, delete_database, rename_database, set_database_credentials, list_tables, create_table, delete_table, rename_table, alter_table, get_table_structure, export_connections, import_connections, list_import_files, get_table_data, generate_table_sql, generate_database_sql');
 }
 ?>

@@ -1147,6 +1147,12 @@ PHASE: Hostinger Edition
                     <span>Hostinger Connections</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="showSection('generateDatabase')">
+                    <span class="nav-icon">🗄️</span>
+                    <span>Generate Database SQL</span>
+                </a>
+            </li>
             <!-- TABLE OPERATIONS - HIDDEN -->
             <li class="nav-item hidden-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(251, 191, 36, 0.3);">
                 <div style="color: rgba(251, 191, 36, 0.7); font-size: 12px; padding: 0 15px; margin-bottom: 10px;">TABLE OPERATIONS</div>
@@ -1506,6 +1512,127 @@ PHASE: Hostinger Edition
                         <strong>💡 Smart Merge:</strong> Import merges with existing connections (no data loss)<br>
                         <strong>🔒 Secure:</strong> Files saved on your computer with full control
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Generate Database SQL Section -->
+        <section id="generateDatabase" class="section">
+            <div class="card">
+                <h2 class="card-title">
+                    <span class="card-title-icon">🗄️</span>
+                    Generate Database SQL Dump
+                </h2>
+                <div id="generateDatabaseMessage"></div>
+                
+                <!-- Selected Database Info -->
+                <div id="selectedDbInfo" style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3); margin-bottom: 20px;">
+                    <div style="font-size: 14px; color: rgba(254, 243, 199, 0.9);">
+                        <strong>📊 Selected Database:</strong> <span id="selectedDbNameDisplay" style="color: #fbbf24; font-weight: bold;">None</span>
+                    </div>
+                    <div style="font-size: 13px; color: rgba(254, 243, 199, 0.7); margin-top: 5px;">
+                        💡 Please select a database from the Dashboard to generate SQL
+                    </div>
+                </div>
+
+                <!-- Generation Options -->
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h3 style="color: #fbbf24; margin-bottom: 20px;">📝 SQL Generation Options</h3>
+                    
+                    <!-- Option 1: Structure Only -->
+                    <div style="background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(251, 191, 36, 0.2); border-radius: 10px; padding: 20px; margin-bottom: 15px; transition: all 0.3s;" onmouseover="this.style.borderColor='#fbbf24'; this.style.background='rgba(251, 191, 36, 0.1)';" onmouseout="this.style.borderColor='rgba(251, 191, 36, 0.2)'; this.style.background='rgba(255, 255, 255, 0.05)';">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    <span style="font-size: 32px;">🏗️</span>
+                                    <div>
+                                        <h4 style="color: #fbbf24; margin: 0;">Tables Structure Only</h4>
+                                        <p style="margin: 5px 0 0 0; font-size: 13px; color: rgba(254, 243, 199, 0.7);">
+                                            Generate CREATE TABLE statements for all tables (no data)<br>
+                                            ✅ Perfect for: Injecting into existing database
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="generateDatabaseSQL(false, false)" style="padding: 12px 24px;">
+                                <span>🏗️</span> Generate
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Option 2: Full Database (CREATE DATABASE + Structure) -->
+                    <div style="background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(251, 191, 36, 0.2); border-radius: 10px; padding: 20px; margin-bottom: 15px; transition: all 0.3s;" onmouseover="this.style.borderColor='#fbbf24'; this.style.background='rgba(251, 191, 36, 0.1)';" onmouseout="this.style.borderColor='rgba(251, 191, 36, 0.2)'; this.style.background='rgba(255, 255, 255, 0.05)';">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    <span style="font-size: 32px;">🗄️</span>
+                                    <div>
+                                        <h4 style="color: #fbbf24; margin: 0;">Full Database (CREATE DATABASE + Tables)</h4>
+                                        <p style="margin: 5px 0 0 0; font-size: 13px; color: rgba(254, 243, 199, 0.7);">
+                                            Generate CREATE DATABASE + all table structures (no data)<br>
+                                            ✅ Perfect for: Complete database migration
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="generateDatabaseSQL(true, false)" style="padding: 12px 24px;">
+                                <span>🗄️</span> Generate
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Option 3: Structure + Data -->
+                    <div style="background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(251, 191, 36, 0.2); border-radius: 10px; padding: 20px; margin-bottom: 15px; transition: all 0.3s;" onmouseover="this.style.borderColor='#fbbf24'; this.style.background='rgba(251, 191, 36, 0.1)';" onmouseout="this.style.borderColor='rgba(251, 191, 36, 0.2)'; this.style.background='rgba(255, 255, 255, 0.05)';">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    <span style="font-size: 32px;">📦</span>
+                                    <div>
+                                        <h4 style="color: #fbbf24; margin: 0;">Tables Structure + Data</h4>
+                                        <p style="margin: 5px 0 0 0; font-size: 13px; color: rgba(254, 243, 199, 0.7);">
+                                            Generate all table structures + INSERT data (no CREATE DATABASE)<br>
+                                            ✅ Perfect for: Injecting complete data into existing database
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="generateDatabaseSQL(false, true)" style="padding: 12px 24px;">
+                                <span>📦</span> Generate
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Option 4: Full Database + Data -->
+                    <div style="background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(34, 197, 94, 0.2); border-radius: 10px; padding: 20px; transition: all 0.3s;" onmouseover="this.style.borderColor='#22c55e'; this.style.background='rgba(34, 197, 94, 0.1)';" onmouseout="this.style.borderColor='rgba(34, 197, 94, 0.2)'; this.style.background='rgba(255, 255, 255, 0.05)';">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    <span style="font-size: 32px;">💎</span>
+                                    <div>
+                                        <h4 style="color: #86efac; margin: 0;">Complete Database Dump (Everything!)</h4>
+                                        <p style="margin: 5px 0 0 0; font-size: 13px; color: rgba(254, 243, 199, 0.7);">
+                                            Generate CREATE DATABASE + all tables + all data<br>
+                                            ✅ Perfect for: Complete backup and restore
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="generateDatabaseSQL(true, true)" style="padding: 12px 24px; background: #22c55e; color: #1e3a8a;">
+                                <span>💎</span> Generate All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help Section -->
+                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 8px; padding: 15px;">
+                    <h4 style="color: #fbbf24; margin: 0 0 10px 0;">💡 Quick Tips</h4>
+                    <ul style="margin: 0; padding-left: 20px; line-height: 1.8; font-size: 13px; color: rgba(254, 243, 199, 0.8);">
+                        <li><strong>Structure Only:</strong> Use when you want to recreate table structure in another database</li>
+                        <li><strong>+ CREATE DATABASE:</strong> Use when migrating to new server (with database creation permission)</li>
+                        <li><strong>+ Data:</strong> Use for complete backup or migration with all data</li>
+                        <li><strong>Complete Dump:</strong> Full backup - includes everything</li>
+                    </ul>
                 </div>
             </div>
         </section>
@@ -1877,6 +2004,8 @@ PHASE: Hostinger Edition
                 loadDashboardConnections();
             } else if (sectionId === 'settings') {
                 loadHostingerConnectionsTable();
+            } else if (sectionId === 'generateDatabase') {
+                updateSelectedDatabaseDisplay();
             } else if (sectionId === 'listTables') {
                 // Auto-load tables when entering List Tables section
                 if (selectedDatabaseId) {
@@ -1890,6 +2019,29 @@ PHASE: Hostinger Edition
             setTimeout(() => {
                 loadSelectedDatabase();
             }, 50);
+        }
+
+        // Update selected database display in Generate Database section
+        function updateSelectedDatabaseDisplay() {
+            const displayEl = document.getElementById('selectedDbNameDisplay');
+            if (!displayEl) return;
+
+            if (selectedDatabaseId) {
+                const connId = selectedDatabaseId.replace('conn_', '');
+                const connections = getHostingerConnections();
+                const conn = connections.find(c => c.id === connId);
+                
+                if (conn) {
+                    displayEl.textContent = `${conn.name} (${conn.dbName})`;
+                    displayEl.style.color = '#22c55e';
+                } else {
+                    displayEl.textContent = 'None - Please select from Dashboard';
+                    displayEl.style.color = '#fca5a5';
+                }
+            } else {
+                displayEl.textContent = 'None - Please select from Dashboard';
+                displayEl.style.color = '#fca5a5';
+            }
         }
 
         // Expandable section toggle
@@ -1958,6 +2110,9 @@ PHASE: Hostinger Edition
                 // Update selected database badge
                 updateSelectedDatabaseBadge();
 
+                // Update selected database display in Generate Database section
+                updateSelectedDatabaseDisplay();
+
                 // Show TABLE OPERATIONS in sidebar
                 showTableOperations();
             }
@@ -2009,6 +2164,9 @@ PHASE: Hostinger Edition
             // Update selected database badge
             updateSelectedDatabaseBadge();
 
+            // Update selected database display in Generate Database section
+            updateSelectedDatabaseDisplay();
+
             // Show TABLE OPERATIONS in sidebar
             showTableOperations();
         }
@@ -2033,6 +2191,9 @@ PHASE: Hostinger Edition
             if (deselectBtn) {
                 deselectBtn.classList.remove('active');
             }
+
+            // Update selected database display in Generate Database section
+            updateSelectedDatabaseDisplay();
 
             // Hide TABLE OPERATIONS in sidebar
             hideTableOperations();
@@ -3391,6 +3552,104 @@ PHASE: Hostinger Edition
 
         let generatedSQL = '';
 
+        // Generate full database SQL
+        async function generateDatabaseSQL(includeCreateDB, includeData) {
+            if (!selectedDatabaseId) {
+                showMessage('generateDatabaseMessage', '❌ Please select a database from Dashboard first', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('generateDatabaseMessage', '❌ Selected database connection not found', 'error');
+                return;
+            }
+
+            // Determine generation type
+            let genType = '';
+            if (includeCreateDB && includeData) {
+                genType = 'Complete Database Dump (CREATE DATABASE + Structure + Data)';
+            } else if (includeCreateDB && !includeData) {
+                genType = 'Full Database (CREATE DATABASE + Structure Only)';
+            } else if (!includeCreateDB && includeData) {
+                genType = 'Tables Structure + Data';
+            } else {
+                genType = 'Tables Structure Only';
+            }
+
+            showMessage('generateDatabaseMessage', `🔄 Generating ${genType}...`, 'info');
+
+            const result = await apiRequest('generate_database_sql', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                include_create_db: includeCreateDB ? 'true' : 'false',
+                include_data: includeData ? 'true' : 'false'
+            });
+
+            if (result.success) {
+                generatedSQL = result.sql;
+                showDatabaseSQLModal(result);
+                showMessage('generateDatabaseMessage', `✅ ${genType} generated successfully!`, 'success');
+            } else {
+                showMessage('generateDatabaseMessage', `❌ ${result.message}`, 'error');
+            }
+        }
+
+        // Show database SQL modal
+        function showDatabaseSQLModal(result) {
+            document.getElementById('sqlTableName').textContent = `Database: ${result.database_name}`;
+            document.getElementById('sqlCode').value = result.sql;
+            
+            // Show info
+            let typeLabel = '';
+            if (result.has_create_db && result.has_data) {
+                typeLabel = '💎 Complete Dump (DB + Tables + Data)';
+            } else if (result.has_create_db && !result.has_data) {
+                typeLabel = '🗄️ Full Database (DB + Tables)';
+            } else if (!result.has_create_db && result.has_data) {
+                typeLabel = '📦 Tables + Data';
+            } else {
+                typeLabel = '🏗️ Tables Structure Only';
+            }
+
+            const infoHtml = `
+                <div class="stat-box" style="flex: 1; min-width: 150px;">
+                    <div class="stat-label">📝 Generation Type</div>
+                    <div class="stat-value" style="font-size: 12px;">${typeLabel}</div>
+                </div>
+                <div class="stat-box" style="flex: 1; min-width: 150px;">
+                    <div class="stat-label">📊 Total Tables</div>
+                    <div class="stat-value" style="font-size: 14px;">${result.total_tables}</div>
+                </div>
+                ${result.has_data ? `
+                <div class="stat-box" style="flex: 1; min-width: 150px;">
+                    <div class="stat-label">📈 Total Rows</div>
+                    <div class="stat-value" style="font-size: 14px;">${result.total_rows.toLocaleString()}</div>
+                </div>` : ''}
+                <div class="stat-box" style="flex: 1; min-width: 150px;">
+                    <div class="stat-label">📏 SQL Size</div>
+                    <div class="stat-value" style="font-size: 14px;">${formatBytes(result.sql_length)}</div>
+                </div>
+            `;
+            document.getElementById('sqlInfo').innerHTML = infoHtml;
+            
+            // Show success message
+            const messageHtml = `
+                <div class="message success" style="display: block;">
+                    ✅ Database SQL generated successfully! Ready to copy or download.
+                </div>
+            `;
+            document.getElementById('sqlMessage').innerHTML = messageHtml;
+            
+            document.getElementById('sqlModal').classList.add('active');
+        }
+
         // Generate SQL from table list (when clicking buttons on table cards)
         async function generateSQLFromList(tableName, includeData) {
             if (!selectedDatabaseId) {
@@ -3508,30 +3767,46 @@ PHASE: Hostinger Edition
             
             try {
                 await navigator.clipboard.writeText(sqlCode);
-                showMessage('tableDataMessage', '✅ SQL copied to clipboard!', 'success');
                 
-                // Visual feedback
+                // Visual feedback in modal
                 const messageEl = document.getElementById('sqlMessage');
                 messageEl.innerHTML = '<div class="message success" style="display: block;">✅ SQL copied to clipboard successfully!</div>';
                 
                 setTimeout(() => {
                     messageEl.innerHTML = '<div class="message success" style="display: block;">✅ SQL generated successfully! You can now copy or download it.</div>';
                 }, 2000);
+
+                // Show message in appropriate location
+                const currentView = document.getElementById('tableDataView').style.display;
+                if (currentView === 'none') {
+                    showMessage('generateDatabaseMessage', '✅ SQL copied to clipboard!', 'success');
+                } else {
+                    showMessage('tableDataMessage', '✅ SQL copied to clipboard!', 'success');
+                }
             } catch (err) {
                 // Fallback for older browsers
                 const textarea = document.getElementById('sqlCode');
                 textarea.select();
                 document.execCommand('copy');
-                showMessage('tableDataMessage', '✅ SQL copied to clipboard!', 'success');
+                
+                const currentView = document.getElementById('tableDataView').style.display;
+                if (currentView === 'none') {
+                    showMessage('generateDatabaseMessage', '✅ SQL copied to clipboard!', 'success');
+                } else {
+                    showMessage('tableDataMessage', '✅ SQL copied to clipboard!', 'success');
+                }
             }
         }
 
         // Download SQL file
         function downloadSQL() {
             const sqlCode = document.getElementById('sqlCode').value;
-            const tableName = document.getElementById('sqlTableName').textContent;
+            const nameText = document.getElementById('sqlTableName').textContent;
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-            const filename = `${tableName}_${timestamp}.sql`;
+            
+            // Clean filename (remove special chars)
+            const cleanName = nameText.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_{2,}/g, '_');
+            const filename = `${cleanName}_${timestamp}.sql`;
             
             const blob = new Blob([sqlCode], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
@@ -3543,7 +3818,13 @@ PHASE: Hostinger Edition
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            showMessage('tableDataMessage', `✅ SQL file downloaded: ${filename}`, 'success');
+            // Show message in appropriate location
+            const currentView = document.getElementById('tableDataView').style.display;
+            if (currentView === 'none') {
+                showMessage('generateDatabaseMessage', `✅ SQL file downloaded: ${filename}`, 'success');
+            } else {
+                showMessage('tableDataMessage', `✅ SQL file downloaded: ${filename}`, 'success');
+            }
         }
 
         // Load tables for dropdowns
