@@ -1541,6 +1541,115 @@ function searchRecords() {
 }
 
 /**
+ * Execute custom SQL query
+ */
+function executeCustomSQL() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $sqlQuery = $_POST['sql_query'] ?? '';
+
+    if (empty($host) || empty($dbName) || empty($username) || empty($sqlQuery)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required parameters');
+        return;
+    }
+
+    if (!validateDatabaseName($dbName)) {
+        http_response_code(400);
+        sendResponse(false, 'Invalid database name');
+        return;
+    }
+
+    $conn = getConnection($host, $dbName, $username, $password, $port);
+    if (!$conn) {
+        http_response_code(500);
+        sendResponse(false, 'Failed to connect to database');
+        return;
+    }
+
+    try {
+        // Trim and clean the query
+        $sqlQuery = trim($sqlQuery);
+        
+        // Detect query type
+        $queryType = 'UNKNOWN';
+        $upperQuery = strtoupper(substr($sqlQuery, 0, 20));
+        
+        if (strpos($upperQuery, 'SELECT') === 0) {
+            $queryType = 'SELECT';
+        } elseif (strpos($upperQuery, 'INSERT') === 0) {
+            $queryType = 'INSERT';
+        } elseif (strpos($upperQuery, 'UPDATE') === 0) {
+            $queryType = 'UPDATE';
+        } elseif (strpos($upperQuery, 'DELETE') === 0) {
+            $queryType = 'DELETE';
+        } elseif (strpos($upperQuery, 'CREATE') === 0) {
+            $queryType = 'CREATE';
+        } elseif (strpos($upperQuery, 'DROP') === 0) {
+            $queryType = 'DROP';
+        } elseif (strpos($upperQuery, 'ALTER') === 0) {
+            $queryType = 'ALTER';
+        } elseif (strpos($upperQuery, 'SHOW') === 0) {
+            $queryType = 'SHOW';
+        } elseif (strpos($upperQuery, 'DESCRIBE') === 0 || strpos($upperQuery, 'DESC') === 0) {
+            $queryType = 'DESCRIBE';
+        }
+
+        // Execute query
+        $stmt = $conn->query($sqlQuery);
+        
+        $responseData = [
+            'query_type' => $queryType,
+            'executed_query' => $sqlQuery
+        ];
+
+        // Handle different query types
+        if ($queryType === 'SELECT' || $queryType === 'SHOW' || $queryType === 'DESCRIBE') {
+            // Fetch results
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $rowCount = count($results);
+            
+            // Get column info if results exist
+            $columns = [];
+            if ($rowCount > 0) {
+                $columns = array_keys($results[0]);
+            }
+            
+            $responseData['results'] = $results;
+            $responseData['columns'] = $columns;
+            $responseData['row_count'] = $rowCount;
+            $responseData['message'] = "Query executed successfully. {$rowCount} row(s) returned.";
+        } elseif ($queryType === 'INSERT') {
+            $affectedRows = $stmt->rowCount();
+            $lastId = $conn->lastInsertId();
+            
+            $responseData['affected_rows'] = $affectedRows;
+            $responseData['insert_id'] = $lastId;
+            $responseData['message'] = "Query executed successfully. {$affectedRows} row(s) inserted. Last insert ID: {$lastId}";
+        } elseif ($queryType === 'UPDATE' || $queryType === 'DELETE') {
+            $affectedRows = $stmt->rowCount();
+            
+            $responseData['affected_rows'] = $affectedRows;
+            $responseData['message'] = "Query executed successfully. {$affectedRows} row(s) affected.";
+        } else {
+            // DDL queries (CREATE, DROP, ALTER, etc.)
+            $responseData['message'] = "Query executed successfully.";
+        }
+
+        sendResponse(true, $responseData['message'], $responseData);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        sendResponse(false, 'SQL Error: ' . $e->getMessage(), [
+            'error_code' => $e->getCode(),
+            'executed_query' => $sqlQuery
+        ]);
+    }
+}
+
+/**
  * Export connections to JSON file
  */
 function exportConnections() {
@@ -1808,8 +1917,12 @@ switch ($action) {
         searchRecords();
         break;
 
+    case 'execute_sql':
+        executeCustomSQL();
+        break;
+
     default:
         http_response_code(400);
-        sendResponse(false, 'Invalid action specified. Supported actions: check_connection, list_databases, connect_database, create_database, delete_database, rename_database, set_database_credentials, list_tables, create_table, delete_table, rename_table, alter_table, get_table_structure, export_connections, import_connections, list_import_files, get_table_data, generate_table_sql, generate_database_sql, insert_random_data, insert_record, update_record, delete_record, search_records');
+        sendResponse(false, 'Invalid action specified. Supported actions: check_connection, list_databases, connect_database, create_database, delete_database, rename_database, set_database_credentials, list_tables, create_table, delete_table, rename_table, alter_table, get_table_structure, export_connections, import_connections, list_import_files, get_table_data, generate_table_sql, generate_database_sql, insert_random_data, insert_record, update_record, delete_record, search_records, execute_sql');
 }
 ?>

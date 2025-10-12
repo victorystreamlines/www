@@ -1543,7 +1543,7 @@ PHASE: Hostinger Edition
             <div class="card">
                 <h2 class="card-title">
                     <span class="card-title-icon">🗄️</span>
-                    Generate Database SQL Dump
+                    Database SQL Tools
                 </h2>
                 <div id="generateDatabaseMessage"></div>
                 
@@ -1553,11 +1553,18 @@ PHASE: Hostinger Edition
                         <strong>📊 Selected Database:</strong> <span id="selectedDbNameDisplay" style="color: #fbbf24; font-weight: bold;">None</span>
                     </div>
                     <div style="font-size: 13px; color: rgba(254, 243, 199, 0.7); margin-top: 5px;">
-                        💡 Please select a database from the Dashboard to generate SQL
+                        💡 Please select a database from the Dashboard
                     </div>
                 </div>
 
-                <!-- Generation Options -->
+                <!-- Tabs -->
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="switchDatabaseSQLTab('generate')">🗄️ Generate SQL Dump</button>
+                    <button class="tab-btn" onclick="switchDatabaseSQLTab('executor')">⚡ SQL Executor</button>
+                </div>
+
+                <!-- Tab 1: Generation Options -->
+                <div id="generateSQLTab" class="tab-content active">
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
                     <h3 style="color: #fbbf24; margin-bottom: 20px;">📝 SQL Generation Options</h3>
                     
@@ -1655,6 +1662,77 @@ PHASE: Hostinger Edition
                         <li><strong>+ Data:</strong> Use for complete backup or migration with all data</li>
                         <li><strong>Complete Dump:</strong> Full backup - includes everything</li>
                     </ul>
+                </div>
+                </div>
+                </div>
+
+                <!-- Tab 2: SQL Executor -->
+                <div id="sqlExecutorTab" class="tab-content">
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h3 style="color: #fbbf24; margin-bottom: 15px;">⚡ Execute Custom SQL Query</h3>
+                        
+                        <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
+                            <strong style="color: #93c5fd;">💡 SQL Executor:</strong> Run any SQL query on the selected database. Works like phpMyAdmin SQL console.
+                        </div>
+
+                        <!-- SQL Input -->
+                        <div class="form-group">
+                            <label class="form-label">SQL Query</label>
+                            <textarea id="customSQLInput" class="form-input" rows="8" placeholder="Enter your SQL query here...&#10;&#10;Examples:&#10;SELECT * FROM users WHERE status = 'active';&#10;INSERT INTO products (name, price) VALUES ('New Product', 99.99);&#10;UPDATE users SET email = 'new@email.com' WHERE id = 1;&#10;DELETE FROM logs WHERE created_at < '2024-01-01';&#10;CREATE TABLE test (id INT PRIMARY KEY AUTO_INCREMENT, name VARCHAR(100));&#10;SHOW TABLES;&#10;DESCRIBE users;" style="font-family: 'Courier New', monospace; font-size: 14px;"></textarea>
+                            <div class="helper-text">⚡ Supported: SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, SHOW, DESCRIBE</div>
+                        </div>
+
+                        <!-- Execute Button -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <button class="btn btn-primary" onclick="executeSQLQuery()" id="executeSQLBtn" disabled style="background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);">
+                                <span>▶️</span> Execute Query
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearSQLInput()">
+                                <span>🗑️</span> Clear
+                            </button>
+                            <button class="btn btn-secondary" onclick="showSQLExamples()">
+                                <span>📚</span> Examples
+                            </button>
+                        </div>
+
+                        <!-- Results Container -->
+                        <div id="sqlResultsContainer" style="display: none;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h4 style="color: #fbbf24; margin: 0;">Query Results</h4>
+                                <button class="btn btn-secondary" onclick="closeSQLResults()" style="padding: 6px 12px; font-size: 12px;">
+                                    ✖️ Close Results
+                                </button>
+                            </div>
+                            
+                            <div id="sqlResultsMessage"></div>
+                            <div id="sqlResultsData"></div>
+                        </div>
+
+                        <!-- SQL Examples -->
+                        <div id="sqlExamplesContainer" style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 8px; padding: 15px; margin-top: 15px;">
+                            <h4 style="color: #93c5fd; margin: 0 0 10px 0;">📚 SQL Query Examples</h4>
+                            <div style="font-size: 13px; line-height: 1.8; color: rgba(254, 243, 199, 0.9);">
+                                <div style="margin-bottom: 10px; cursor: pointer;" onclick="insertSQLExample('SELECT * FROM users LIMIT 10;')">
+                                    <strong style="color: #fbbf24;">SELECT:</strong> <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">SELECT * FROM users LIMIT 10;</code>
+                                </div>
+                                <div style="margin-bottom: 10px; cursor: pointer;" onclick="insertSQLExample('INSERT INTO users (username, email) VALUES (\\'testuser\\', \\'test@email.com\\');')">
+                                    <strong style="color: #fbbf24;">INSERT:</strong> <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">INSERT INTO users (username, email) VALUES ('testuser', 'test@email.com');</code>
+                                </div>
+                                <div style="margin-bottom: 10px; cursor: pointer;" onclick="insertSQLExample('UPDATE users SET status = \\'active\\' WHERE id = 1;')">
+                                    <strong style="color: #fbbf24;">UPDATE:</strong> <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">UPDATE users SET status = 'active' WHERE id = 1;</code>
+                                </div>
+                                <div style="margin-bottom: 10px; cursor: pointer;" onclick="insertSQLExample('DELETE FROM logs WHERE created_at < \\'2024-01-01\\';')">
+                                    <strong style="color: #fbbf24;">DELETE:</strong> <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">DELETE FROM logs WHERE created_at < '2024-01-01';</code>
+                                </div>
+                                <div style="margin-bottom: 10px; cursor: pointer;" onclick="insertSQLExample('SHOW TABLES;')">
+                                    <strong style="color: #fbbf24;">SHOW TABLES:</strong> <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">SHOW TABLES;</code>
+                                </div>
+                                <div style="margin-bottom: 10px; cursor: pointer;" onclick="insertSQLExample('DESCRIBE users;')">
+                                    <strong style="color: #fbbf24;">DESCRIBE:</strong> <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">DESCRIBE users;</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -2714,6 +2792,8 @@ OVERVIEW:
         // Update selected database display in Generate Database section
         function updateSelectedDatabaseDisplay() {
             const displayEl = document.getElementById('selectedDbNameDisplay');
+            const executeSQLBtn = document.getElementById('executeSQLBtn');
+            
             if (!displayEl) return;
 
             if (selectedDatabaseId) {
@@ -2724,14 +2804,210 @@ OVERVIEW:
                 if (conn) {
                     displayEl.textContent = `${conn.name} (${conn.dbName})`;
                     displayEl.style.color = '#22c55e';
+                    // Enable SQL executor button
+                    if (executeSQLBtn) executeSQLBtn.disabled = false;
                 } else {
                     displayEl.textContent = 'None - Please select from Dashboard';
                     displayEl.style.color = '#fca5a5';
+                    if (executeSQLBtn) executeSQLBtn.disabled = true;
                 }
             } else {
                 displayEl.textContent = 'None - Please select from Dashboard';
                 displayEl.style.color = '#fca5a5';
+                if (executeSQLBtn) executeSQLBtn.disabled = true;
             }
+        }
+
+        // ========================================
+        // SQL EXECUTOR FUNCTIONS
+        // ========================================
+
+        // Switch between Database SQL tabs
+        function switchDatabaseSQLTab(tabName) {
+            const section = document.getElementById('generateDatabase');
+            if (!section) return;
+
+            section.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            if (tabName === 'generate') {
+                section.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+                document.getElementById('generateSQLTab').classList.add('active');
+                document.getElementById('sqlExecutorTab').classList.remove('active');
+            } else if (tabName === 'executor') {
+                section.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+                document.getElementById('sqlExecutorTab').classList.add('active');
+                document.getElementById('generateSQLTab').classList.remove('active');
+            }
+        }
+
+        // Execute SQL Query
+        async function executeSQLQuery() {
+            if (!selectedDatabaseId) {
+                showMessage('generateDatabaseMessage', '❌ Please select a database first', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('generateDatabaseMessage', '❌ Connection not found', 'error');
+                return;
+            }
+
+            const sqlQuery = document.getElementById('customSQLInput').value.trim();
+            
+            if (!sqlQuery) {
+                showMessage('generateDatabaseMessage', '❌ Please enter an SQL query', 'error');
+                return;
+            }
+
+            showMessage('generateDatabaseMessage', '🔄 Executing SQL query...', 'info');
+
+            const result = await apiRequest('execute_sql', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                sql_query: sqlQuery
+            });
+
+            if (result.success) {
+                showMessage('generateDatabaseMessage', `✅ ${result.message}`, 'success');
+                displaySQLResults(result);
+            } else {
+                showMessage('generateDatabaseMessage', `❌ ${result.message}`, 'error');
+                displaySQLError(result);
+            }
+        }
+
+        // Display SQL results
+        function displaySQLResults(result) {
+            const container = document.getElementById('sqlResultsContainer');
+            const messageEl = document.getElementById('sqlResultsMessage');
+            const dataEl = document.getElementById('sqlResultsData');
+            
+            container.style.display = 'block';
+            
+            // Show success message
+            messageEl.innerHTML = `
+                <div class="message success" style="display: block; margin-bottom: 15px;">
+                    ✅ ${result.message}<br>
+                    <strong>Query Type:</strong> ${result.query_type}
+                </div>
+            `;
+
+            // Display results based on query type
+            if (result.results && result.results.length > 0) {
+                // SELECT/SHOW/DESCRIBE results - display as table
+                let html = '<div style="overflow-x: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; max-height: 500px; overflow-y: auto;">';
+                html += '<table class="data-table">';
+                
+                // Header
+                html += '<thead><tr>';
+                result.columns.forEach(col => {
+                    html += `<th>${col}</th>`;
+                });
+                html += '</tr></thead>';
+                
+                // Body
+                html += '<tbody>';
+                result.results.forEach(row => {
+                    html += '<tr>';
+                    result.columns.forEach(col => {
+                        const value = row[col];
+                        const displayValue = value === null ? '<span style="color: #fca5a5; font-style: italic;">NULL</span>' : value;
+                        html += `<td title="${value}">${displayValue}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
+                
+                html += `<div style="margin-top: 10px; padding: 10px; background: rgba(59, 130, 246, 0.1); border-radius: 6px; font-size: 13px; color: #93c5fd;">
+                    📊 <strong>${result.row_count} row(s)</strong> returned | <strong>${result.columns.length} column(s)</strong>
+                </div>`;
+                
+                dataEl.innerHTML = html;
+            } else if (result.affected_rows !== undefined) {
+                // INSERT/UPDATE/DELETE results
+                let html = '<div style="padding: 20px; background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; border-radius: 8px;">';
+                html += `<div style="font-size: 16px; color: #86efac; margin-bottom: 10px;"><strong>✅ Operation Completed</strong></div>`;
+                html += `<div style="font-size: 14px; color: rgba(254, 243, 199, 0.9);">`;
+                html += `📊 <strong>Affected Rows:</strong> ${result.affected_rows}<br>`;
+                if (result.insert_id) {
+                    html += `🔑 <strong>Last Insert ID:</strong> ${result.insert_id}`;
+                }
+                html += `</div></div>`;
+                dataEl.innerHTML = html;
+            } else {
+                // DDL queries (CREATE, DROP, ALTER)
+                dataEl.innerHTML = `
+                    <div style="padding: 20px; background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                        <div style="font-size: 16px; color: #86efac;"><strong>Query Executed Successfully</strong></div>
+                        <div style="font-size: 13px; color: rgba(254, 243, 199, 0.7); margin-top: 5px;">No results to display (DDL operation)</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Display SQL error
+        function displaySQLError(result) {
+            const container = document.getElementById('sqlResultsContainer');
+            const messageEl = document.getElementById('sqlResultsMessage');
+            const dataEl = document.getElementById('sqlResultsData');
+            
+            container.style.display = 'block';
+            
+            messageEl.innerHTML = `
+                <div class="message error" style="display: block; margin-bottom: 15px;">
+                    ❌ ${result.message}
+                </div>
+            `;
+
+            dataEl.innerHTML = `
+                <div style="padding: 20px; background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 8px;">
+                    <div style="font-size: 14px; color: #fca5a5; margin-bottom: 10px;"><strong>Error Details:</strong></div>
+                    <div style="font-size: 13px; color: rgba(254, 243, 199, 0.9); font-family: monospace;">
+                        ${result.message}
+                    </div>
+                    ${result.executed_query ? `
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 6px;">
+                            <div style="font-size: 12px; color: rgba(254, 243, 199, 0.6); margin-bottom: 5px;">Executed Query:</div>
+                            <div style="font-size: 13px; color: #86efac; font-family: monospace;">${result.executed_query}</div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Clear SQL input
+        function clearSQLInput() {
+            document.getElementById('customSQLInput').value = '';
+            closeSQLResults();
+        }
+
+        // Close SQL results
+        function closeSQLResults() {
+            document.getElementById('sqlResultsContainer').style.display = 'none';
+        }
+
+        // Show/Hide SQL examples
+        function showSQLExamples() {
+            const container = document.getElementById('sqlExamplesContainer');
+            if (container.style.display === 'none' || !container.style.display) {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        // Insert SQL example into textarea
+        function insertSQLExample(example) {
+            document.getElementById('customSQLInput').value = example;
+            document.getElementById('sqlExamplesContainer').style.display = 'none';
         }
 
         // Expandable section toggle
@@ -6179,3 +6455,4 @@ ${'='.repeat(60)}
     </script>
 </body>
 </html>
+
