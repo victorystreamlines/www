@@ -1662,6 +1662,9 @@ PHASE: Hostinger Edition
                         <span id="currentTableName">Table Data</span>
                     </h2>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="injectRandomRecords()" style="background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);">
+                            <span>🎲</span> Inject 10 Random Records
+                        </button>
                         <button class="btn btn-primary" onclick="generateSQL(false)">
                             <span>🏗️</span> Generate Structure
                         </button>
@@ -3720,6 +3723,298 @@ PHASE: Hostinger Edition
             const sizes = ['Bytes', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // ========================================
+        // RANDOM DATA GENERATOR
+        // ========================================
+
+        // Sample data pools for realistic generation
+        const SAMPLE_DATA = {
+            firstNames: ['John', 'Jane', 'Michael', 'Sarah', 'David', 'Emma', 'James', 'Emily', 'Robert', 'Lisa', 'William', 'Mary', 'Richard', 'Jennifer', 'Thomas', 'Linda', 'Charles', 'Patricia', 'Daniel', 'Elizabeth', 'Matthew', 'Susan', 'Anthony', 'Jessica', 'Donald', 'Karen', 'Mark', 'Nancy', 'Paul', 'Betty', 'Steven', 'Helen', 'Andrew', 'Sandra', 'Kenneth', 'Donna', 'Joshua', 'Carol', 'Kevin', 'Ruth', 'Brian', 'Sharon', 'George', 'Michelle', 'Edward', 'Laura', 'Ronald', 'Sarah', 'Timothy', 'Kimberly'],
+            lastNames: ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson', 'Walker'],
+            companies: ['TechCorp', 'DataSoft', 'CloudSys', 'WebFlow', 'AppWorks', 'NetCore', 'CodeBase', 'DevHub', 'InfoTech', 'SoftWare Inc', 'Digital Solutions', 'Smart Systems', 'Tech Innovators', 'Global Tech', 'Future Labs'],
+            domains: ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'company.com', 'business.net', 'email.com', 'mail.com'],
+            cities: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'San Jose', 'Austin', 'Jacksonville', 'London', 'Paris', 'Tokyo', 'Berlin', 'Sydney', 'Toronto', 'Dubai', 'Singapore'],
+            countries: ['USA', 'UK', 'Canada', 'Australia', 'Germany', 'France', 'Japan', 'China', 'India', 'Brazil', 'Mexico', 'Italy', 'Spain', 'South Korea', 'Netherlands'],
+            statuses: ['active', 'inactive', 'pending', 'completed', 'cancelled', 'processing', 'approved', 'rejected', 'on_hold', 'verified'],
+            categories: ['General', 'Technology', 'Business', 'Finance', 'Health', 'Education', 'Entertainment', 'Sports', 'News', 'Science'],
+            products: ['Laptop', 'Smartphone', 'Tablet', 'Monitor', 'Keyboard', 'Mouse', 'Headphones', 'Camera', 'Printer', 'Scanner', 'Speaker', 'Router', 'Hard Drive', 'SSD', 'RAM'],
+            descriptions: [
+                'High quality product with excellent features',
+                'Premium service for modern businesses',
+                'Innovative solution for your needs',
+                'Professional grade equipment',
+                'Best value for money',
+                'Industry leading performance',
+                'Cutting-edge technology',
+                'User-friendly interface',
+                'Reliable and efficient',
+                'Perfect for everyday use'
+            ]
+        };
+
+        // Generate random data based on column name and type
+        function generateRandomValue(columnName, columnType, isAutoIncrement, isPrimaryKey) {
+            const colNameLower = columnName.toLowerCase();
+            const typeUpper = columnType.toUpperCase();
+            
+            // Skip auto increment and primary key (will be auto-generated)
+            if (isAutoIncrement || (isPrimaryKey && typeUpper.includes('INT'))) {
+                return null; // Will be excluded from INSERT
+            }
+            
+            // Name fields
+            if (colNameLower.includes('first') && colNameLower.includes('name')) {
+                return SAMPLE_DATA.firstNames[Math.floor(Math.random() * SAMPLE_DATA.firstNames.length)];
+            }
+            if (colNameLower.includes('last') && colNameLower.includes('name')) {
+                return SAMPLE_DATA.lastNames[Math.floor(Math.random() * SAMPLE_DATA.lastNames.length)];
+            }
+            if (colNameLower === 'name' || colNameLower === 'username' || colNameLower === 'user_name' || colNameLower === 'full_name' || colNameLower === 'fullname') {
+                const first = SAMPLE_DATA.firstNames[Math.floor(Math.random() * SAMPLE_DATA.firstNames.length)];
+                const last = SAMPLE_DATA.lastNames[Math.floor(Math.random() * SAMPLE_DATA.lastNames.length)];
+                return colNameLower.includes('user') ? first.toLowerCase() + last.toLowerCase() : first + ' ' + last;
+            }
+            
+            // Email
+            if (colNameLower.includes('email') || colNameLower.includes('mail')) {
+                const name = SAMPLE_DATA.firstNames[Math.floor(Math.random() * SAMPLE_DATA.firstNames.length)].toLowerCase();
+                const num = Math.floor(Math.random() * 999);
+                const domain = SAMPLE_DATA.domains[Math.floor(Math.random() * SAMPLE_DATA.domains.length)];
+                return `${name}${num}@${domain}`;
+            }
+            
+            // Phone
+            if (colNameLower.includes('phone') || colNameLower.includes('mobile') || colNameLower.includes('tel')) {
+                return '+1' + Math.floor(Math.random() * 9000000000 + 1000000000);
+            }
+            
+            // Address
+            if (colNameLower.includes('address') || colNameLower.includes('street')) {
+                return Math.floor(Math.random() * 9999 + 1) + ' ' + SAMPLE_DATA.lastNames[Math.floor(Math.random() * SAMPLE_DATA.lastNames.length)] + ' Street';
+            }
+            
+            // City
+            if (colNameLower.includes('city')) {
+                return SAMPLE_DATA.cities[Math.floor(Math.random() * SAMPLE_DATA.cities.length)];
+            }
+            
+            // Country
+            if (colNameLower.includes('country')) {
+                return SAMPLE_DATA.countries[Math.floor(Math.random() * SAMPLE_DATA.countries.length)];
+            }
+            
+            // Company
+            if (colNameLower.includes('company') || colNameLower.includes('organization')) {
+                return SAMPLE_DATA.companies[Math.floor(Math.random() * SAMPLE_DATA.companies.length)];
+            }
+            
+            // Title
+            if (colNameLower.includes('title') && !colNameLower.includes('job')) {
+                return 'Sample Title ' + Math.floor(Math.random() * 1000);
+            }
+            
+            // Description
+            if (colNameLower.includes('desc') || colNameLower.includes('content') || colNameLower.includes('comment') || colNameLower.includes('note')) {
+                return SAMPLE_DATA.descriptions[Math.floor(Math.random() * SAMPLE_DATA.descriptions.length)];
+            }
+            
+            // Status
+            if (colNameLower.includes('status') || colNameLower === 'state') {
+                return SAMPLE_DATA.statuses[Math.floor(Math.random() * SAMPLE_DATA.statuses.length)];
+            }
+            
+            // Category
+            if (colNameLower.includes('category') || colNameLower.includes('type') && !typeUpper.includes('INT')) {
+                return SAMPLE_DATA.categories[Math.floor(Math.random() * SAMPLE_DATA.categories.length)];
+            }
+            
+            // Product
+            if (colNameLower.includes('product')) {
+                return SAMPLE_DATA.products[Math.floor(Math.random() * SAMPLE_DATA.products.length)];
+            }
+            
+            // Price/Amount/Cost
+            if (colNameLower.includes('price') || colNameLower.includes('amount') || colNameLower.includes('cost') || colNameLower.includes('total')) {
+                return (Math.random() * 999 + 1).toFixed(2);
+            }
+            
+            // Quantity/Stock/Count
+            if (colNameLower.includes('quantity') || colNameLower.includes('stock') || colNameLower.includes('count') || colNameLower.includes('qty')) {
+                return Math.floor(Math.random() * 100);
+            }
+            
+            // Age
+            if (colNameLower === 'age') {
+                return Math.floor(Math.random() * 60 + 18);
+            }
+            
+            // Password/Hash
+            if (colNameLower.includes('password') || colNameLower.includes('hash')) {
+                return '$2y$10$' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            }
+            
+            // Token
+            if (colNameLower.includes('token') || colNameLower.includes('key') && typeUpper.includes('VARCHAR')) {
+                return Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+            }
+            
+            // URL/Link
+            if (colNameLower.includes('url') || colNameLower.includes('link') || colNameLower.includes('website')) {
+                return 'https://example.com/' + Math.random().toString(36).substring(7);
+            }
+            
+            // Slug
+            if (colNameLower.includes('slug')) {
+                return 'sample-slug-' + Math.floor(Math.random() * 10000);
+            }
+            
+            // IP Address
+            if (colNameLower.includes('ip')) {
+                return Math.floor(Math.random() * 255) + '.' + Math.floor(Math.random() * 255) + '.' + Math.floor(Math.random() * 255) + '.' + Math.floor(Math.random() * 255);
+            }
+            
+            // Based on data type
+            if (typeUpper.includes('INT') || typeUpper.includes('INTEGER')) {
+                if (typeUpper.includes('TINYINT')) {
+                    return Math.floor(Math.random() * 2); // 0 or 1 for boolean
+                }
+                return Math.floor(Math.random() * 10000);
+            }
+            
+            if (typeUpper.includes('DECIMAL') || typeUpper.includes('FLOAT') || typeUpper.includes('DOUBLE')) {
+                return (Math.random() * 1000).toFixed(2);
+            }
+            
+            if (typeUpper.includes('DATE')) {
+                const start = new Date(2020, 0, 1);
+                const end = new Date();
+                const randomDate = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+                return randomDate.toISOString().split('T')[0];
+            }
+            
+            if (typeUpper.includes('DATETIME') || typeUpper.includes('TIMESTAMP')) {
+                const start = new Date(2020, 0, 1);
+                const end = new Date();
+                const randomDate = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+                return randomDate.toISOString().slice(0, 19).replace('T', ' ');
+            }
+            
+            if (typeUpper.includes('TIME') && !typeUpper.includes('DATETIME')) {
+                const h = Math.floor(Math.random() * 24).toString().padStart(2, '0');
+                const m = Math.floor(Math.random() * 60).toString().padStart(2, '0');
+                const s = Math.floor(Math.random() * 60).toString().padStart(2, '0');
+                return `${h}:${m}:${s}`;
+            }
+            
+            if (typeUpper.includes('BOOL')) {
+                return Math.random() > 0.5 ? 1 : 0;
+            }
+            
+            if (typeUpper.includes('TEXT') || typeUpper.includes('VARCHAR') || typeUpper.includes('CHAR')) {
+                // Generic text
+                if (colNameLower.includes('desc') || colNameLower.includes('content')) {
+                    return 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. ' + Math.random().toString(36).substring(7);
+                }
+                return 'Sample ' + columnName + ' ' + Math.floor(Math.random() * 1000);
+            }
+            
+            // Default
+            return 'Data_' + Math.floor(Math.random() * 10000);
+        }
+
+        // Generate random records for table
+        function generateRandomRecords(columns, count = 10) {
+            const records = [];
+            
+            for (let i = 0; i < count; i++) {
+                const record = {};
+                
+                columns.forEach(col => {
+                    const isAutoIncrement = col.Extra && col.Extra.toLowerCase().includes('auto_increment');
+                    const isPrimaryKey = col.Key === 'PRI';
+                    
+                    // Skip auto increment columns
+                    if (isAutoIncrement) {
+                        return;
+                    }
+                    
+                    const value = generateRandomValue(col.Field, col.Type, isAutoIncrement, isPrimaryKey);
+                    
+                    if (value !== null) {
+                        record[col.Field] = value;
+                    }
+                });
+                
+                records.push(record);
+            }
+            
+            return records;
+        }
+
+        // Inject random records into current table
+        async function injectRandomRecords() {
+            if (!selectedDatabaseId || !currentTableName) {
+                showMessage('tableDataMessage', '❌ No table selected', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('tableDataMessage', '❌ Connection not found', 'error');
+                return;
+            }
+
+            // Get table structure first
+            showMessage('tableDataMessage', '🔄 Generating random data...', 'info');
+
+            const structureResult = await apiRequest('get_table_structure', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                table_name: currentTableName
+            });
+
+            if (!structureResult.success) {
+                showMessage('tableDataMessage', `❌ ${structureResult.message}`, 'error');
+                return;
+            }
+
+            // Generate random records
+            const randomRecords = generateRandomRecords(structureResult.columns, 10);
+
+            if (randomRecords.length === 0) {
+                showMessage('tableDataMessage', '❌ Could not generate records (table has only auto-increment columns?)', 'error');
+                return;
+            }
+
+            // Insert records
+            showMessage('tableDataMessage', '🔄 Injecting 10 random records...', 'info');
+
+            const result = await apiRequest('insert_random_data', {
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
+                table_name: currentTableName,
+                records_data: JSON.stringify(randomRecords),
+                record_count: 10
+            });
+
+            if (result.success) {
+                showMessage('tableDataMessage', `✅ ${result.message}`, 'success');
+                // Reload table data to show new records
+                viewTableData(currentTableName, currentTablePage);
+            } else {
+                showMessage('tableDataMessage', `❌ ${result.message}`, 'error');
+            }
         }
 
         // ========================================

@@ -1189,6 +1189,88 @@ function generateDatabaseSQL() {
 }
 
 /**
+ * Insert random data into table
+ */
+function insertRandomData() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $tableName = $_POST['table_name'] ?? '';
+    $recordsData = $_POST['records_data'] ?? '';
+    $recordCount = intval($_POST['record_count'] ?? 10);
+
+    if (empty($host) || empty($dbName) || empty($username) || empty($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required connection parameters');
+        return;
+    }
+
+    if (!validateTableName($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Invalid table name');
+        return;
+    }
+
+    $conn = getConnection($host, $dbName, $username, $password, $port);
+    if (!$conn) {
+        http_response_code(500);
+        sendResponse(false, 'Failed to connect to database');
+        return;
+    }
+
+    try {
+        // Parse records data
+        $records = json_decode($recordsData, true);
+        if (!$records || !is_array($records) || empty($records)) {
+            http_response_code(400);
+            sendResponse(false, 'Invalid records data');
+            return;
+        }
+
+        $safeTableName = sanitizeTableName($tableName);
+        
+        // Get column names from first record
+        $columns = array_keys($records[0]);
+        
+        // Build and execute INSERT statements (batch by 50)
+        $batchSize = 50;
+        $batches = array_chunk($records, $batchSize);
+        $insertedCount = 0;
+        
+        foreach ($batches as $batch) {
+            $sql = "INSERT INTO $safeTableName (`" . implode('`, `', $columns) . "`) VALUES ";
+            
+            $values = [];
+            foreach ($batch as $record) {
+                $rowValues = [];
+                foreach ($columns as $col) {
+                    $value = $record[$col];
+                    if ($value === null || $value === 'NULL') {
+                        $rowValues[] = 'NULL';
+                    } else {
+                        $rowValues[] = $conn->quote($value);
+                    }
+                }
+                $values[] = '(' . implode(', ', $rowValues) . ')';
+            }
+            
+            $sql .= implode(', ', $values);
+            $conn->exec($sql);
+            $insertedCount += count($batch);
+        }
+        
+        sendResponse(true, "Successfully inserted {$insertedCount} random records into table '{$tableName}'", [
+            'inserted_count' => $insertedCount
+        ]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        sendResponse(false, 'Error inserting random data: ' . $e->getMessage());
+    }
+}
+
+/**
  * Export connections to JSON file
  */
 function exportConnections() {
@@ -1436,8 +1518,12 @@ switch ($action) {
         generateDatabaseSQL();
         break;
 
+    case 'insert_random_data':
+        insertRandomData();
+        break;
+
     default:
         http_response_code(400);
-        sendResponse(false, 'Invalid action specified. Supported actions: check_connection, list_databases, connect_database, create_database, delete_database, rename_database, set_database_credentials, list_tables, create_table, delete_table, rename_table, alter_table, get_table_structure, export_connections, import_connections, list_import_files, get_table_data, generate_table_sql, generate_database_sql');
+        sendResponse(false, 'Invalid action specified. Supported actions: check_connection, list_databases, connect_database, create_database, delete_database, rename_database, set_database_credentials, list_tables, create_table, delete_table, rename_table, alter_table, get_table_structure, export_connections, import_connections, list_import_files, get_table_data, generate_table_sql, generate_database_sql, insert_random_data');
 }
 ?>
