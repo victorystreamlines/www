@@ -1692,7 +1692,11 @@ PHASE: Hostinger Edition
 
         <!-- Create Table Section - HIDDEN -->
         <section id="createTable" class="section hidden-section">
-            <div id="createTableConnectionStatus" class="connection-status"></div>
+            <!-- Selected Database Display -->
+            <div style="background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #86efac; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-weight: 500;">
+                ✅ Creating table in: <strong id="createTableDbName" style="color: #fbbf24;">Database Name</strong>
+            </div>
+            
             <div class="card">
                 <h2 class="card-title">
                     <span class="card-title-icon">➕</span>
@@ -2006,6 +2010,8 @@ PHASE: Hostinger Edition
                 loadHostingerConnectionsTable();
             } else if (sectionId === 'generateDatabase') {
                 updateSelectedDatabaseDisplay();
+            } else if (sectionId === 'createTable') {
+                updateCreateTableDatabaseDisplay();
             } else if (sectionId === 'listTables') {
                 // Auto-load tables when entering List Tables section
                 if (selectedDatabaseId) {
@@ -2019,6 +2025,26 @@ PHASE: Hostinger Edition
             setTimeout(() => {
                 loadSelectedDatabase();
             }, 50);
+        }
+
+        // Update selected database display in Create Table section
+        function updateCreateTableDatabaseDisplay() {
+            const displayEl = document.getElementById('createTableDbName');
+            if (!displayEl) return;
+
+            if (selectedDatabaseId) {
+                const connId = selectedDatabaseId.replace('conn_', '');
+                const connections = getHostingerConnections();
+                const conn = connections.find(c => c.id === connId);
+                
+                if (conn) {
+                    displayEl.textContent = `${conn.name} (${conn.dbName})`;
+                } else {
+                    displayEl.textContent = 'None - Please select from Dashboard';
+                }
+            } else {
+                displayEl.textContent = 'None - Please select from Dashboard';
+            }
         }
 
         // Update selected database display in Generate Database section
@@ -2113,6 +2139,9 @@ PHASE: Hostinger Edition
                 // Update selected database display in Generate Database section
                 updateSelectedDatabaseDisplay();
 
+                // Update selected database display in Create Table section
+                updateCreateTableDatabaseDisplay();
+
                 // Show TABLE OPERATIONS in sidebar
                 showTableOperations();
             }
@@ -2166,6 +2195,9 @@ PHASE: Hostinger Edition
 
             // Update selected database display in Generate Database section
             updateSelectedDatabaseDisplay();
+
+            // Update selected database display in Create Table section
+            updateCreateTableDatabaseDisplay();
 
             // Show TABLE OPERATIONS in sidebar
             showTableOperations();
@@ -3233,8 +3265,17 @@ PHASE: Hostinger Edition
         async function createTableManual(event) {
             event.preventDefault();
             
-            if (!currentDatabase) {
-                showMessage('createTableMessage', '❌ Please connect to a database first', 'error');
+            if (!selectedDatabaseId) {
+                showMessage('createTableMessage', '❌ Please select a database from Dashboard first', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('createTableMessage', '❌ Selected database connection not found', 'error');
                 return;
             }
             
@@ -3254,7 +3295,11 @@ PHASE: Hostinger Edition
             showMessage('createTableMessage', '🔄 Creating table...', 'info');
             
             const result = await apiRequest('create_table', {
-                db_name: currentDatabase,
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
                 table_name: tableName,
                 columns: JSON.stringify(columns)
             });
@@ -3264,7 +3309,12 @@ PHASE: Hostinger Edition
                 document.getElementById('newTableName').value = '';
                 document.getElementById('columnBuilder').innerHTML = '';
                 document.getElementById('sqlPreview').style.display = 'none';
+                addColumnRow(); // Re-add one empty column row
                 loadTablesForDropdowns();
+                // Refresh table list if we're in that section
+                if (document.getElementById('listTables').classList.contains('active')) {
+                    loadTables();
+                }
             } else {
                 showMessage('createTableMessage', `❌ ${result.message}`, 'error');
             }
@@ -3274,8 +3324,17 @@ PHASE: Hostinger Edition
         async function createTableFromTemplate(event) {
             event.preventDefault();
             
-            if (!currentDatabase) {
-                showMessage('createTableMessage', '❌ Please connect to a database first', 'error');
+            if (!selectedDatabaseId) {
+                showMessage('createTableMessage', '❌ Please select a database from Dashboard first', 'error');
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const conn = connections.find(c => c.id === connId);
+            
+            if (!conn) {
+                showMessage('createTableMessage', '❌ Selected database connection not found', 'error');
                 return;
             }
             
@@ -3295,7 +3354,11 @@ PHASE: Hostinger Edition
             showMessage('createTableMessage', '🔄 Creating table from template...', 'info');
             
             const result = await apiRequest('create_table', {
-                db_name: currentDatabase,
+                db_host: conn.host,
+                db_name: conn.dbName,
+                db_user: conn.username,
+                db_pass: conn.password,
+                db_port: conn.port,
                 table_name: tableName,
                 columns: JSON.stringify(columns)
             });
@@ -3309,6 +3372,10 @@ PHASE: Hostinger Edition
                 selectedTemplate = null;
                 document.querySelectorAll('.template-card').forEach(card => card.classList.remove('selected'));
                 loadTablesForDropdowns();
+                // Refresh table list if we're in that section
+                if (document.getElementById('listTables').classList.contains('active')) {
+                    loadTables();
+                }
             } else {
                 showMessage('createTableMessage', `❌ ${result.message}`, 'error');
             }

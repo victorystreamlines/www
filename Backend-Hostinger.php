@@ -456,23 +456,40 @@ function sanitizeTableName($name) {
 }
 
 /**
- * Create a table
+ * Create a table with Hostinger credentials
  */
-function createTable($dbName, $tableName, $columnsJson) {
+function createTable() {
+    $host = $_POST['db_host'] ?? '';
+    $dbName = $_POST['db_name'] ?? '';
+    $username = $_POST['db_user'] ?? '';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    $tableName = $_POST['table_name'] ?? '';
+    $columnsJson = $_POST['columns'] ?? '';
+
+    if (empty($host) || empty($dbName) || empty($username) || empty($tableName)) {
+        http_response_code(400);
+        sendResponse(false, 'Missing required connection parameters');
+        return;
+    }
+
     if (!validateDatabaseName($dbName)) {
         http_response_code(400);
         sendResponse(false, 'Invalid database name');
+        return;
     }
 
     if (!validateTableName($tableName)) {
         http_response_code(400);
         sendResponse(false, 'Invalid table name. Use only alphanumeric characters and underscores.');
+        return;
     }
 
-    $conn = getConnection($dbName);
+    $conn = getConnection($host, $dbName, $username, $password, $port);
     if (!$conn) {
         http_response_code(500);
-        sendResponse(false, 'Failed to connect to database');
+        sendResponse(false, 'Failed to connect to database. Please check your credentials.');
+        return;
     }
 
     try {
@@ -513,6 +530,8 @@ function createTable($dbName, $tableName, $columnsJson) {
             if (isset($col['defaultValue']) && $col['defaultValue'] !== '') {
                 if (strtoupper($col['defaultValue']) === 'NULL') {
                     $colDef .= ' DEFAULT NULL';
+                } elseif (strtoupper($col['defaultValue']) === 'CURRENT_TIMESTAMP') {
+                    $colDef .= ' DEFAULT CURRENT_TIMESTAMP';
                 } else {
                     $colDef .= ' DEFAULT ' . $conn->quote($col['defaultValue']);
                 }
@@ -1302,10 +1321,7 @@ switch ($action) {
         break;
 
     case 'create_table':
-        $dbName = $_POST['db_name'] ?? '';
-        $tableName = $_POST['table_name'] ?? '';
-        $columns = $_POST['columns'] ?? '';
-        createTable($dbName, $tableName, $columns);
+        createTable();
         break;
 
     case 'delete_table':
