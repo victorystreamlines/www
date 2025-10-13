@@ -2918,6 +2918,100 @@ PHASE: Hostinger Edition
         let columnCounter = 0;
         let selectedTemplate = null;
 
+        // Custom toast notification function
+        function showCustomToast(message, type = 'success', duration = 3000) {
+            const toast = document.createElement('div');
+            
+            // Define colors based on type
+            const styles = {
+                success: {
+                    gradient: 'linear-gradient(135deg, #22c55e 0%, #15803d 100%)',
+                    border: '#86efac',
+                    shadow: 'rgba(34, 197, 94, 0.5)',
+                    icon: '✅'
+                },
+                error: {
+                    gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                    border: '#fca5a5',
+                    shadow: 'rgba(239, 68, 68, 0.5)',
+                    icon: '❌'
+                },
+                info: {
+                    gradient: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
+                    border: '#60a5fa',
+                    shadow: 'rgba(59, 130, 246, 0.5)',
+                    icon: 'ℹ️'
+                },
+                warning: {
+                    gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                    border: '#fbbf24',
+                    shadow: 'rgba(245, 158, 11, 0.5)',
+                    icon: '⚠️'
+                }
+            };
+            
+            const style = styles[type] || styles.success;
+            
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                background: ${style.gradient};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 12px;
+                border: 2px solid ${style.border};
+                z-index: 10000;
+                box-shadow: 0 8px 25px ${style.shadow};
+                animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+                min-width: 300px;
+                max-width: 500px;
+            `;
+            
+            toast.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 24px; flex-shrink: 0;">${style.icon}</span>
+                    <div style="flex: 1;">
+                        <div style="font-size: 15px; font-weight: 600; line-height: 1.4;">${message}</div>
+                    </div>
+                </div>
+                <style>
+                    @keyframes slideInRight {
+                        from { 
+                            transform: translateX(400px) scale(0.8); 
+                            opacity: 0; 
+                        }
+                        to { 
+                            transform: translateX(0) scale(1); 
+                            opacity: 1; 
+                        }
+                    }
+                    @keyframes slideOutRight {
+                        from { 
+                            transform: translateX(0) scale(1); 
+                            opacity: 1; 
+                        }
+                        to { 
+                            transform: translateX(400px) scale(0.8); 
+                            opacity: 0; 
+                        }
+                    }
+                </style>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // Auto dismiss
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 400);
+            }, duration);
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadDashboardConnections();
@@ -7129,13 +7223,17 @@ You can now use these credentials to build your application!
             
             try {
                 await navigator.clipboard.writeText(text);
-                alert('✅ تم نسخ معلومات قاعدة البيانات إلى الحافظة!');
+                showCustomToast('Database information copied to clipboard successfully!', 'success', 3000);
             } catch (err) {
-                // Fallback
-                const textarea = document.getElementById('databaseInfoText');
-                textarea.select();
-                document.execCommand('copy');
-                alert('✅ تم نسخ معلومات قاعدة البيانات!');
+                // Fallback for older browsers
+                try {
+                    const textarea = document.getElementById('databaseInfoText');
+                    textarea.select();
+                    document.execCommand('copy');
+                    showCustomToast('Database information copied to clipboard!', 'success', 3000);
+                } catch (fallbackErr) {
+                    showCustomToast('Failed to copy. Please copy manually.', 'error', 3000);
+                }
             }
         }
 
