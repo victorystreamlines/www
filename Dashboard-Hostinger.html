@@ -2870,20 +2870,20 @@ PHASE: Hostinger Edition
             </div>
             <div class="modal-body" style="flex: 1; display: flex; flex-direction: column; overflow: auto;">
                 <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid #8b5cf6; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
-                    <strong style="color: #a78bfa;">💡 كيفية الاستخدام:</strong> انسخ هذه المعلومات لاستخدامها في الاتصال بقاعدة البيانات من التطبيقات الخارجية (PHP, Node.js, Python, etc.)
+                    <strong style="color: #a78bfa;">💡 How to Use:</strong> Copy this information to use it for connecting to the database from external applications (PHP, Node.js, Python, etc.)
                 </div>
                 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <div style="color: #fbbf24; font-size: 14px; font-weight: bold;">معلومات اتصال قاعدة البيانات الكاملة:</div>
+                    <div style="color: #fbbf24; font-size: 14px; font-weight: bold;">Complete Database Connection Information:</div>
                     <button class="btn btn-primary" onclick="copyDatabaseInfoText()" style="padding: 8px 16px;">
-                        <span>📋</span> نسخ للحافظة
+                        <span>📋</span> Copy to Clipboard
                     </button>
                 </div>
                 
-                <textarea id="databaseInfoText" readonly style="width: 100%; height: 450px; padding: 15px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(139, 92, 246, 0.3); border-radius: 8px; color: #86efac; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; resize: vertical; overflow-y: auto;">جاري التحميل...</textarea>
+                <textarea id="databaseInfoText" readonly style="width: 100%; height: 450px; padding: 15px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(139, 92, 246, 0.3); border-radius: 8px; color: #86efac; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; resize: vertical; overflow-y: auto;">Loading...</textarea>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeDatabaseInfoModal()">إغلاق</button>
+                <button class="btn btn-secondary" onclick="closeDatabaseInfoModal()">Close</button>
             </div>
         </div>
     </div>
@@ -6819,10 +6819,11 @@ ${errorDetails || 'Unknown error occurred'}
             }
         }
 
-        // Show database info (credentials only)
+        // Show database info (credentials only or with selected tables)
         async function showDatabaseInfo() {
             console.log('=== SHOW DATABASE INFO ===');
             console.log('selectedDatabaseId:', selectedDatabaseId);
+            console.log('selectedMigrationTables:', selectedMigrationTables);
             
             if (!selectedDatabaseId) {
                 alert('❌ No database selected\n\nPlease select a database first from Dashboard.');
@@ -6861,9 +6862,10 @@ ${errorDetails || 'Unknown error occurred'}
             });
             
             if (titleEl) titleEl.textContent = conn.dbName;
+            if (textArea) textArea.value = 'Loading database information...';
 
             // Build database credentials prompt
-            const dbPrompt = `DATABASE CONNECTION INFORMATION FOR AI
+            let dbPrompt = `DATABASE CONNECTION INFORMATION FOR AI
 =====================================
 
 🗄️ DATABASE CREDENTIALS:
@@ -6878,7 +6880,115 @@ Port: ${conn.port || '3306'}
 Server Type: ${conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
 
+            // Check if any tables are selected
+            if (selectedMigrationTables && selectedMigrationTables.size > 0) {
+                console.log('📊 Tables selected, fetching table details...');
+                
+                dbPrompt += `
+📊 SELECTED TABLES (${selectedMigrationTables.size}):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+`;
+                
+                try {
+                    const selectedTablesArray = Array.from(selectedMigrationTables);
+                    
+                    for (let i = 0; i < selectedTablesArray.length; i++) {
+                        const tableName = selectedTablesArray[i];
+                        console.log(`Fetching info for table ${i + 1}/${selectedTablesArray.length}: ${tableName}`);
+                        
+                        // Update progress in textarea
+                        if (textArea) {
+                            textArea.value = `Loading database information...\n\nFetching table ${i + 1}/${selectedTablesArray.length}: ${tableName}`;
+                        }
+                        
+                        try {
+                            // Get table structure
+                            const structResult = await apiRequest('get_table_structure', {
+                                db_host: conn.host,
+                                db_name: conn.dbName,
+                                db_user: conn.username,
+                                db_pass: conn.password,
+                                db_port: conn.port || '3306',
+                                table_name: tableName
+                            });
+
+                            // Get table data count
+                            const dataResult = await apiRequest('get_table_data', {
+                                db_host: conn.host,
+                                db_name: conn.dbName,
+                                db_user: conn.username,
+                                db_pass: conn.password,
+                                db_port: conn.port || '3306',
+                                table_name: tableName,
+                                page: 1,
+                                limit: 5
+                            });
+
+                            if (structResult.success && dataResult.success) {
+                                const rowCount = dataResult.pagination.total_rows;
+                                const engine = dataResult.table_info.engine;
+                                const collation = dataResult.table_info.collation;
+                                const dataSize = formatBytes(dataResult.table_info.data_length);
+                                
+                                dbPrompt += `
+${i + 1}. TABLE: ${tableName}
+   ├─ Total Records: ${rowCount.toLocaleString()}
+   ├─ Columns: ${structResult.columns.length}
+   ├─ Engine: ${engine}
+   ├─ Collation: ${collation}
+   ├─ Data Size: ${dataSize}
+   └─ Structure:
+`;
+                                
+                                structResult.columns.forEach((col, idx) => {
+                                    const keyInfo = col.Key ? 
+                                        (col.Key === 'PRI' ? ' [PRIMARY KEY]' : 
+                                         col.Key === 'UNI' ? ' [UNIQUE]' : 
+                                         col.Key === 'MUL' ? ' [INDEX]' : '') : '';
+                                    const nullInfo = col.Null === 'YES' ? ' NULL' : ' NOT NULL';
+                                    const defaultInfo = col.Default !== null ? ` DEFAULT '${col.Default}'` : '';
+                                    const extraInfo = col.Extra ? ` ${col.Extra.toUpperCase()}` : '';
+                                    
+                                    dbPrompt += `      ${idx + 1}. ${col.Field} - ${col.Type}${nullInfo}${defaultInfo}${extraInfo}${keyInfo}\n`;
+                                });
+                                
+                                dbPrompt += '\n';
+                            } else {
+                                dbPrompt += `
+${i + 1}. TABLE: ${tableName}
+   └─ Error: ${structResult.message || dataResult.message || 'Could not fetch table info'}
+
+`;
+                            }
+                        } catch (tableError) {
+                            console.error(`Error fetching table ${tableName}:`, tableError);
+                            dbPrompt += `
+${i + 1}. TABLE: ${tableName}
+   └─ Error: ${tableError.message}
+
+`;
+                        }
+                    }
+                    
+                    dbPrompt += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+`;
+                } catch (error) {
+                    console.error('Error fetching table details:', error);
+                    dbPrompt += `
+⚠️ Error loading table details: ${error.message}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+`;
+                }
+            }
+
+            // Add connection examples
+            dbPrompt += `
 📋 CONNECTION STRING (PHP - PDO):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -7011,7 +7121,14 @@ db = create_connection()
 ✅ Always use prepared statements for security
 ✅ Port ${conn.port || '3306'} is the MySQL/MariaDB port
 ✅ Host may require SSL/TLS connection
-✅ Keep credentials secure - never expose in client-side code
+✅ Keep credentials secure - never expose in client-side code`;
+
+            if (selectedMigrationTables && selectedMigrationTables.size > 0) {
+                dbPrompt += `
+✅ ${selectedMigrationTables.size} table(s) selected - structure details included above`;
+            }
+
+            dbPrompt += `
 
 🔒 SECURITY REMINDERS:
 - Store credentials in environment variables (.env file)
@@ -7024,7 +7141,14 @@ db = create_connection()
 
 📊 CONNECTION SUMMARY:
 Server: ${conn.host}:${conn.port || '3306'}
-Database: ${conn.dbName}
+Database: ${conn.dbName}`;
+
+            if (selectedMigrationTables && selectedMigrationTables.size > 0) {
+                dbPrompt += `
+Selected Tables: ${selectedMigrationTables.size}`;
+            }
+
+            dbPrompt += `
 Status: Ready for AI integration
 
 You can now use these credentials to build your application!
