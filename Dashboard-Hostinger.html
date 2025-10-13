@@ -2152,6 +2152,7 @@ PHASE: Hostinger Edition
                 <div class="tab-buttons">
                     <button class="tab-btn active" onclick="switchTab('manual')">Manual Definition</button>
                     <button class="tab-btn" onclick="switchTab('template')">Use Template</button>
+                    <button class="tab-btn" onclick="switchTab('migration')">Migration</button>
                 </div>
 
                 <!-- Manual Tab -->
@@ -2213,6 +2214,16 @@ PHASE: Hostinger Edition
                             </button>
                         </div>
                     </form>
+                </div>
+
+                <!-- Migration Tab -->
+                <div id="migrationTab" class="tab-content">
+                    <!-- Migration content will be added here -->
+                    <div style="text-align: center; padding: 60px 20px; color: rgba(254, 243, 199, 0.6);">
+                        <div style="font-size: 48px; margin-bottom: 20px;">🚀</div>
+                        <h3 style="color: #fbbf24; margin-bottom: 10px;">Migration Feature</h3>
+                        <p>Migration functionality will be implemented here</p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -5564,10 +5575,13 @@ ${errorDetails || 'Unknown error occurred'}
             if (tabName === 'manual') {
                 document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
                 document.getElementById('manualTab').classList.add('active');
-            } else {
+            } else if (tabName === 'template') {
                 document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
                 document.getElementById('templateTab').classList.add('active');
                 loadTemplates();
+            } else if (tabName === 'migration') {
+                document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
+                document.getElementById('migrationTab').classList.add('active');
             }
         }
 
