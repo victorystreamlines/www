@@ -6224,85 +6224,60 @@ ${errorDetails || 'Unknown error occurred'}
                          draggable="true"
                          ondragstart="handleDragStart(event, '${tableName}', false)"
                          ondragend="handleDragEnd(event)"
-                         style="cursor: grab; position: relative; padding-bottom: 35px;">
-                        
-                        <!-- Row Count Badge (Top Left) -->
-                        <div style="position: absolute; top: 3px; left: 3px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.8) 0%, rgba(29, 78, 216, 0.8) 100%); padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; color: white; border: 1px solid rgba(59, 130, 246, 0.6); box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3); z-index: 5;">
-                            <span style="font-size: 11px;">📊</span> ${typeof rowCount === 'number' ? rowCount.toLocaleString() : rowCount}
-                        </div>
+                         style="cursor: grab; position: relative; display: grid; grid-template-rows: auto 1fr; gap: 8px; padding: 8px;">
                         
                         <span class="migration-check-icon" onclick="toggleMigrationTable('${tableName}')">✓</span>
-                        <span class="migration-table-emoji" onclick="toggleMigrationTable('${tableName}')">${emoji}</span>
-                        <div class="migration-table-name" 
-                             oncontextmenu="startRenameTable('${tableName}', this); event.preventDefault(); event.stopPropagation(); return false;"
-                             onclick="event.stopPropagation(); toggleMigrationTable('${tableName}')"
-                             onmouseover="this.style.cursor='context-menu'; this.style.background='rgba(251, 191, 36, 0.15)'; this.style.borderRadius='4px'; this.style.padding='2px 4px';"
-                             onmouseout="this.style.cursor='pointer'; this.style.background=''; this.style.borderRadius=''; this.style.padding='';"
-                             title="Right-click to rename | Left-click to select"
-                             style="cursor: pointer; user-select: none; transition: all 0.2s;">
-                            ${tableName}
+                        
+                        <!-- Row 1: Row Count + Action Buttons -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+                            <!-- Row Count -->
+                            <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.8) 0%, rgba(29, 78, 216, 0.8) 100%); padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: bold; color: white; border: 1px solid rgba(59, 130, 246, 0.6); box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3); white-space: nowrap;">
+                                <span style="font-size: 11px;">📊</span> ${typeof rowCount === 'number' ? rowCount.toLocaleString() : rowCount}
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div style="display: flex; gap: 4px;">
+                                <button onclick="injectRandomIntoTable('${tableName}'); event.stopPropagation();" title="🎲 Inject 10 random records" style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); padding: 4px 8px; border-radius: 5px; border: 1px solid rgba(59, 130, 246, 0.6); cursor: pointer; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 3px 8px rgba(59, 130, 246, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.3)';"><span style="font-size: 12px;">🎲</span></button>
+                                
+                                <button onclick="duplicateTable('${tableName}'); event.stopPropagation();" title="📋 Duplicate" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); padding: 4px 8px; border-radius: 5px; border: 1px solid rgba(139, 92, 246, 0.6); cursor: pointer; box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 3px 8px rgba(139, 92, 246, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(139, 92, 246, 0.3)';"><span style="font-size: 12px;">📋</span></button>
+                                
+                                <button onclick="emptyTableData('${tableName}'); event.stopPropagation();" title="🧹 Empty" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 4px 8px; border-radius: 5px; border: 1px solid rgba(245, 158, 11, 0.6); cursor: pointer; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 3px 8px rgba(245, 158, 11, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.3)';"><span style="font-size: 12px;">🧹</span></button>
+                                
+                                <button onclick="deleteTableFromMigration('${tableName}'); event.stopPropagation();" title="🗑️ Delete" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 4px 8px; border-radius: 5px; border: 1px solid rgba(239, 68, 68, 0.6); cursor: pointer; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 3px 8px rgba(239, 68, 68, 0.5)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(239, 68, 68, 0.3)';"><span style="font-size: 12px;">🗑️</span></button>
+                            </div>
                         </div>
                         
-                        <!-- Action Buttons Grid (Top Right) -->
-                        <div style="position: absolute; top: 3px; right: 3px; display: grid; grid-template-columns: repeat(4, auto); gap: 5px; z-index: 10;">
+                        <!-- Row 2: Structure Label + Table Name + Data Badge -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0;">
+                            <!-- Structure Label -->
+                            <div style="background: rgba(251, 191, 36, 0.15); padding: 3px 8px; border-radius: 5px; border: 1px solid rgba(251, 191, 36, 0.3); font-size: 10px; color: #fbbf24; font-weight: 600; white-space: nowrap;">
+                                🏗️ Structure
+                            </div>
                             
-                            <!-- Inject Random Button -->
-                            <button class="action-btn"
-                                    onclick="injectRandomIntoTable('${tableName}'); event.stopPropagation();"
-                                    title="🎲 Inject 10 random records"
-                                    style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); padding: 5px 9px; border-radius: 6px; border: 1px solid rgba(59, 130, 246, 0.6); cursor: pointer; box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3); transition: all 0.2s;"
-                                    onmouseover="this.style.background='linear-gradient(135deg, #60a5fa 0%, #2563eb 100%)'; this.style.transform='scale(1.15) translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.5)';"
-                                    onmouseout="this.style.background='linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(59, 130, 246, 0.3)';">
-                                <span style="font-size: 13px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">🎲</span>
-                            </button>
+                            <!-- Table Name (Center) -->
+                            <div class="migration-table-name" 
+                                 oncontextmenu="startRenameTable('${tableName}', this); event.preventDefault(); event.stopPropagation(); return false;"
+                                 onclick="event.stopPropagation(); toggleMigrationTable('${tableName}')"
+                                 onmouseover="this.style.cursor='context-menu'; this.style.background='rgba(251, 191, 36, 0.2)'; this.style.transform='scale(1.05)';"
+                                 onmouseout="this.style.cursor='pointer'; this.style.background='rgba(255, 255, 255, 0.05)'; this.style.transform='scale(1)';"
+                                 title="Right-click to rename"
+                                 style="flex: 1; text-align: center; font-size: 14px; font-weight: 600; color: #fef3c7; padding: 6px 10px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; cursor: pointer; user-select: none; transition: all 0.2s; border: 1px solid rgba(251, 191, 36, 0.2);">
+                                ${tableName}
+                            </div>
                             
-                            <!-- Copy Button -->
-                            <button class="action-btn"
-                                    onclick="duplicateTable('${tableName}'); event.stopPropagation();"
-                                    title="📋 Duplicate table with data"
-                                    style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); padding: 5px 9px; border-radius: 6px; border: 1px solid rgba(139, 92, 246, 0.6); cursor: pointer; box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3); transition: all 0.2s;"
-                                    onmouseover="this.style.background='linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)'; this.style.transform='scale(1.15) translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(139, 92, 246, 0.5)';"
-                                    onmouseout="this.style.background='linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(139, 92, 246, 0.3)';">
-                                <span style="font-size: 13px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">📋</span>
-                            </button>
-                            
-                            <!-- Empty Button -->
-                            <button class="action-btn"
-                                    onclick="emptyTableData('${tableName}'); event.stopPropagation();"
-                                    title="🧹 Empty table (delete all data)"
-                                    style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 5px 9px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.6); cursor: pointer; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3); transition: all 0.2s;"
-                                    onmouseover="this.style.background='linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'; this.style.transform='scale(1.15) translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(245, 158, 11, 0.5)';"
-                                    onmouseout="this.style.background='linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(245, 158, 11, 0.3)';">
-                                <span style="font-size: 13px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">🧹</span>
-                            </button>
-                            
-                            <!-- Delete Button -->
-                            <button class="action-btn"
-                                    onclick="deleteTableFromMigration('${tableName}'); event.stopPropagation();"
-                                    title="🗑️ Delete table permanently"
-                                    style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 5px 9px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.6); cursor: pointer; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3); transition: all 0.2s;"
-                                    onmouseover="this.style.background='linear-gradient(135deg, #f87171 0%, #ef4444 100%)'; this.style.transform='scale(1.15) translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.5)';"
-                                    onmouseout="this.style.background='linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(239, 68, 68, 0.3)';">
-                                <span style="font-size: 13px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">🗑️</span>
-                            </button>
+                            <!-- Data Badge -->
+                            <div draggable="true"
+                                 ondragstart="handleDragStart(event, '${tableName}', true); event.stopPropagation();"
+                                 ondragend="handleDragEnd(event)"
+                                 onclick="event.stopPropagation();"
+                                 onmouseover="this.style.background='linear-gradient(135deg, #22c55e 0%, #15803d 100%)'; this.style.transform='scale(1.1)'; this.style.cursor='grab';"
+                                 onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'; this.style.transform='scale(1)';"
+                                 title="✋ Drag for Structure + Data"
+                                 style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 4px 10px; border-radius: 6px; cursor: grab; border: 1px solid rgba(16, 185, 129, 0.6); box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); transition: all 0.2s; white-space: nowrap;">
+                                <span style="font-size: 12px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">✋</span>
+                                <span style="font-size: 10px; font-weight: bold; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">Data</span>
+                            </div>
                         </div>
-                        
-                        <!-- Hand Holder for Structure + Data -->
-                        <div class="data-hand-holder" 
-                             draggable="true"
-                             ondragstart="handleDragStart(event, '${tableName}', true); event.stopPropagation();"
-                             ondragend="handleDragEnd(event)"
-                             onclick="event.stopPropagation();"
-                             onmouseover="this.style.background='linear-gradient(135deg, #22c55e 0%, #15803d 100%)'; this.style.transform='scale(1.15)'; this.style.cursor='grab'; this.style.boxShadow='0 5px 15px rgba(34, 197, 94, 0.6)';"
-                             onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'; this.style.transform='scale(1)'; this.style.boxShadow='0 3px 10px rgba(16, 185, 129, 0.4)';"
-                             onmousedown="this.style.cursor='grabbing'; this.style.transform='scale(1.05)';"
-                             title="✋ Drag from here to transfer Structure + Data"
-                             style="position: absolute; bottom: 3px; right: 3px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 5px 10px; border-radius: 8px; cursor: grab; display: flex; align-items: center; gap: 5px; border: 2px solid rgba(16, 185, 129, 0.6); box-shadow: 0 3px 10px rgba(16, 185, 129, 0.4); transition: all 0.2s; z-index: 10;">
-                            <span style="font-size: 14px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">✋</span>
-                            <span style="font-size: 11px; font-weight: bold; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">Data</span>
-                        </div>
-                        
-                        <span style="position: absolute; bottom: 4px; left: 6px; font-size: 10px; opacity: 0.5; color: #fbbf24; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">🏗️ Structure</span>
                     </div>
                 `;
             }).join('');
