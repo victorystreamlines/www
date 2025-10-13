@@ -2444,10 +2444,7 @@ PHASE: Hostinger Edition
                                     </p>
                                 </div>
                                 <div style="display: flex; gap: 8px;">
-                                    <button onclick="showSelectedTableInfo()" class="btn btn-primary" style="padding: 8px 12px; font-size: 12px; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);" title="Show info for selected table">
-                                        <span>ℹ️</span> Info
-                                    </button>
-                                    <button onclick="showDatabaseInfo()" class="btn btn-primary" style="padding: 8px 12px; font-size: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);" title="Show database credentials">
+                                    <button onclick="showDatabaseInfo()" class="btn btn-primary" style="padding: 8px 12px; font-size: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);" title="Show database credentials and selected tables info">
                                         <span>🗄️</span> DB-Info
                                     </button>
                                     <button onclick="refreshMigrationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Refresh tables">
@@ -2821,40 +2818,6 @@ PHASE: Hostinger Edition
                 <button class="btn btn-primary" onclick="submitConnection()">
                     <span>🔌</span> Connect
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Table Info Modal (for AI) -->
-    <div id="tableInfoModal" class="modal">
-        <div class="modal-content" style="max-width: 800px; max-height: 90vh; display: flex; flex-direction: column;">
-            <div class="modal-header">
-                <h3 class="modal-title">
-                    <span>ℹ️</span> Table Information for AI - <span id="tableInfoTableName"></span>
-                </h3>
-                <button class="modal-close" onclick="closeTableInfoModal()">×</button>
-            </div>
-            <div class="modal-body" style="flex: 1; display: flex; flex-direction: column; overflow: auto;">
-                <div style="background: rgba(6, 182, 212, 0.1); border: 1px solid #06b6d4; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
-                    <strong style="color: #22d3ee;">💡 How to use:</strong> Copy this prompt and paste it into your AI code editor. The AI will have complete access information to work with this specific table.
-                </div>
-                
-                <div id="tableInfoLoading" style="display: none; text-align: center; padding: 40px;">
-                    <div class="spinner"></div>
-                    <div style="margin-top: 15px; color: #06b6d4;">Analyzing table...</div>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <div style="color: #fbbf24; font-size: 14px; font-weight: bold;">Complete Table Information:</div>
-                    <button class="btn btn-primary" onclick="copyTableInfoText()" style="padding: 8px 16px;">
-                        <span>📋</span> Copy to Clipboard
-                    </button>
-                </div>
-                
-                <textarea id="tableInfoText" readonly style="width: 100%; height: 450px; padding: 15px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(6, 182, 212, 0.3); border-radius: 8px; color: #86efac; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; resize: vertical; overflow-y: auto;">Ready to load...</textarea>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeTableInfoModal()">Close</button>
             </div>
         </div>
     </div>
@@ -6169,13 +6132,6 @@ ${errorDetails || 'Unknown error occurred'}
         }
 
         async function loadMigrationTables() {
-            // Don't refresh if table info modal is open
-            const infoModal = document.getElementById('tableInfoModal');
-            if (infoModal && infoModal.classList.contains('active')) {
-                console.log('⚠️ Table info modal is open, skipping refresh');
-                return;
-            }
-            
             console.log('Loading migration tables...', selectedDatabaseId);
             
             if (!selectedDatabaseId) {
@@ -7160,215 +7116,6 @@ You can now use these credentials to build your application!
             }
 
             console.log('✅ Database info modal opened');
-        }
-
-        // Show info for selected table (called from header button)
-        async function showSelectedTableInfo() {
-            console.log('=== SHOW SELECTED TABLE INFO ===');
-            console.log('Selected tables:', selectedMigrationTables);
-            console.log('Size:', selectedMigrationTables.size);
-            
-            // Check if exactly one table is selected
-            if (selectedMigrationTables.size === 0) {
-                alert('❌ Please select ONE table first!\n\nClick on a table to select it, then click Info.');
-                return;
-            }
-
-            if (selectedMigrationTables.size > 1) {
-                alert('❌ Please select only ONE table!\n\nMultiple tables selected. Select one table only.');
-                return;
-            }
-
-            const tableName = Array.from(selectedMigrationTables)[0];
-            console.log('✅ Showing info for selected table:', tableName);
-
-            // Call the main function
-            await showTableInfo(tableName);
-        }
-
-        // Show table info modal for AI
-        async function showTableInfo(tableName) {
-            console.log('=== SHOW TABLE INFO ===');
-            console.log('Table:', tableName);
-            
-            if (!selectedDatabaseId) {
-                alert('❌ No database selected');
-                return;
-            }
-
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
-
-            if (!conn) {
-                alert('❌ Connection not found');
-                return;
-            }
-
-            console.log('✅ Using connection:', conn.name);
-
-            // Show modal
-            const modal = document.getElementById('tableInfoModal');
-            if (!modal) {
-                alert('Error: Modal not found in HTML.');
-                return;
-            }
-            
-            modal.classList.add('active');
-            
-            const titleEl = document.getElementById('tableInfoTableName');
-            const loadingEl = document.getElementById('tableInfoLoading');
-            const textArea = document.getElementById('tableInfoText');
-            
-            if (titleEl) titleEl.textContent = tableName;
-            if (loadingEl) loadingEl.style.display = 'block';
-            if (textArea) textArea.value = 'Loading table information...';
-
-            try {
-                console.log('📊 Fetching table structure...');
-                const structResult = await apiRequest('get_table_structure', {
-                    db_host: conn.host,
-                    db_name: conn.dbName,
-                    db_user: conn.username,
-                    db_pass: conn.password,
-                    db_port: conn.port || '3306',
-                    table_name: tableName
-                });
-
-                if (!structResult.success) {
-                    throw new Error('Failed to fetch table structure: ' + (structResult.message || 'Unknown error'));
-                }
-
-                console.log('📊 Fetching table data...');
-                const dataResult = await apiRequest('get_table_data', {
-                    db_host: conn.host,
-                    db_name: conn.dbName,
-                    db_user: conn.username,
-                    db_pass: conn.password,
-                    db_port: conn.port || '3306',
-                    table_name: tableName,
-                    page: 1,
-                    limit: 5
-                });
-
-                if (!dataResult.success) {
-                    throw new Error('Failed to fetch table data: ' + (dataResult.message || 'Unknown error'));
-                }
-
-                console.log('✅ All data fetched, building prompt...');
-
-                // Build comprehensive prompt
-                const prompt = `TABLE INFORMATION FOR AI
-=====================================
-
-DATABASE CONNECTION:
-Host: ${conn.host}
-Database Name: ${conn.dbName}
-Username: ${conn.username}
-Password: ${conn.password}
-Port: ${conn.port || '3306'}
-Connection Name: ${conn.name}
-Server Type: ${conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting'}
-
-TABLE DETAILS:
-Table Name: ${tableName}
-Total Records: ${dataResult.pagination.total_rows.toLocaleString()}
-Columns: ${structResult.columns.length}
-Engine: ${dataResult.table_info.engine}
-Collation: ${dataResult.table_info.collation}
-Data Size: ${formatBytes(dataResult.table_info.data_length)}
-
-COLUMN STRUCTURE:
-${'='.repeat(60)}
-
-${structResult.columns.map((col, idx) => `
-${idx + 1}. ${col.Field}
-   Type: ${col.Type}
-   Nullable: ${col.Null}
-   ${col.Key ? `Key: ${col.Key === 'PRI' ? 'PRIMARY KEY' : col.Key === 'UNI' ? 'UNIQUE' : col.Key}` : ''}
-   ${col.Default !== null ? `Default: ${col.Default}` : ''}
-   ${col.Extra ? `Extra: ${col.Extra}` : ''}
-`).join('\n')}
-
-SAMPLE DATA (First ${dataResult.data.length} rows):
-${'='.repeat(60)}
-
-${dataResult.data.map((row, idx) => `
-Record ${idx + 1}:
-${structResult.columns.map(col => `  ${col.Field}: ${row[col.Field] === null ? 'NULL' : row[col.Field]}`).join('\n')}
-`).join('\n')}
-
-IMPORTANT INSTRUCTIONS FOR AI:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Use the credentials above to connect to the database
-- Table name: ${tableName}
-- ${dataResult.pagination.total_rows} existing record(s)
-- Always use prepared statements for security
-- Respect NOT NULL and UNIQUE constraints
-- Primary key: ${structResult.columns.find(c => c.Key === 'PRI')?.Field || 'None'}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-SAMPLE CONNECTION CODE (PHP):
-\`\`\`php
-$host = '${conn.host}';
-$dbname = '${conn.dbName}';
-$username = '${conn.username}';
-$password = '${conn.password}';
-$port = '${conn.port || '3306'}';
-$table = '${tableName}';
-
-$pdo = new PDO("mysql:host=\$host;port=\$port;dbname=\$dbname;charset=utf8mb4", $username, $password);
-$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-// Example: Get all records
-$stmt = $pdo->query("SELECT * FROM \`\$table\`");
-$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-\`\`\`
-
-You can now work with this table using the connection information above.
-`;
-
-                // Update UI
-                if (loadingEl) loadingEl.style.display = 'none';
-                if (textArea) {
-                    textArea.value = prompt;
-                }
-
-                console.log('✅ Table info generated successfully!');
-
-            } catch (error) {
-                console.error('❌ Error generating table info:', error);
-                
-                if (loadingEl) loadingEl.style.display = 'none';
-                if (textArea) {
-                    const errorMsg = `Error loading table information:\n\n${error.message}\n\nCheck browser console (F12) for more details.`;
-                    textArea.value = errorMsg;
-                }
-                
-                alert(`❌ Failed to load table info:\n\n${error.message}\n\nCheck Console (F12) for details.`);
-            }
-        }
-
-        // Close table info modal
-        function closeTableInfoModal() {
-            document.getElementById('tableInfoModal').classList.remove('active');
-        }
-
-        // Copy table info text
-        async function copyTableInfoText() {
-            const text = document.getElementById('tableInfoText').value;
-            
-            try {
-                await navigator.clipboard.writeText(text);
-                alert('✅ تم نسخ معلومات الجدول إلى الحافظة!');
-            } catch (err) {
-                // Fallback
-                const textarea = document.getElementById('tableInfoText');
-                textarea.select();
-                document.execCommand('copy');
-                alert('✅ تم نسخ معلومات الجدول!');
-            }
         }
 
         // Close database info modal
