@@ -975,6 +975,48 @@ PHASE: Hostinger Edition
             background: rgba(251, 191, 36, 0.7);
         }
 
+        /* Destination tables container scrollbar */
+        #migrationDestinationTablesContainer::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #migrationDestinationTablesContainer::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        #migrationDestinationTablesContainer::-webkit-scrollbar-thumb {
+            background: rgba(34, 197, 94, 0.5);
+            border-radius: 4px;
+        }
+
+        #migrationDestinationTablesContainer::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 197, 94, 0.7);
+        }
+
+        /* Destination dropdown hover effect */
+        #migrationDestinationSelect:hover {
+            border-color: #86efac;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+        }
+
+        #migrationDestinationSelect:focus {
+            border-color: #22c55e;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+        }
+
+        /* Arrow pulse animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
         @media (max-width: 768px) {
             .column-row {
                 grid-template-columns: 1fr;
@@ -2356,10 +2398,83 @@ PHASE: Hostinger Edition
                             </div>
                         </div>
 
-                        <!-- Right Side Container (Will be added later) -->
-                        <div style="flex: 1; background: rgba(0, 0, 0, 0.2); border: 2px dashed rgba(251, 191, 36, 0.3); border-radius: 12px; padding: 40px; text-align: center; color: rgba(254, 243, 199, 0.5);">
-                            <div style="font-size: 48px; margin-bottom: 15px;">➡️</div>
-                            <p style="font-size: 14px;">Destination options will appear here</p>
+                        <!-- Arrow Container (Center) -->
+                        <div style="flex: 0 0 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
+                            <div style="font-size: 36px; animation: pulse 2s infinite;">➡️</div>
+                            <div style="width: 2px; height: 80px; background: linear-gradient(to bottom, rgba(251, 191, 36, 0.5), rgba(251, 191, 36, 0.1));"></div>
+                            <div style="font-size: 36px; animation: pulse 2s infinite; animation-delay: 1s;">➡️</div>
+                        </div>
+
+                        <!-- Destination Database Container (Right Side - 48%) -->
+                        <div style="flex: 0 0 48%; background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%); border: 2px solid rgba(34, 197, 94, 0.4); border-radius: 12px; padding: 20px; backdrop-filter: blur(10px);">
+                            <!-- Container Header -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid rgba(34, 197, 94, 0.3);">
+                                <div>
+                                    <h3 style="color: #86efac; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 24px;">📥</span>
+                                        <span>Destination Database</span>
+                                    </h3>
+                                    <p style="color: rgba(254, 243, 199, 0.7); margin: 5px 0 0 34px; font-size: 13px;">
+                                        Select where to copy tables
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="refreshDestinationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Refresh tables">
+                                        <span>🔄</span>
+                                    </button>
+                                    <button onclick="selectAllDestinationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Select all">
+                                        <span>✅</span>
+                                    </button>
+                                    <button onclick="deselectAllDestinationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Deselect all">
+                                        <span>❌</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Database Selection Dropdown -->
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; color: #fbbf24; font-size: 14px; font-weight: 500; margin-bottom: 10px;">
+                                    🎯 Select Destination Database
+                                </label>
+                                <select id="migrationDestinationSelect" 
+                                        onchange="loadDestinationTables()"
+                                        style="width: 100%; padding: 12px 15px; background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 100%); border: 2px solid rgba(34, 197, 94, 0.4); border-radius: 8px; color: #fef3c7; font-size: 14px; cursor: pointer; outline: none; transition: all 0.3s;">
+                                    <option value="">-- Select Destination --</option>
+                                </select>
+                            </div>
+
+                            <!-- Destination Info Display -->
+                            <div id="migrationDestinationInfo" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; display: none;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 20px;">🌐</span>
+                                    <div style="flex: 1;">
+                                        <div style="color: #93c5fd; font-size: 13px; font-weight: 500;" id="migrationDestDbName">Database Name</div>
+                                        <div style="color: rgba(254, 243, 199, 0.6); font-size: 11px;" id="migrationDestHost">Host</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Destination Tables Container -->
+                            <div id="migrationDestinationTablesContainer" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 200px; max-height: 340px; overflow-y: auto; padding: 5px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.2);">
+                                <!-- Destination tables will be loaded here -->
+                                <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                                    <div style="font-size: 48px; margin-bottom: 15px;">🎯</div>
+                                    <p style="font-size: 14px;">Select a destination database</p>
+                                </div>
+                            </div>
+
+                            <!-- Destination Tables Count -->
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(34, 197, 94, 0.2); color: rgba(254, 243, 199, 0.8); font-size: 13px; display: flex; justify-content: space-between; align-items: center;">
+                                <span id="migrationDestinationSelectedCount">0 tables selected</span>
+                                <span id="migrationDestinationCount">0 tables total</span>
+                            </div>
+
+                            <!-- Migration Action Button -->
+                            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid rgba(34, 197, 94, 0.3);">
+                                <button onclick="startTableMigration()" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px; background: linear-gradient(135deg, #22c55e 0%, #059669 100%); border: none;">
+                                    <span>🚀</span> Start Migration
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -5735,6 +5850,7 @@ ${errorDetails || 'Unknown error occurred'}
                 document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
                 document.getElementById('migrationTab').classList.add('active');
                 loadMigrationTables();
+                loadDestinationDropdown();
             }
         }
 
@@ -5864,6 +5980,9 @@ ${errorDetails || 'Unknown error occurred'}
                     console.log('Tables loaded:', migrationTables);
                     renderMigrationTables();
                     updateMigrationCounts();
+                    
+                    // Update destination dropdown to exclude current source
+                    loadDestinationDropdown();
                 } else {
                     console.warn('No tables found or error:', result);
                     document.getElementById('migrationTablesContainer').innerHTML = `
@@ -5966,6 +6085,195 @@ ${errorDetails || 'Unknown error occurred'}
                 `${selectedMigrationTables.size} table${selectedMigrationTables.size !== 1 ? 's' : ''} selected`;
             document.getElementById('migrationTotalCount').textContent = 
                 `${migrationTables.length} table${migrationTables.length !== 1 ? 's' : ''} total`;
+        }
+
+        // ========================================
+        // MIGRATION: DESTINATION DATABASE
+        // ========================================
+
+        let destinationTables = [];
+        let selectedDestinationId = null;
+
+        // Load destination database dropdown
+        function loadDestinationDropdown() {
+            const select = document.getElementById('migrationDestinationSelect');
+            if (!select) return;
+
+            const allConnections = getHostingerConnections();
+            const sourceId = selectedDatabaseId ? selectedDatabaseId.replace('conn_', '') : null;
+
+            // Clear and rebuild dropdown
+            select.innerHTML = '<option value="">-- Select Destination --</option>';
+
+            allConnections.forEach(conn => {
+                // Skip source database
+                if (sourceId && conn.id === sourceId) {
+                    return;
+                }
+
+                const option = document.createElement('option');
+                option.value = conn.id;
+                option.textContent = `${conn.name} (${conn.dbName})`;
+                option.style.background = 'rgba(0, 0, 0, 0.8)';
+                option.style.color = '#fef3c7';
+                select.appendChild(option);
+            });
+
+            console.log('Destination dropdown loaded, excluded source:', sourceId);
+        }
+
+        // Load destination tables
+        async function loadDestinationTables() {
+            const select = document.getElementById('migrationDestinationSelect');
+            const destId = select.value;
+
+            console.log('Loading destination tables for:', destId);
+
+            if (!destId) {
+                // Reset destination display
+                document.getElementById('migrationDestinationInfo').style.display = 'none';
+                document.getElementById('migrationDestinationTablesContainer').innerHTML = `
+                    <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                        <div style="font-size: 48px; margin-bottom: 15px;">🎯</div>
+                        <p style="font-size: 14px;">Select a destination database</p>
+                    </div>
+                `;
+                selectedDestinationId = null;
+                destinationTables = [];
+                updateDestinationCount();
+                return;
+            }
+
+            selectedDestinationId = destId;
+
+            const allConnections = getHostingerConnections();
+            const conn = allConnections.find(c => c.id === destId);
+
+            if (!conn) {
+                console.error('Destination connection not found:', destId);
+                return;
+            }
+
+            // Show destination info
+            document.getElementById('migrationDestinationInfo').style.display = 'block';
+            document.getElementById('migrationDestDbName').textContent = conn.name;
+            document.getElementById('migrationDestHost').textContent = `Host: ${conn.host} | DB: ${conn.dbName}`;
+
+            // Show loading state
+            document.getElementById('migrationDestinationTablesContainer').innerHTML = `
+                <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                    <div style="font-size: 48px; margin-bottom: 15px;">⏳</div>
+                    <p style="font-size: 14px;">Loading destination tables...</p>
+                </div>
+            `;
+
+            try {
+                const result = await apiRequest('list_tables', {
+                    db_host: conn.host,
+                    db_name: conn.dbName,
+                    db_user: conn.username,
+                    db_pass: conn.password,
+                    db_port: conn.port
+                });
+
+                console.log('Destination tables result:', result);
+
+                if (result.success && result.tables) {
+                    destinationTables = result.tables;
+                    renderDestinationTables();
+                    updateDestinationCount();
+                } else {
+                    document.getElementById('migrationDestinationTablesContainer').innerHTML = `
+                        <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                            <div style="font-size: 48px; margin-bottom: 15px;">📭</div>
+                            <p style="font-size: 14px;">No tables in destination database</p>
+                            <p style="font-size: 12px; margin-top: 10px; color: rgba(34, 197, 94, 0.7);">✓ Empty database - perfect for migration!</p>
+                        </div>
+                    `;
+                    destinationTables = [];
+                    updateDestinationCount();
+                }
+            } catch (error) {
+                console.error('Error loading destination tables:', error);
+                document.getElementById('migrationDestinationTablesContainer').innerHTML = `
+                    <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                        <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
+                        <p style="font-size: 14px;">Error loading destination tables</p>
+                    </div>
+                `;
+                destinationTables = [];
+            }
+        }
+
+        // Render destination tables
+        function renderDestinationTables() {
+            const container = document.getElementById('migrationDestinationTablesContainer');
+
+            if (!container) {
+                console.error('Destination tables container not found!');
+                return;
+            }
+
+            if (destinationTables.length === 0) {
+                container.innerHTML = `
+                    <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                        <div style="font-size: 48px; margin-bottom: 15px;">📭</div>
+                        <p style="font-size: 14px;">No tables in destination database</p>
+                        <p style="font-size: 12px; margin-top: 10px; color: rgba(34, 197, 94, 0.7);">✓ Empty database - perfect for migration!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = destinationTables.map(tableName => {
+                const emoji = getTableEmoji(tableName);
+
+                return `
+                    <div class="migration-table-box" 
+                         style="border-color: rgba(34, 197, 94, 0.4); cursor: default; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);"
+                         data-table="${tableName}">
+                        <span class="migration-table-emoji">${emoji}</span>
+                        <div class="migration-table-name" style="color: #86efac;">${tableName}</div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        // Update destination count
+        function updateDestinationCount() {
+            document.getElementById('migrationDestinationCount').textContent = 
+                `${destinationTables.length} table${destinationTables.length !== 1 ? 's' : ''} in destination`;
+        }
+
+        // Start table migration
+        function startTableMigration() {
+            if (!selectedDatabaseId) {
+                alert('⚠️ Please select a source database first!');
+                return;
+            }
+
+            if (!selectedDestinationId) {
+                alert('⚠️ Please select a destination database!');
+                return;
+            }
+
+            if (selectedMigrationTables.size === 0) {
+                alert('⚠️ Please select at least one table to migrate!');
+                return;
+            }
+
+            // TODO: Implement migration logic
+            const selectedTablesList = Array.from(selectedMigrationTables).join(', ');
+            console.log('Starting migration...', {
+                source: selectedDatabaseId,
+                destination: selectedDestinationId,
+                tables: selectedTablesList,
+                count: selectedMigrationTables.size
+            });
+
+            alert(`🚀 Migration Ready!\n\n📤 Source: ${selectedDatabaseId}\n📥 Destination: ${selectedDestinationId}\n📊 Tables: ${selectedMigrationTables.size}\n\n✓ Feature will be implemented next!`);
         }
 
         // Load table templates
