@@ -6523,22 +6523,62 @@ ${errorDetails || 'Unknown error occurred'}
                 const sourceConn = allConnections.find(c => c.id === sourceId);
                 const destConn = allConnections.find(c => c.id === selectedDestinationId);
 
-                if (!sourceConn || !destConn) {
-                    throw new Error('Connection not found');
+                console.log('🔍 Debug Info:', {
+                    selectedDatabaseId,
+                    sourceId,
+                    selectedDestinationId,
+                    allConnectionsCount: allConnections.length,
+                    sourceConn: sourceConn ? 'Found' : 'NOT FOUND',
+                    destConn: destConn ? 'Found' : 'NOT FOUND'
+                });
+
+                if (!sourceConn) {
+                    throw new Error('Source connection not found. Selected ID: ' + sourceId);
                 }
+
+                if (!destConn) {
+                    throw new Error('Destination connection not found. Selected ID: ' + selectedDestinationId);
+                }
+
+                console.log('📋 Source Connection:', {
+                    host: sourceConn.host,
+                    dbName: sourceConn.dbName,
+                    user: sourceConn.username,
+                    port: sourceConn.port
+                });
+
+                console.log('📥 Destination Connection:', {
+                    host: destConn.host,
+                    dbName: destConn.dbName,
+                    user: destConn.username,
+                    port: destConn.port
+                });
 
                 // Step 1: Get table structure with data
                 console.log('📋 Step 1: Generating SQL for table:', draggedTableName);
                 loadingDiv.querySelector('div:nth-child(2)').textContent = 'Step 1: Copying table structure & data...';
                 
-                const sqlResult = await apiRequest('generate_table_sql', {
+                const sqlRequestData = {
                     db_host: sourceConn.host,
                     db_name: sourceConn.dbName,
                     db_user: sourceConn.username,
                     db_pass: sourceConn.password,
-                    db_port: sourceConn.port,
+                    db_port: sourceConn.port || '3306',
                     table_name: draggedTableName,
                     include_data: 'true'
+                };
+
+                console.log('📤 Sending SQL generation request with data:', {
+                    ...sqlRequestData,
+                    db_pass: '***hidden***'
+                });
+
+                const sqlResult = await apiRequest('generate_table_sql', sqlRequestData);
+
+                console.log('📥 SQL generation result:', {
+                    success: sqlResult.success,
+                    message: sqlResult.message,
+                    hasSql: !!sqlResult.sql
                 });
 
                 if (!sqlResult.success || !sqlResult.sql) {
@@ -6549,13 +6589,22 @@ ${errorDetails || 'Unknown error occurred'}
                 console.log('📥 Step 2: Executing SQL on destination database');
                 loadingDiv.querySelector('div:nth-child(2)').textContent = 'Step 2: Creating table in destination...';
                 
-                const executeResult = await apiRequest('execute_sql', {
+                const executeRequestData = {
                     db_host: destConn.host,
                     db_name: destConn.dbName,
                     db_user: destConn.username,
                     db_pass: destConn.password,
-                    db_port: destConn.port,
+                    db_port: destConn.port || '3306',
                     sql: sqlResult.sql
+                };
+
+                console.log('📤 Sending execute SQL request to destination');
+
+                const executeResult = await apiRequest('execute_sql', executeRequestData);
+
+                console.log('📥 Execute SQL result:', {
+                    success: executeResult.success,
+                    message: executeResult.message
                 });
 
                 if (!executeResult.success) {
@@ -6566,13 +6615,22 @@ ${errorDetails || 'Unknown error occurred'}
                 console.log('🗑️ Step 3: Deleting table from source database');
                 loadingDiv.querySelector('div:nth-child(2)').textContent = 'Step 3: Removing from source...';
                 
-                const deleteResult = await apiRequest('delete_table', {
+                const deleteRequestData = {
                     db_host: sourceConn.host,
                     db_name: sourceConn.dbName,
                     db_user: sourceConn.username,
                     db_pass: sourceConn.password,
-                    db_port: sourceConn.port,
+                    db_port: sourceConn.port || '3306',
                     table_name: draggedTableName
+                };
+
+                console.log('📤 Sending delete table request');
+
+                const deleteResult = await apiRequest('delete_table', deleteRequestData);
+
+                console.log('📥 Delete table result:', {
+                    success: deleteResult.success,
+                    message: deleteResult.message
                 });
 
                 if (!deleteResult.success) {
@@ -6614,15 +6672,39 @@ ${errorDetails || 'Unknown error occurred'}
 
             } catch (error) {
                 console.error('❌ Migration error:', error);
+                console.error('❌ Full error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    error: error
+                });
                 
                 // Remove loading indicator
                 const loading = document.getElementById('dragMigrationLoading');
-                if (loading) {
+                if (loading && loading.parentNode) {
                     document.body.removeChild(loading);
                 }
 
-                // Show error message
-                alert(`❌ Migration Failed!\n\n${error.message || error}`);
+                // Show detailed error message
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(239, 68, 68, 0.98); color: white; padding: 40px 60px; border-radius: 15px; border: 3px solid #fca5a5; z-index: 10000; text-align: center; box-shadow: 0 0 50px rgba(239, 68, 68, 0.7); max-width: 600px;';
+                errorDiv.innerHTML = `
+                    <div style="font-size: 64px; margin-bottom: 20px;">❌</div>
+                    <div style="font-size: 22px; margin-bottom: 15px; font-weight: bold;">Migration Failed!</div>
+                    <div style="font-size: 14px; opacity: 0.95; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; text-align: left; margin: 15px 0;">
+                        <strong>Error:</strong><br>
+                        ${error.message || error}
+                    </div>
+                    <div style="font-size: 12px; opacity: 0.8; margin-top: 15px;">Check browser console (F12) for more details</div>
+                    <button onclick="this.parentElement.remove()" style="margin-top: 20px; padding: 10px 25px; background: white; color: #dc2626; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer;">Close</button>
+                `;
+                document.body.appendChild(errorDiv);
+
+                // Auto-remove after 10 seconds
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        document.body.removeChild(errorDiv);
+                    }
+                }, 10000);
             } finally {
                 draggedTableName = null;
             }
