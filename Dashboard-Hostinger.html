@@ -884,6 +884,97 @@ PHASE: Hostinger Edition
             display: block;
         }
 
+        /* Migration Table Box Styles */
+        .migration-table-box {
+            flex: 0 0 calc(33.333% - 7px);
+            min-width: 120px;
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%);
+            border: 2px solid rgba(251, 191, 36, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            user-select: none;
+        }
+
+        .migration-table-box:hover {
+            transform: translateY(-3px);
+            border-color: #fbbf24;
+            box-shadow: 0 5px 15px rgba(251, 191, 36, 0.3);
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(251, 191, 36, 0.1) 100%);
+        }
+
+        .migration-table-box.selected {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.15) 100%);
+            border-color: #22c55e;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+        }
+
+        .migration-table-box.selected:hover {
+            transform: translateY(-3px);
+            border-color: #86efac;
+        }
+
+        .migration-table-emoji {
+            font-size: 32px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .migration-table-name {
+            color: #fef3c7;
+            font-size: 13px;
+            font-weight: 500;
+            word-wrap: break-word;
+            line-height: 1.3;
+        }
+
+        .migration-table-box.selected .migration-table-name {
+            color: #86efac;
+        }
+
+        .migration-check-icon {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #22c55e;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .migration-table-box.selected .migration-check-icon {
+            opacity: 1;
+        }
+
+        /* Migration tables container scrollbar */
+        #migrationTablesContainer::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #migrationTablesContainer::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        #migrationTablesContainer::-webkit-scrollbar-thumb {
+            background: rgba(251, 191, 36, 0.5);
+            border-radius: 4px;
+        }
+
+        #migrationTablesContainer::-webkit-scrollbar-thumb:hover {
+            background: rgba(251, 191, 36, 0.7);
+        }
+
         @media (max-width: 768px) {
             .column-row {
                 grid-template-columns: 1fr;
@@ -891,6 +982,10 @@ PHASE: Hostinger Edition
 
             .template-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .migration-table-box {
+                flex: 0 0 calc(50% - 5px);
             }
         }
 
@@ -1846,7 +1941,7 @@ PHASE: Hostinger Edition
                 </div>
 
                 <!-- Tab 3: Database Migration -->
-                <div id="migrationTab" class="tab-content">
+                <div id="databaseMigrationTab" class="tab-content">
                     <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
                         <h3 style="color: #fbbf24; margin-bottom: 15px;">🔄 Database Migration</h3>
                         
@@ -2218,11 +2313,54 @@ PHASE: Hostinger Edition
 
                 <!-- Migration Tab -->
                 <div id="migrationTab" class="tab-content">
-                    <!-- Migration content will be added here -->
-                    <div style="text-align: center; padding: 60px 20px; color: rgba(254, 243, 199, 0.6);">
-                        <div style="font-size: 48px; margin-bottom: 20px;">🚀</div>
-                        <h3 style="color: #fbbf24; margin-bottom: 10px;">Migration Feature</h3>
-                        <p>Migration functionality will be implemented here</p>
+                    <div style="display: flex; gap: 20px; align-items: flex-start;">
+                        <!-- Source Tables Container (Left Side - 48%) -->
+                        <div style="flex: 0 0 48%; background: linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(153, 27, 27, 0.3) 100%); border: 2px solid rgba(251, 191, 36, 0.3); border-radius: 12px; padding: 20px; backdrop-filter: blur(10px);">
+                            <!-- Container Header -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid rgba(251, 191, 36, 0.3);">
+                                <div>
+                                    <h3 style="color: #fbbf24; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 24px;">📦</span>
+                                        <span>Source Tables</span>
+                                    </h3>
+                                    <p style="color: rgba(254, 243, 199, 0.7); margin: 5px 0 0 34px; font-size: 13px;" id="migrationSourceDbName">
+                                        No database selected
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="refreshMigrationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Refresh tables">
+                                        <span>🔄</span>
+                                    </button>
+                                    <button onclick="selectAllMigrationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Select all">
+                                        <span>✅</span>
+                                    </button>
+                                    <button onclick="deselectAllMigrationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Deselect all">
+                                        <span>❌</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tables Grid -->
+                            <div id="migrationTablesContainer" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 200px; max-height: 500px; overflow-y: auto; padding: 5px;">
+                                <!-- Tables will be loaded here dynamically -->
+                                <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                                    <div style="font-size: 48px; margin-bottom: 15px;">�</div>
+                                    <p style="font-size: 14px;">Select a database to view tables</p>
+                                </div>
+                            </div>
+
+                            <!-- Selected Count -->
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(251, 191, 36, 0.2); color: rgba(254, 243, 199, 0.8); font-size: 13px; display: flex; justify-content: space-between; align-items: center;">
+                                <span id="migrationSelectedCount">0 tables selected</span>
+                                <span id="migrationTotalCount">0 tables total</span>
+                            </div>
+                        </div>
+
+                        <!-- Right Side Container (Will be added later) -->
+                        <div style="flex: 1; background: rgba(0, 0, 0, 0.2); border: 2px dashed rgba(251, 191, 36, 0.3); border-radius: 12px; padding: 40px; text-align: center; color: rgba(254, 243, 199, 0.5);">
+                            <div style="font-size: 48px; margin-bottom: 15px;">➡️</div>
+                            <p style="font-size: 14px;">Destination options will appear here</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2530,6 +2668,14 @@ PHASE: Hostinger Edition
             // Load selected database from localStorage
             setTimeout(() => {
                 loadSelectedDatabase();
+                
+                // Load migration tables if a database is selected
+                setTimeout(() => {
+                    if (selectedDatabaseId && typeof loadMigrationTables === 'function') {
+                        console.log('Initial migration tables load on page load');
+                        loadMigrationTables();
+                    }
+                }, 200);
             }, 100);
         });
 
@@ -3079,7 +3225,7 @@ OVERVIEW:
             
             document.getElementById('generateSQLTab').classList.remove('active');
             document.getElementById('sqlExecutorTab').classList.remove('active');
-            document.getElementById('migrationTab').classList.remove('active');
+            document.getElementById('databaseMigrationTab').classList.remove('active');
             
             if (tabName === 'generate') {
                 section.querySelector('.tab-btn:nth-child(1)').classList.add('active');
@@ -3091,7 +3237,7 @@ OVERVIEW:
                 initSQLAutocomplete();
             } else if (tabName === 'migration') {
                 section.querySelector('.tab-btn:nth-child(3)').classList.add('active');
-                document.getElementById('migrationTab').classList.add('active');
+                document.getElementById('databaseMigrationTab').classList.add('active');
                 // Initialize migration tab
                 initMigrationTab();
             }
@@ -4811,6 +4957,12 @@ ${errorDetails || 'Unknown error occurred'}
             // Update AI Prompt display
             updateAIPromptDisplay();
 
+            // Update migration tables - load immediately when database is selected
+            if (typeof loadMigrationTables === 'function') {
+                console.log('Triggering migration tables load from selectDatabase');
+                loadMigrationTables();
+            }
+
             // Show TABLE OPERATIONS in sidebar
             showTableOperations();
         }
@@ -5582,7 +5734,238 @@ ${errorDetails || 'Unknown error occurred'}
             } else if (tabName === 'migration') {
                 document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
                 document.getElementById('migrationTab').classList.add('active');
+                loadMigrationTables();
             }
+        }
+
+        // Migration: Get emoji based on table name
+        function getTableEmoji(tableName) {
+            const name = tableName.toLowerCase();
+            
+            // Common patterns
+            if (name.includes('user') || name.includes('account') || name.includes('member')) return '👤';
+            if (name.includes('product') || name.includes('item')) return '📦';
+            if (name.includes('order') || name.includes('purchase')) return '🛒';
+            if (name.includes('payment') || name.includes('transaction')) return '💳';
+            if (name.includes('category') || name.includes('categor')) return '📂';
+            if (name.includes('post') || name.includes('article') || name.includes('blog')) return '📝';
+            if (name.includes('comment')) return '💬';
+            if (name.includes('message') || name.includes('mail') || name.includes('email')) return '✉️';
+            if (name.includes('image') || name.includes('photo') || name.includes('picture')) return '🖼️';
+            if (name.includes('file') || name.includes('document')) return '📄';
+            if (name.includes('video')) return '🎥';
+            if (name.includes('audio') || name.includes('music')) return '🎵';
+            if (name.includes('setting') || name.includes('config')) return '⚙️';
+            if (name.includes('log') || name.includes('history')) return '📋';
+            if (name.includes('notification') || name.includes('alert')) return '🔔';
+            if (name.includes('tag')) return '🏷️';
+            if (name.includes('session')) return '🔐';
+            if (name.includes('token') || name.includes('api')) return '🔑';
+            if (name.includes('report')) return '📊';
+            if (name.includes('analytics') || name.includes('statistic')) return '📈';
+            if (name.includes('invoice')) return '🧾';
+            if (name.includes('cart') || name.includes('basket')) return '🛍️';
+            if (name.includes('review') || name.includes('rating')) return '⭐';
+            if (name.includes('wishlist') || name.includes('favorite')) return '❤️';
+            if (name.includes('address') || name.includes('location')) return '📍';
+            if (name.includes('country') || name.includes('city') || name.includes('region')) return '🌍';
+            if (name.includes('language')) return '🌐';
+            if (name.includes('permission') || name.includes('role')) return '🛡️';
+            if (name.includes('backup')) return '💾';
+            if (name.includes('cache')) return '⚡';
+            if (name.includes('queue') || name.includes('job')) return '📮';
+            if (name.includes('event')) return '📅';
+            if (name.includes('customer') || name.includes('client')) return '👥';
+            if (name.includes('supplier') || name.includes('vendor')) return '🏪';
+            if (name.includes('employee') || name.includes('staff')) return '👔';
+            if (name.includes('department')) return '🏢';
+            if (name.includes('project')) return '📁';
+            if (name.includes('task') || name.includes('todo')) return '✅';
+            if (name.includes('ticket') || name.includes('support')) return '🎫';
+            if (name.includes('feedback')) return '📣';
+            if (name.includes('contact')) return '📞';
+            if (name.includes('subscription')) return '📬';
+            if (name.includes('coupon') || name.includes('discount') || name.includes('promo')) return '🎟️';
+            if (name.includes('shipping') || name.includes('delivery')) return '🚚';
+            if (name.includes('inventory') || name.includes('stock')) return '📦';
+            if (name.includes('warehouse')) return '🏭';
+            
+            // Default
+            return '📊';
+        }
+
+        // Migration: Load tables from selected database
+        let migrationTables = [];
+        let selectedMigrationTables = new Set();
+
+        async function loadMigrationTables() {
+            console.log('Loading migration tables...', selectedDatabaseId);
+            
+            if (!selectedDatabaseId) {
+                document.getElementById('migrationSourceDbName').textContent = 'No database selected';
+                document.getElementById('migrationTablesContainer').innerHTML = `
+                    <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                        <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+                        <p style="font-size: 14px;">Please select a database first from Dashboard</p>
+                    </div>
+                `;
+                updateMigrationCounts();
+                return;
+            }
+
+            // Get all connections
+            const allConnections = getHostingerConnections();
+            console.log('All connections:', allConnections);
+            
+            // Extract the actual ID from selectedDatabaseId (remove 'conn_' prefix if present)
+            const actualId = selectedDatabaseId.replace('conn_', '');
+            console.log('Looking for connection with ID:', actualId);
+            
+            // Find the selected connection
+            const conn = allConnections.find(c => c.id === actualId);
+            console.log('Selected connection:', conn);
+            
+            if (!conn) {
+                console.error('Connection not found for ID:', actualId);
+                document.getElementById('migrationSourceDbName').textContent = 'Connection not found';
+                document.getElementById('migrationTablesContainer').innerHTML = `
+                    <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                        <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
+                        <p style="font-size: 14px;">Connection not found</p>
+                        <p style="font-size: 12px; margin-top: 10px;">ID: ${actualId}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            document.getElementById('migrationSourceDbName').textContent = `Database: ${conn.name}`;
+
+            // Show loading state
+            document.getElementById('migrationTablesContainer').innerHTML = `
+                <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                    <div style="font-size: 48px; margin-bottom: 15px;">⏳</div>
+                    <p style="font-size: 14px;">Loading tables...</p>
+                </div>
+            `;
+
+            try {
+                const result = await apiRequest('list_tables', {
+                    db_host: conn.host,
+                    db_name: conn.dbName,
+                    db_user: conn.username,
+                    db_pass: conn.password,
+                    db_port: conn.port
+                });
+                
+                console.log('API Result:', result);
+                
+                if (result.success && result.tables) {
+                    migrationTables = result.tables;
+                    console.log('Tables loaded:', migrationTables);
+                    renderMigrationTables();
+                    updateMigrationCounts();
+                } else {
+                    console.warn('No tables found or error:', result);
+                    document.getElementById('migrationTablesContainer').innerHTML = `
+                        <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                            <div style="font-size: 48px; margin-bottom: 15px;">📭</div>
+                            <p style="font-size: 14px;">No tables found in this database</p>
+                            <p style="font-size: 12px; margin-top: 10px;">${result.message || ''}</p>
+                        </div>
+                    `;
+                    migrationTables = [];
+                    updateMigrationCounts();
+                }
+            } catch (error) {
+                console.error('Error loading migration tables:', error);
+                document.getElementById('migrationTablesContainer').innerHTML = `
+                    <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                        <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
+                        <p style="font-size: 14px;">Error loading tables</p>
+                        <p style="font-size: 12px; margin-top: 10px;">${error.message || 'Unknown error'}</p>
+                    </div>
+                `;
+                migrationTables = [];
+            }
+        }
+
+        // Migration: Render table boxes
+        function renderMigrationTables() {
+            const container = document.getElementById('migrationTablesContainer');
+            
+            console.log('Rendering migration tables:', migrationTables);
+            
+            if (!container) {
+                console.error('Migration tables container not found!');
+                return;
+            }
+            
+            if (migrationTables.length === 0) {
+                container.innerHTML = `
+                    <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                        <div style="font-size: 48px; margin-bottom: 15px;">📭</div>
+                        <p style="font-size: 14px;">No tables found in this database</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = migrationTables.map(tableName => {
+                const emoji = getTableEmoji(tableName);
+                const isSelected = selectedMigrationTables.has(tableName);
+                
+                return `
+                    <div class="migration-table-box ${isSelected ? 'selected' : ''}" 
+                         onclick="toggleMigrationTable('${tableName}')"
+                         data-table="${tableName}">
+                        <span class="migration-check-icon">✓</span>
+                        <span class="migration-table-emoji">${emoji}</span>
+                        <div class="migration-table-name">${tableName}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            console.log('Generated HTML length:', html.length);
+            container.innerHTML = html;
+        }
+
+        // Migration: Toggle table selection
+        function toggleMigrationTable(tableName) {
+            if (selectedMigrationTables.has(tableName)) {
+                selectedMigrationTables.delete(tableName);
+            } else {
+                selectedMigrationTables.add(tableName);
+            }
+            renderMigrationTables();
+            updateMigrationCounts();
+        }
+
+        // Migration: Select all tables
+        function selectAllMigrationTables() {
+            selectedMigrationTables = new Set(migrationTables);
+            renderMigrationTables();
+            updateMigrationCounts();
+        }
+
+        // Migration: Deselect all tables
+        function deselectAllMigrationTables() {
+            selectedMigrationTables.clear();
+            renderMigrationTables();
+            updateMigrationCounts();
+        }
+
+        // Migration: Refresh tables
+        function refreshMigrationTables() {
+            selectedMigrationTables.clear();
+            loadMigrationTables();
+        }
+
+        // Migration: Update counts
+        function updateMigrationCounts() {
+            document.getElementById('migrationSelectedCount').textContent = 
+                `${selectedMigrationTables.size} table${selectedMigrationTables.size !== 1 ? 's' : ''} selected`;
+            document.getElementById('migrationTotalCount').textContent = 
+                `${migrationTables.length} table${migrationTables.length !== 1 ? 's' : ''} total`;
         }
 
         // Load table templates
