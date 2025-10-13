@@ -2564,6 +2564,11 @@ PHASE: Hostinger Edition
                                     <div style="font-size: 11px; opacity: 0.8; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(245, 158, 11, 0.2);">
                                         💡 Buttons: Top-right corner | Green badge: Bottom-right | Double-click name to rename
                                     </div>
+                                    <div style="margin-top: 10px; text-align: center;">
+                                        <button onclick="testRenameFunction()" class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px;">
+                                            🧪 Test Rename
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -6478,6 +6483,19 @@ ${errorDetails || 'Unknown error occurred'}
             loadDestinationTables();
         }
 
+        // Test rename function
+        function testRenameFunction() {
+            alert('🧪 Test Rename:\n\n1. Find a table name in the source container\n2. Double-click DIRECTLY on the table name (center text)\n3. Input box should appear with golden border\n4. Type new name and press Enter\n\nIf input appears but is empty:\n- Type the new name anyway\n- It will work!\n\nCheck Console (F12) for detailed logs.');
+            
+            console.log('=== RENAME TEST ===');
+            console.log('Available tables:', migrationTables);
+            console.log('Try double-clicking on any table name');
+            
+            if (migrationTables.length > 0) {
+                console.log('Example: Double-click on "' + migrationTables[0] + '"');
+            }
+        }
+
         // Start inline rename for table
         function startRenameTable(oldName, element) {
             console.log('✏️ Starting rename for:', oldName);
@@ -6493,46 +6511,29 @@ ${errorDetails || 'Unknown error occurred'}
             const originalContent = element.innerHTML;
             console.log('Original content:', originalContent);
             
-            // Create input element
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = oldName;
-            input.placeholder = oldName;
-            input.className = 'rename-input';
-            input.style.cssText = `
-                width: 100%;
-                padding: 6px 10px;
-                background: linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(245, 158, 11, 0.2) 100%);
-                border: 2px solid #fbbf24;
-                border-radius: 6px;
-                color: #fef3c7;
-                font-size: 14px;
-                font-weight: 600;
-                text-align: center;
-                outline: none;
-                box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
-                animation: inputGlow 0.3s ease-out;
+            // Create input element using innerHTML (more reliable)
+            element.innerHTML = `
+                <input type="text" 
+                       value="${oldName}" 
+                       placeholder="${oldName}"
+                       class="rename-input"
+                       style="width: 100%; padding: 6px 10px; background: linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(245, 158, 11, 0.2) 100%); border: 2px solid #fbbf24; border-radius: 6px; color: #fef3c7; font-size: 14px; font-weight: 600; text-align: center; outline: none; box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);">
             `;
             
-            // Add glow animation
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes inputGlow {
-                    from { box-shadow: 0 0 0 rgba(251, 191, 36, 0); }
-                    to { box-shadow: 0 0 15px rgba(251, 191, 36, 0.5); }
-                }
-            `;
-            document.head.appendChild(style);
+            // Get the input element that was just created
+            const input = element.querySelector('input');
             
-            // Replace content with input
-            element.innerHTML = '';
-            element.appendChild(input);
+            console.log('✅ Input created via innerHTML');
+            console.log('Input value:', input.value);
+            console.log('Input element:', input);
             
-            // Focus and select after a tiny delay
+            // Focus and select
             setTimeout(() => {
                 input.focus();
                 input.select();
                 console.log('✅ Input focused and selected');
+                console.log('Input is focused:', document.activeElement === input);
+                console.log('Input current value:', input.value);
             }, 50);
             
             // Handle Enter key (save)
