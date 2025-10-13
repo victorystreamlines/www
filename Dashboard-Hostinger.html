@@ -2391,13 +2391,22 @@ PHASE: Hostinger Edition
                 <div id="templateTab" class="tab-content">
                     <form onsubmit="createTableFromTemplate(event)">
                         <div class="form-group">
-                            <label class="form-label">Table Name *</label>
-                            <input type="text" id="templateTableName" class="form-input" placeholder="Enter table name" required>
+                            <label class="form-label">Select Template First</label>
+                            <div class="template-grid" id="templateGrid"></div>
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Select Template</label>
-                            <div class="template-grid" id="templateGrid"></div>
+                        <div class="form-group" id="templateNameSection" style="display: none;">
+                            <label class="form-label">Table Name *</label>
+                            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                                <select id="templateSuggestedNames" class="form-select" onchange="useSuggestedName()" style="flex: 1;">
+                                    <option value="">-- Choose Suggested Name --</option>
+                                </select>
+                                <button type="button" class="btn btn-secondary" onclick="clearTemplateName()" style="padding: 8px 16px;">
+                                    <span>✖️</span> Clear
+                                </button>
+                            </div>
+                            <input type="text" id="templateTableName" class="form-input" placeholder="Or type custom name..." required>
+                            <div class="helper-text">💡 Select a suggested name above or type your own</div>
                         </div>
 
                         <div id="templateColumnBuilder" class="column-builder" style="display: none; margin-top: 20px;">
@@ -7493,6 +7502,20 @@ ${errorDetails || 'Unknown error occurred'}
             window.tableTemplates = templates;
         }
 
+        // Suggested names for each template
+        const templateSuggestedNames = {
+            'Users': ['users', 'my_users', 'customers', 'members', 'accounts', 'profiles', 'user_accounts'],
+            'Products': ['products', 'items', 'catalog', 'inventory', 'goods', 'articles', 'merchandise'],
+            'Blog Posts': ['posts', 'blog_posts', 'articles', 'content', 'publications', 'entries'],
+            'Orders': ['orders', 'purchases', 'transactions', 'sales', 'checkouts', 'invoices'],
+            'Categories': ['categories', 'types', 'groups', 'sections', 'tags', 'classifications'],
+            'Comments': ['comments', 'reviews', 'feedback', 'replies', 'notes', 'discussions'],
+            'Media': ['media', 'files', 'uploads', 'attachments', 'images', 'documents', 'assets'],
+            'Settings': ['settings', 'config', 'preferences', 'options', 'configuration'],
+            'Logs': ['logs', 'activity_logs', 'audit_logs', 'system_logs', 'event_logs'],
+            'Sessions': ['sessions', 'user_sessions', 'auth_sessions', 'login_sessions']
+        };
+
         // Select template
         function selectTemplate(templateName) {
             selectedTemplate = window.tableTemplates.find(t => t.name === templateName);
@@ -7500,6 +7523,22 @@ ${errorDetails || 'Unknown error occurred'}
             // Update UI
             document.querySelectorAll('.template-card').forEach(card => card.classList.remove('selected'));
             event.target.closest('.template-card').classList.add('selected');
+            
+            // Show template name section
+            document.getElementById('templateNameSection').style.display = 'block';
+            
+            // Populate suggested names
+            const suggestedSelect = document.getElementById('templateSuggestedNames');
+            suggestedSelect.innerHTML = '<option value="">-- Choose Suggested Name --</option>';
+            
+            const suggestions = templateSuggestedNames[templateName] || [];
+            suggestions.forEach(name => {
+                suggestedSelect.innerHTML += `<option value="${name}">${name}</option>`;
+            });
+            
+            // Auto-fill first suggestion in input placeholder
+            const firstSuggestion = suggestions[0] || templateName.toLowerCase().replace(/\s+/g, '_');
+            document.getElementById('templateTableName').placeholder = `e.g., ${firstSuggestion}`;
             
             // Show template columns
             const container = document.getElementById('templateColumns');
@@ -7510,6 +7549,24 @@ ${errorDetails || 'Unknown error occurred'}
             });
             
             document.getElementById('templateColumnBuilder').style.display = 'block';
+        }
+
+        // Use suggested name
+        function useSuggestedName() {
+            const select = document.getElementById('templateSuggestedNames');
+            const input = document.getElementById('templateTableName');
+            
+            if (select.value) {
+                input.value = select.value;
+                input.focus();
+            }
+        }
+
+        // Clear template name
+        function clearTemplateName() {
+            document.getElementById('templateTableName').value = '';
+            document.getElementById('templateSuggestedNames').value = '';
+            document.getElementById('templateTableName').focus();
         }
 
         // Create column row HTML
