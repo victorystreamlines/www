@@ -2547,13 +2547,19 @@ PHASE: Hostinger Edition
                                 </div>
                                 <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 6px; padding: 10px; font-size: 12px;">
                                     <div style="margin-bottom: 8px;">
-                                        <strong style="color: #fbbf24;">🏗️ Drag from table card:</strong> Structure Only
+                                        <strong style="color: #fbbf24;">🏗️ Drag from table card:</strong> Move (Structure Only)
                                     </div>
                                     <div style="margin-bottom: 8px;">
-                                        <strong style="color: #22c55e;">✋ Drag from green "Data" badge:</strong> Structure + Data
+                                        <strong style="color: #22c55e;">✋ Drag from green badge:</strong> Move (Structure + Data)
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <strong style="color: #a78bfa;">📋 Purple "Copy" button:</strong> Duplicate in same DB
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <strong style="color: #ef4444;">🗑️ Red "Delete" button:</strong> Permanently delete table
                                     </div>
                                     <div style="font-size: 11px; opacity: 0.8; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(245, 158, 11, 0.2);">
-                                        💡 The green badge appears in bottom-right corner of each table
+                                        💡 Top-right: Delete (red) & Copy (purple) | Bottom-right: Data badge (green)
                                     </div>
                                 </div>
                             </div>
@@ -6159,10 +6165,31 @@ ${errorDetails || 'Unknown error occurred'}
                          ondragstart="handleDragStart(event, '${tableName}', false)"
                          ondragend="handleDragEnd(event)"
                          data-table="${tableName}"
-                         style="cursor: grab; position: relative;">
+                         style="cursor: grab; position: relative; padding-bottom: 35px;">
                         <span class="migration-check-icon">✓</span>
                         <span class="migration-table-emoji">${emoji}</span>
                         <div class="migration-table-name">${tableName}</div>
+                        
+                        <!-- Duplicate Button -->
+                        <button class="duplicate-btn"
+                                onclick="duplicateTable('${tableName}'); event.stopPropagation();"
+                                title="Duplicate this table with data"
+                                style="position: absolute; top: 3px; right: 60px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(139, 92, 246, 0.6); cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3); transition: all 0.2s; z-index: 10;"
+                                onmouseover="this.style.background='linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)'; this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 12px rgba(139, 92, 246, 0.5)';"
+                                onmouseout="this.style.background='linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(139, 92, 246, 0.3)';">
+                            <span style="font-size: 12px;">📋</span>
+                            <span style="font-size: 10px; font-weight: bold; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">Copy</span>
+                        </button>
+                        
+                        <!-- Delete Button -->
+                        <button class="delete-btn"
+                                onclick="deleteTableFromMigration('${tableName}'); event.stopPropagation();"
+                                title="Delete this table permanently"
+                                style="position: absolute; top: 3px; right: 3px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.6); cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3); transition: all 0.2s; z-index: 10;"
+                                onmouseover="this.style.background='linear-gradient(135deg, #f87171 0%, #ef4444 100%)'; this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.5)';"
+                                onmouseout="this.style.background='linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(239, 68, 68, 0.3)';">
+                            <span style="font-size: 12px;">🗑️</span>
+                        </button>
                         
                         <!-- Hand Holder for Structure + Data -->
                         <div class="data-hand-holder" 
@@ -6441,6 +6468,245 @@ ${errorDetails || 'Unknown error occurred'}
         // Refresh destination tables
         function refreshDestinationTables() {
             loadDestinationTables();
+        }
+
+        // Delete table from source database
+        async function deleteTableFromMigration(tableName) {
+            if (!selectedDatabaseId) {
+                alert('❌ No database selected');
+                return;
+            }
+
+            console.log('=== DELETE TABLE ===');
+            console.log('Table to delete:', tableName);
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const sourceConn = connections.find(c => c.id === connId);
+
+            if (!sourceConn) {
+                alert('❌ Connection not found');
+                return;
+            }
+
+            // Confirmation
+            if (!confirm(`🗑️ Delete Table: ${tableName}\n\n⚠️ This will PERMANENTLY delete this table and ALL its data!\n\nAre you absolutely sure?`)) {
+                console.log('User cancelled delete');
+                return;
+            }
+
+            // Double confirmation for safety
+            if (!confirm(`⚠️ FINAL WARNING!\n\nDelete "${tableName}" permanently?\n\nThis action CANNOT be undone!`)) {
+                console.log('User cancelled on second confirmation');
+                return;
+            }
+
+            // Show loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(239, 68, 68, 0.95); color: white; padding: 30px 50px; border-radius: 12px; border: 2px solid #f87171; z-index: 10000; text-align: center; box-shadow: 0 0 40px rgba(239, 68, 68, 0.6);';
+            loadingDiv.innerHTML = `
+                <div style="font-size: 48px; margin-bottom: 15px; animation: shake 0.5s ease-in-out infinite;">🗑️</div>
+                <div style="font-size: 18px; font-weight: bold;">Deleting Table...</div>
+                <div style="font-size: 14px; margin-top: 8px; opacity: 0.9;">${tableName}</div>
+                <style>
+                    @keyframes shake {
+                        0%, 100% { transform: translateX(0); }
+                        25% { transform: translateX(-5px); }
+                        75% { transform: translateX(5px); }
+                    }
+                </style>
+            `;
+            document.body.appendChild(loadingDiv);
+
+            try {
+                // Delete table
+                console.log('Deleting table:', tableName);
+                const deleteResult = await apiRequest('delete_table', {
+                    db_host: sourceConn.host,
+                    db_name: sourceConn.dbName,
+                    db_user: sourceConn.username,
+                    db_pass: sourceConn.password,
+                    db_port: sourceConn.port || '3306',
+                    table_name: tableName
+                });
+
+                if (!deleteResult.success) {
+                    throw new Error(deleteResult.message || 'Failed to delete table');
+                }
+
+                console.log('✅ Table deleted successfully');
+
+                // Success!
+                document.body.removeChild(loadingDiv);
+
+                // Show success message
+                const successDiv = document.createElement('div');
+                successDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 35px 55px; border-radius: 12px; border: 2px solid #f87171; z-index: 10000; text-align: center; box-shadow: 0 0 40px rgba(239, 68, 68, 0.7);';
+                successDiv.innerHTML = `
+                    <div style="font-size: 56px; margin-bottom: 15px;">✅</div>
+                    <div style="font-size: 20px; margin-bottom: 10px; font-weight: bold;">Table Deleted!</div>
+                    <div style="font-size: 14px; background: rgba(0,0,0,0.3); padding: 8px 14px; border-radius: 6px; display: inline-block;">
+                        ${tableName}
+                    </div>
+                    <div style="font-size: 12px; opacity: 0.8; margin-top: 10px;">Table and all data permanently removed</div>
+                `;
+                document.body.appendChild(successDiv);
+
+                setTimeout(() => {
+                    document.body.removeChild(successDiv);
+                }, 3000);
+
+                // Refresh source tables
+                await loadMigrationTables();
+
+                console.log('✅ Table deletion completed!');
+
+            } catch (error) {
+                console.error('❌ Delete error:', error);
+                document.body.removeChild(loadingDiv);
+
+                alert(`❌ Deletion Failed!\n\n${error.message}`);
+            }
+        }
+
+        // Duplicate table in source database
+        async function duplicateTable(tableName) {
+            if (!selectedDatabaseId) {
+                alert('❌ No database selected');
+                return;
+            }
+
+            console.log('=== DUPLICATE TABLE ===');
+            console.log('Original table:', tableName);
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const sourceConn = connections.find(c => c.id === connId);
+
+            if (!sourceConn) {
+                alert('❌ Connection not found');
+                return;
+            }
+
+            // Prompt for new table name
+            const newName = prompt(`📋 Duplicate Table: ${tableName}\n\nEnter name for the copy:`, `${tableName}_copy`);
+            
+            if (!newName) {
+                console.log('User cancelled duplicate');
+                return;
+            }
+
+            if (newName === tableName) {
+                alert('❌ New name must be different from original table!');
+                return;
+            }
+
+            // Check if new name already exists
+            if (migrationTables.includes(newName)) {
+                if (!confirm(`⚠️ Table "${newName}" already exists!\n\nOverwrite it?`)) {
+                    return;
+                }
+            }
+
+            // Show loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(139, 92, 246, 0.95); color: white; padding: 30px 50px; border-radius: 12px; border: 2px solid #a78bfa; z-index: 10000; text-align: center; box-shadow: 0 0 40px rgba(139, 92, 246, 0.6);';
+            loadingDiv.innerHTML = `
+                <div style="font-size: 48px; margin-bottom: 15px; animation: spin 1.5s linear infinite;">📋</div>
+                <div style="font-size: 18px; font-weight: bold;">Duplicating Table...</div>
+                <div style="font-size: 14px; margin-top: 8px; opacity: 0.9;">${tableName} → ${newName}</div>
+                <style>@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }</style>
+            `;
+            document.body.appendChild(loadingDiv);
+
+            try {
+                // Step 1: Generate SQL with data
+                console.log('Step 1: Generating SQL with data for:', tableName);
+                const sqlResult = await apiRequest('generate_table_sql', {
+                    db_host: sourceConn.host,
+                    db_name: sourceConn.dbName,
+                    db_user: sourceConn.username,
+                    db_pass: sourceConn.password,
+                    db_port: sourceConn.port || '3306',
+                    table_name: tableName,
+                    include_data: 'true'
+                });
+
+                if (!sqlResult.success || !sqlResult.sql) {
+                    throw new Error(sqlResult.message || 'Failed to generate SQL');
+                }
+
+                console.log(`✅ SQL generated (${sqlResult.row_count || 0} rows)`);
+
+                // Step 2: Modify SQL to use new table name
+                let modifiedSQL = sqlResult.sql;
+                
+                // Replace table name in all occurrences
+                modifiedSQL = modifiedSQL.replace(new RegExp(`\`${tableName}\``, 'g'), `\`${newName}\``);
+                modifiedSQL = modifiedSQL.replace(new RegExp(`DROP TABLE IF EXISTS \`${tableName}\``, 'g'), `DROP TABLE IF EXISTS \`${newName}\``);
+                
+                console.log('✅ SQL modified for new table name:', newName);
+
+                // Step 3: Execute SQL in same database
+                console.log('Step 3: Creating duplicate table:', newName);
+                
+                // Split and execute statements
+                const statements = modifiedSQL.split(/;\s*\n/).filter(s => {
+                    const trimmed = s.trim();
+                    return trimmed.length > 0 && !trimmed.startsWith('--');
+                });
+
+                console.log(`Found ${statements.length} statements to execute`);
+
+                for (const statement of statements) {
+                    const trimmed = statement.trim();
+                    if (!trimmed) continue;
+
+                    const execResult = await apiRequest('execute_sql', {
+                        db_host: sourceConn.host,
+                        db_name: sourceConn.dbName,
+                        db_user: sourceConn.username,
+                        db_pass: sourceConn.password,
+                        db_port: sourceConn.port || '3306',
+                        sql_query: trimmed.endsWith(';') ? trimmed : trimmed + ';'
+                    });
+
+                    if (!execResult.success) {
+                        console.error('Statement failed:', execResult.message);
+                    }
+                }
+
+                // Success!
+                document.body.removeChild(loadingDiv);
+
+                // Show success message
+                const successDiv = document.createElement('div');
+                successDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: white; padding: 35px 55px; border-radius: 12px; border: 2px solid #a78bfa; z-index: 10000; text-align: center; box-shadow: 0 0 40px rgba(139, 92, 246, 0.7);';
+                successDiv.innerHTML = `
+                    <div style="font-size: 56px; margin-bottom: 15px;">✅</div>
+                    <div style="font-size: 20px; margin-bottom: 10px; font-weight: bold;">Table Duplicated!</div>
+                    <div style="font-size: 14px; background: rgba(0,0,0,0.2); padding: 8px 14px; border-radius: 6px; display: inline-block;">
+                        ${tableName} → ${newName}
+                    </div>
+                    ${sqlResult.row_count > 0 ? `<div style="font-size: 12px; opacity: 0.8; margin-top: 10px;">📊 ${sqlResult.row_count.toLocaleString()} record(s) copied</div>` : ''}
+                `;
+                document.body.appendChild(successDiv);
+
+                setTimeout(() => {
+                    document.body.removeChild(successDiv);
+                }, 3000);
+
+                // Refresh source tables to show the duplicate
+                await loadMigrationTables();
+
+                console.log('✅ Table duplicated successfully!');
+
+            } catch (error) {
+                console.error('❌ Duplicate error:', error);
+                document.body.removeChild(loadingDiv);
+
+                alert(`❌ Duplication Failed!\n\n${error.message}`);
+            }
         }
 
 
