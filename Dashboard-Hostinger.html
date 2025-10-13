@@ -2558,8 +2558,11 @@ PHASE: Hostinger Edition
                                     <div style="margin-bottom: 8px;">
                                         <strong style="color: #ef4444;">🗑️ Red "Delete" button:</strong> Permanently delete table
                                     </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <strong style="color: #fbbf24;">🖱️ Double-click table name:</strong> Rename table (Enter to save, Esc to cancel)
+                                    </div>
                                     <div style="font-size: 11px; opacity: 0.8; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(245, 158, 11, 0.2);">
-                                        💡 Top-right: Delete (red) & Copy (purple) | Bottom-right: Data badge (green)
+                                        💡 Buttons: Top-right corner | Green badge: Bottom-right | Double-click name to rename
                                     </div>
                                 </div>
                             </div>
@@ -6160,15 +6163,20 @@ ${errorDetails || 'Unknown error occurred'}
                 
                 return `
                     <div class="migration-table-box ${isSelected ? 'selected' : ''}" 
-                         onclick="toggleMigrationTable('${tableName}')"
+                         data-table="${tableName}"
                          draggable="true"
                          ondragstart="handleDragStart(event, '${tableName}', false)"
                          ondragend="handleDragEnd(event)"
-                         data-table="${tableName}"
                          style="cursor: grab; position: relative; padding-bottom: 35px;">
-                        <span class="migration-check-icon">✓</span>
-                        <span class="migration-table-emoji">${emoji}</span>
-                        <div class="migration-table-name">${tableName}</div>
+                        <span class="migration-check-icon" onclick="toggleMigrationTable('${tableName}')">✓</span>
+                        <span class="migration-table-emoji" onclick="toggleMigrationTable('${tableName}')">${emoji}</span>
+                        <div class="migration-table-name" 
+                             ondblclick="startRenameTable('${tableName}', this)"
+                             onclick="event.stopPropagation(); toggleMigrationTable('${tableName}')"
+                             title="Double-click to rename | Single-click to select"
+                             style="cursor: pointer; user-select: none;">
+                            ${tableName}
+                        </div>
                         
                         <!-- Duplicate Button -->
                         <button class="duplicate-btn"
@@ -6468,6 +6476,193 @@ ${errorDetails || 'Unknown error occurred'}
         // Refresh destination tables
         function refreshDestinationTables() {
             loadDestinationTables();
+        }
+
+        // Start inline rename for table
+        function startRenameTable(oldName, element) {
+            console.log('✏️ Starting rename for:', oldName);
+            console.log('Element:', element);
+            
+            // Prevent if already renaming
+            if (element.querySelector('input')) {
+                console.log('Already renaming, ignoring');
+                return;
+            }
+            
+            // Store original content
+            const originalContent = element.innerHTML;
+            console.log('Original content:', originalContent);
+            
+            // Create input element
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = oldName;
+            input.placeholder = oldName;
+            input.className = 'rename-input';
+            input.style.cssText = `
+                width: 100%;
+                padding: 6px 10px;
+                background: linear-gradient(135deg, rgba(251, 191, 36, 0.3) 0%, rgba(245, 158, 11, 0.2) 100%);
+                border: 2px solid #fbbf24;
+                border-radius: 6px;
+                color: #fef3c7;
+                font-size: 14px;
+                font-weight: 600;
+                text-align: center;
+                outline: none;
+                box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+                animation: inputGlow 0.3s ease-out;
+            `;
+            
+            // Add glow animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes inputGlow {
+                    from { box-shadow: 0 0 0 rgba(251, 191, 36, 0); }
+                    to { box-shadow: 0 0 15px rgba(251, 191, 36, 0.5); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Replace content with input
+            element.innerHTML = '';
+            element.appendChild(input);
+            
+            // Focus and select after a tiny delay
+            setTimeout(() => {
+                input.focus();
+                input.select();
+                console.log('✅ Input focused and selected');
+            }, 50);
+            
+            // Handle Enter key (save)
+            input.addEventListener('keydown', async function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const newName = input.value.trim();
+                    
+                    if (!newName) {
+                        alert('❌ Table name cannot be empty!');
+                        input.focus();
+                        return;
+                    }
+                    
+                    if (newName === oldName) {
+                        // No change, just restore
+                        element.innerHTML = originalContent;
+                        return;
+                    }
+                    
+                    // Validate table name
+                    if (!/^[a-zA-Z0-9_]+$/.test(newName)) {
+                        alert('❌ Table name can only contain letters, numbers, and underscores!');
+                        input.focus();
+                        return;
+                    }
+                    
+                    // Check if new name already exists
+                    if (migrationTables.includes(newName)) {
+                        alert(`❌ Table "${newName}" already exists!`);
+                        input.focus();
+                        return;
+                    }
+                    
+                    // Perform rename
+                    await performTableRename(oldName, newName, element, originalContent);
+                } else if (e.key === 'Escape') {
+                    // Cancel rename
+                    element.innerHTML = originalContent;
+                }
+            });
+            
+            // Handle blur (clicking outside)
+            input.addEventListener('blur', function() {
+                setTimeout(() => {
+                    if (element.contains(input)) {
+                        element.innerHTML = originalContent;
+                    }
+                }, 200);
+            });
+        }
+
+        // Perform table rename
+        async function performTableRename(oldName, newName, element, originalContent) {
+            if (!selectedDatabaseId) {
+                alert('❌ No database selected');
+                element.innerHTML = originalContent;
+                return;
+            }
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const sourceConn = connections.find(c => c.id === connId);
+
+            if (!sourceConn) {
+                alert('❌ Connection not found');
+                element.innerHTML = originalContent;
+                return;
+            }
+
+            // Show loading in element
+            element.innerHTML = '<div style="font-size: 11px; color: #93c5fd;">Renaming...</div>';
+
+            try {
+                console.log('Renaming table:', oldName, '→', newName);
+                
+                const result = await apiRequest('rename_table', {
+                    db_host: sourceConn.host,
+                    db_name: sourceConn.dbName,
+                    db_user: sourceConn.username,
+                    db_pass: sourceConn.password,
+                    db_port: sourceConn.port || '3306',
+                    old_table_name: oldName,
+                    new_table_name: newName
+                });
+
+                if (!result.success) {
+                    throw new Error(result.message || 'Failed to rename table');
+                }
+
+                console.log('✅ Table renamed successfully');
+
+                // Show brief success indicator
+                element.innerHTML = `<div style="color: #22c55e; font-size: 12px;">✅ Renamed!</div>`;
+                
+                // Refresh tables after short delay
+                setTimeout(async () => {
+                    await loadMigrationTables();
+                    
+                    // Show success toast
+                    const toast = document.createElement('div');
+                    toast.style.cssText = 'position: fixed; bottom: 30px; right: 30px; background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); color: white; padding: 15px 25px; border-radius: 10px; border: 2px solid #86efac; z-index: 10000; box-shadow: 0 5px 20px rgba(34, 197, 94, 0.5); animation: slideInRight 0.3s ease-out;';
+                    toast.innerHTML = `
+                        <div style="font-size: 14px; font-weight: bold;">✅ Table Renamed!</div>
+                        <div style="font-size: 12px; margin-top: 5px; opacity: 0.9;">${oldName} → ${newName}</div>
+                        <style>
+                            @keyframes slideInRight {
+                                from { transform: translateX(400px); opacity: 0; }
+                                to { transform: translateX(0); opacity: 1; }
+                            }
+                        </style>
+                    `;
+                    document.body.appendChild(toast);
+                    
+                    setTimeout(() => {
+                        toast.style.animation = 'slideOutRight 0.3s ease-out forwards';
+                        toast.innerHTML += '<style>@keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }</style>';
+                        setTimeout(() => {
+                            if (toast.parentNode) {
+                                document.body.removeChild(toast);
+                            }
+                        }, 300);
+                    }, 2500);
+                }, 500);
+
+            } catch (error) {
+                console.error('❌ Rename error:', error);
+                element.innerHTML = originalContent;
+                alert(`❌ Rename Failed!\n\n${error.message}`);
+            }
         }
 
         // Delete table from source database
