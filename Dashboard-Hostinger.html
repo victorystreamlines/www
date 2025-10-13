@@ -2546,8 +2546,15 @@ PHASE: Hostinger Edition
                                     <p style="margin: 5px 0; font-weight: bold;">Drag tables to migrate</p>
                                 </div>
                                 <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 6px; padding: 10px; font-size: 12px;">
-                                    <div style="margin-bottom: 8px;"><strong style="color: #fbbf24;">🏗️ Drag from table:</strong> Structure Only</div>
-                                    <div><strong style="color: #3b82f6;">✋ Drag from "Data" badge:</strong> Structure + Data</div>
+                                    <div style="margin-bottom: 8px;">
+                                        <strong style="color: #fbbf24;">🏗️ Drag from table card:</strong> Structure Only
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <strong style="color: #22c55e;">✋ Drag from green "Data" badge:</strong> Structure + Data
+                                    </div>
+                                    <div style="font-size: 11px; opacity: 0.8; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(245, 158, 11, 0.2);">
+                                        💡 The green badge appears in bottom-right corner of each table
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -6163,13 +6170,16 @@ ${errorDetails || 'Unknown error occurred'}
                              ondragstart="handleDragStart(event, '${tableName}', true); event.stopPropagation();"
                              ondragend="handleDragEnd(event)"
                              onclick="event.stopPropagation();"
-                             title="Drag to transfer Structure + Data"
-                             style="position: absolute; bottom: 3px; right: 3px; background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); padding: 4px 8px; border-radius: 6px; cursor: grab; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(59, 130, 246, 0.5); box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3); transition: all 0.2s;">
-                            <span style="font-size: 12px;">✋</span>
-                            <span style="font-size: 10px; font-weight: bold; color: white;">Data</span>
+                             onmouseover="this.style.background='linear-gradient(135deg, #22c55e 0%, #15803d 100%)'; this.style.transform='scale(1.15)'; this.style.cursor='grab'; this.style.boxShadow='0 5px 15px rgba(34, 197, 94, 0.6)';"
+                             onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'; this.style.transform='scale(1)'; this.style.boxShadow='0 3px 10px rgba(16, 185, 129, 0.4)';"
+                             onmousedown="this.style.cursor='grabbing'; this.style.transform='scale(1.05)';"
+                             title="✋ Drag from here to transfer Structure + Data"
+                             style="position: absolute; bottom: 3px; right: 3px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 5px 10px; border-radius: 8px; cursor: grab; display: flex; align-items: center; gap: 5px; border: 2px solid rgba(16, 185, 129, 0.6); box-shadow: 0 3px 10px rgba(16, 185, 129, 0.4); transition: all 0.2s; z-index: 10;">
+                            <span style="font-size: 14px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">✋</span>
+                            <span style="font-size: 11px; font-weight: bold; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">Data</span>
                         </div>
                         
-                        <span style="position: absolute; bottom: 3px; left: 5px; font-size: 9px; opacity: 0.4; color: #fbbf24;">🏗️ Structure</span>
+                        <span style="position: absolute; bottom: 4px; left: 6px; font-size: 10px; opacity: 0.5; color: #fbbf24; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">🏗️ Structure</span>
                     </div>
                 `;
             }).join('');
@@ -6473,9 +6483,19 @@ ${errorDetails || 'Unknown error occurred'}
 
         // Handle drag start
         function handleDragStart(event, tableName, includeData = false) {
+            console.log('=== DRAG START ===');
+            console.log('Table:', tableName);
+            console.log('Include Data:', includeData);
+            
             draggedTableName = tableName;
             draggedElement = event.target;
             dragIncludeData = includeData; // Store whether to include data
+            
+            // Store in event.target as well for persistence
+            event.target.setAttribute('data-include-data', includeData ? 'true' : 'false');
+            
+            console.log('✅ Set dragIncludeData to:', dragIncludeData);
+            console.log('✅ Set data-include-data attribute to:', includeData ? 'true' : 'false');
             
             event.target.classList.add('dragging');
             event.dataTransfer.effectAllowed = 'move';
@@ -6483,6 +6503,9 @@ ${errorDetails || 'Unknown error occurred'}
                 table: tableName,
                 includeData: includeData
             }));
+            
+            // Also set a simple text for debugging
+            event.dataTransfer.setData('application/x-include-data', includeData ? 'true' : 'false');
             
             // Create custom drag image (ghost element)
             const dragImage = event.target.cloneNode(true);
@@ -6504,12 +6527,13 @@ ${errorDetails || 'Unknown error occurred'}
             // Show hint message with mode indicator
             const hint = document.createElement('div');
             hint.id = 'dragHint';
-            const bgColor = includeData ? 'rgba(59, 130, 246, 0.95)' : 'rgba(251, 191, 36, 0.95)';
+            const bgColor = includeData ? 'rgba(16, 185, 129, 0.95)' : 'rgba(251, 191, 36, 0.95)';
             const modeText = includeData ? '📦 Structure + Data' : '🏗️ Structure Only';
-            const modeColor = includeData ? 'white' : 'black';
+            const modeColor = 'white';
+            const borderColor = includeData ? '#22c55e' : '#fbbf24';
             
-            hint.style.cssText = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: ${bgColor}; color: ${modeColor}; padding: 12px 25px; border-radius: 10px; font-size: 14px; font-weight: bold; z-index: 9999; box-shadow: 0 5px 20px rgba(0,0,0,0.3); animation: slideDown 0.3s ease-out;`;
-            hint.innerHTML = `🖱️ ${modeText}: <strong>${tableName}</strong>`;
+            hint.style.cssText = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: ${bgColor}; color: ${modeColor}; padding: 12px 25px; border-radius: 10px; font-size: 14px; font-weight: bold; z-index: 9999; box-shadow: 0 5px 20px rgba(0,0,0,0.5); border: 2px solid ${borderColor}; animation: slideDown 0.3s ease-out;`;
+            hint.innerHTML = `🖱️ Dragging: <strong>${tableName}</strong><br><span style="font-size: 12px; opacity: 0.9;">${modeText}</span>`;
             hint.innerHTML += '<style>@keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 20px; opacity: 1; } }</style>';
             document.body.appendChild(hint);
         }
@@ -6633,10 +6657,20 @@ ${errorDetails || 'Unknown error occurred'}
                 });
 
                 // Step 1: Get table structure (with or without data based on drag mode)
+                console.log('=== INSIDE handleDrop ===');
+                console.log('🔍 Current dragIncludeData value:', dragIncludeData);
+                console.log('🔍 Type of dragIncludeData:', typeof dragIncludeData);
+                
+                // Force to true for testing - REMOVE THIS AFTER DEBUGGING
+                // dragIncludeData = true;
+                
                 const includeDataMode = dragIncludeData ? 'true' : 'false';
                 const modeText = dragIncludeData ? 'structure & data' : 'structure only';
                 
                 console.log(`📋 Step 1: Generating SQL for table (${modeText}):`, draggedTableName);
+                console.log(`📊 include_data parameter will be:`, includeDataMode);
+                console.log(`📊 Will send to Backend: include_data = "${includeDataMode}"`);
+                
                 loadingDiv.querySelector('div:nth-child(2)').textContent = `Step 1: Copying table ${modeText}...`;
                 
                 const sqlRequestData = {
@@ -6649,9 +6683,10 @@ ${errorDetails || 'Unknown error occurred'}
                     include_data: includeDataMode
                 };
 
-                console.log('📤 Sending SQL generation request with data:', {
+                console.log('📤 Sending SQL generation request:', {
                     ...sqlRequestData,
-                    db_pass: '***hidden***'
+                    db_pass: '***hidden***',
+                    include_data: includeDataMode  // Show this clearly
                 });
 
                 const sqlResult = await apiRequest('generate_table_sql', sqlRequestData);
@@ -6659,11 +6694,44 @@ ${errorDetails || 'Unknown error occurred'}
                 console.log('📥 SQL generation result:', {
                     success: sqlResult.success,
                     message: sqlResult.message,
-                    hasSql: !!sqlResult.sql
+                    hasSql: !!sqlResult.sql,
+                    hasData: sqlResult.has_data,
+                    rowCount: sqlResult.row_count,
+                    sqlLength: sqlResult.sql_length
                 });
+
+                console.log('🔍 VERIFICATION:');
+                console.log('  - Requested include_data:', includeDataMode);
+                console.log('  - Backend returned has_data:', sqlResult.has_data);
+                console.log('  - Backend returned row_count:', sqlResult.row_count);
 
                 if (!sqlResult.success || !sqlResult.sql) {
                     throw new Error(sqlResult.message || 'Failed to generate SQL');
+                }
+
+                // Verify data was included
+                if (dragIncludeData && sqlResult.row_count === 0) {
+                    console.warn('⚠️ Warning: Data requested but table appears to be empty (0 rows)');
+                    // Show alert for debugging
+                    if (confirm('⚠️ Table appears to be EMPTY (0 rows).\n\nContinue with structure only?')) {
+                        console.log('User chose to continue with structure only');
+                    } else {
+                        throw new Error('Migration cancelled - table is empty');
+                    }
+                } else if (dragIncludeData && sqlResult.row_count > 0) {
+                    console.log(`✅ Confirmed: SQL includes ${sqlResult.row_count} rows of data`);
+                    console.log(`✅ SQL length: ${sqlResult.sql_length} bytes`);
+                } else if (!dragIncludeData) {
+                    console.log('✅ Structure only mode - no data included (as intended)');
+                }
+                
+                // Additional check - does SQL contain INSERT?
+                const hasInsertStatements = sqlResult.sql.includes('INSERT INTO');
+                console.log('🔍 SQL contains INSERT statements:', hasInsertStatements);
+                
+                if (dragIncludeData && !hasInsertStatements) {
+                    console.error('❌ ERROR: Data was requested but SQL has NO INSERT statements!');
+                    console.error('This means Backend did not include data even though include_data=true was sent');
                 }
 
                 // Step 2: Execute SQL on destination
@@ -6747,16 +6815,20 @@ ${errorDetails || 'Unknown error occurred'}
                 const successDiv = document.createElement('div');
                 const modeIcon = dragIncludeData ? '📦' : '🏗️';
                 const modeLabel = dragIncludeData ? 'Structure + Data' : 'Structure Only';
-                const modeColor = dragIncludeData ? '#3b82f6' : '#fbbf24';
+                const modeColor = dragIncludeData ? '#22c55e' : '#fbbf24';
+                const recordsInfo = (dragIncludeData && sqlResult.row_count > 0) 
+                    ? `<div style="font-size: 12px; opacity: 0.8; margin-top: 8px;">📊 ${sqlResult.row_count.toLocaleString()} record(s) copied</div>` 
+                    : '';
                 
                 successDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, rgba(34, 197, 94, 0.98) 0%, rgba(16, 185, 129, 0.98) 100%); color: white; padding: 40px 60px; border-radius: 15px; border: 3px solid #86efac; z-index: 10000; text-align: center; box-shadow: 0 0 50px rgba(34, 197, 94, 0.7); animation: bounceIn 0.5s ease-out;';
                 successDiv.innerHTML = `
                     <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
                     <div style="font-size: 22px; margin-bottom: 12px; font-weight: bold;">Table Moved Successfully!</div>
                     <div style="font-size: 16px; opacity: 0.95; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px; display: inline-block;">${draggedTableName}</div>
-                    <div style="font-size: 13px; opacity: 0.9; margin-top: 10px; background: rgba(0,0,0,0.2); padding: 6px 12px; border-radius: 6px; display: inline-block;">
-                        <span style="color: ${modeColor};">${modeIcon}</span> ${modeLabel}
+                    <div style="font-size: 13px; opacity: 0.9; margin-top: 10px; background: rgba(0,0,0,0.3); padding: 8px 14px; border-radius: 6px; display: inline-block; border: 1px solid ${modeColor};">
+                        <span style="color: ${modeColor}; font-size: 16px;">${modeIcon}</span> <strong>${modeLabel}</strong>
                     </div>
+                    ${recordsInfo}
                     <div style="font-size: 13px; opacity: 0.8; margin-top: 15px;">📤 Removed from source • 📥 Added to destination</div>
                     <style>
                         @keyframes bounceIn {
