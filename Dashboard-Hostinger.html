@@ -5913,6 +5913,9 @@ ${errorDetails || 'Unknown error occurred'}
         // Migration: Load tables from selected database
         let migrationTables = [];
         let selectedMigrationTables = new Set();
+        let destinationTables = [];
+        let selectedDestinationTables = new Set();
+        let selectedDestinationId = null;
 
         async function loadMigrationTables() {
             console.log('Loading migration tables...', selectedDatabaseId);
@@ -5977,6 +5980,7 @@ ${errorDetails || 'Unknown error occurred'}
                 
                 if (result.success && result.tables) {
                     migrationTables = result.tables;
+                    selectedMigrationTables.clear(); // Clear selections when loading new tables
                     console.log('Tables loaded:', migrationTables);
                     renderMigrationTables();
                     updateMigrationCounts();
@@ -6091,9 +6095,6 @@ ${errorDetails || 'Unknown error occurred'}
         // MIGRATION: DESTINATION DATABASE
         // ========================================
 
-        let destinationTables = [];
-        let selectedDestinationId = null;
-
         // Load destination database dropdown
         function loadDestinationDropdown() {
             const select = document.getElementById('migrationDestinationSelect');
@@ -6140,11 +6141,13 @@ ${errorDetails || 'Unknown error occurred'}
                 `;
                 selectedDestinationId = null;
                 destinationTables = [];
+                selectedDestinationTables.clear();
                 updateDestinationCount();
                 return;
             }
 
             selectedDestinationId = destId;
+            selectedDestinationTables.clear(); // Clear selections when loading new destination
 
             const allConnections = getHostingerConnections();
             const conn = allConnections.find(c => c.id === destId);
@@ -6229,11 +6232,13 @@ ${errorDetails || 'Unknown error occurred'}
                 const emoji = getTableEmoji(tableName);
 
                 return `
-                    <div class="migration-table-box" 
-                         style="border-color: rgba(34, 197, 94, 0.4); cursor: default; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);"
+                    <div class="migration-table-box ${selectedDestinationTables.has(tableName) ? 'selected' : ''}" 
+                         style="border-color: rgba(34, 197, 94, 0.4); background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);"
+                         onclick="toggleDestinationTable('${tableName}')"
                          data-table="${tableName}">
                         <span class="migration-table-emoji">${emoji}</span>
                         <div class="migration-table-name" style="color: #86efac;">${tableName}</div>
+                        ${selectedDestinationTables.has(tableName) ? '<span style="position: absolute; top: 5px; right: 5px; font-size: 12px;">✅</span>' : ''}
                     </div>
                 `;
             }).join('');
@@ -6243,9 +6248,48 @@ ${errorDetails || 'Unknown error occurred'}
 
         // Update destination count
         function updateDestinationCount() {
+            const selectedCount = selectedDestinationTables.size;
+            const totalCount = destinationTables.length;
+            
+            document.getElementById('migrationDestinationSelectedCount').textContent = 
+                `${selectedCount} table${selectedCount !== 1 ? 's' : ''} selected`;
             document.getElementById('migrationDestinationCount').textContent = 
-                `${destinationTables.length} table${destinationTables.length !== 1 ? 's' : ''} in destination`;
+                `${totalCount} table${totalCount !== 1 ? 's' : ''} total`;
         }
+
+        // Toggle destination table selection
+        function toggleDestinationTable(tableName) {
+            if (selectedDestinationTables.has(tableName)) {
+                selectedDestinationTables.delete(tableName);
+            } else {
+                selectedDestinationTables.add(tableName);
+            }
+            renderDestinationTables();
+            updateDestinationCount();
+        }
+
+        // Select all destination tables
+        function selectAllDestinationTables() {
+            selectedDestinationTables.clear();
+            destinationTables.forEach(tableName => {
+                selectedDestinationTables.add(tableName);
+            });
+            renderDestinationTables();
+            updateDestinationCount();
+        }
+
+        // Deselect all destination tables
+        function deselectAllDestinationTables() {
+            selectedDestinationTables.clear();
+            renderDestinationTables();
+            updateDestinationCount();
+        }
+
+        // Refresh destination tables
+        function refreshDestinationTables() {
+            loadDestinationTables();
+        }
+
 
         // Start table migration
         function startTableMigration() {
