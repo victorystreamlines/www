@@ -6208,6 +6208,10 @@ ${errorDetails || 'Unknown error occurred'}
             const select = document.getElementById('migrationDestinationSelect');
             if (!select) return;
 
+            // Save current selection
+            const currentSelection = select.value;
+            console.log('Current destination selection before reload:', currentSelection);
+
             const allConnections = getHostingerConnections();
             const sourceId = selectedDatabaseId ? selectedDatabaseId.replace('conn_', '') : null;
 
@@ -6228,15 +6232,27 @@ ${errorDetails || 'Unknown error occurred'}
                 select.appendChild(option);
             });
 
+            // Restore previous selection if it still exists
+            if (currentSelection && currentSelection !== '') {
+                const optionExists = Array.from(select.options).some(opt => opt.value === currentSelection);
+                if (optionExists) {
+                    select.value = currentSelection;
+                    console.log('Restored destination selection:', currentSelection);
+                } else {
+                    console.log('Previous selection no longer available:', currentSelection);
+                }
+            }
+
             console.log('Destination dropdown loaded, excluded source:', sourceId);
         }
 
         // Load destination tables
         async function loadDestinationTables() {
             const select = document.getElementById('migrationDestinationSelect');
-            const destId = select.value;
+            const destId = select ? select.value : null;
 
             console.log('Loading destination tables for:', destId);
+            console.log('Current selectedDestinationId:', selectedDestinationId);
 
             if (!destId) {
                 // Reset destination display
@@ -6255,6 +6271,7 @@ ${errorDetails || 'Unknown error occurred'}
             }
 
             selectedDestinationId = destId;
+            console.log('Set selectedDestinationId to:', selectedDestinationId);
             selectedDestinationTables.clear(); // Clear selections when loading new destination
 
             const allConnections = getHostingerConnections();
@@ -6718,10 +6735,13 @@ ${errorDetails || 'Unknown error occurred'}
                 }, 3000);
 
                 // Refresh both source and destination tables
-                await Promise.all([
-                    loadMigrationTables(),
-                    loadDestinationTables()
-                ]);
+                // Note: loadMigrationTables() will preserve destination dropdown selection
+                await loadMigrationTables();
+                
+                // Only reload destination if it's still selected
+                if (selectedDestinationId) {
+                    await loadDestinationTables();
+                }
 
                 console.log('✅ Migration completed successfully!');
 
