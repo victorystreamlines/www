@@ -2565,13 +2565,16 @@ PHASE: Hostinger Edition
                                         <strong style="color: #a78bfa;">📋 Purple "Copy" button:</strong> Duplicate in same DB
                                     </div>
                                     <div style="margin-bottom: 8px;">
+                                        <strong style="color: #f59e0b;">🧹 Orange "Empty" button:</strong> Delete all data (keep table structure)
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
                                         <strong style="color: #ef4444;">🗑️ Red "Delete" button:</strong> Permanently delete table
                                     </div>
                                     <div style="margin-bottom: 8px;">
                                         <strong style="color: #fbbf24;">🖱️ Hover + Right-click table name:</strong> Rename table (Enter to save, Esc to cancel)
                                     </div>
                                     <div style="font-size: 11px; opacity: 0.8; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(245, 158, 11, 0.2);">
-                                        💡 Row count: Top-left | Buttons: Top-right | Badges: Bottom | Hover name → cursor changes → Right-click to rename
+                                        💡 Row count: Top-left (blue) | Buttons: Top-right (Empty/Copy/Delete) | Badges: Bottom (Structure/Data)
                                     </div>
                                 </div>
                             </div>
@@ -6248,6 +6251,17 @@ ${errorDetails || 'Unknown error occurred'}
                             <span style="font-size: 10px; font-weight: bold; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">Copy</span>
                         </button>
                         
+                        <!-- Empty Button (Clear Data) -->
+                        <button class="empty-btn"
+                                onclick="emptyTableData('${tableName}'); event.stopPropagation();"
+                                title="Empty table (delete all data, keep structure)"
+                                style="position: absolute; top: 3px; right: 115px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.6); cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3); transition: all 0.2s; z-index: 10;"
+                                onmouseover="this.style.background='linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'; this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 12px rgba(245, 158, 11, 0.5)';"
+                                onmouseout="this.style.background='linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(245, 158, 11, 0.3)';">
+                            <span style="font-size: 11px;">🧹</span>
+                            <span style="font-size: 10px; font-weight: bold; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">Empty</span>
+                        </button>
+                        
                         <!-- Delete Button -->
                         <button class="delete-btn"
                                 onclick="deleteTableFromMigration('${tableName}'); event.stopPropagation();"
@@ -6715,6 +6729,123 @@ ${errorDetails || 'Unknown error occurred'}
                 console.error('❌ Rename error:', error);
                 element.innerHTML = originalContent;
                 alert(`❌ Rename Failed!\n\n${error.message}`);
+            }
+        }
+
+        // Empty table data (keep structure)
+        async function emptyTableData(tableName) {
+            if (!selectedDatabaseId) {
+                alert('❌ No database selected');
+                return;
+            }
+
+            console.log('=== EMPTY TABLE DATA ===');
+            console.log('Table to empty:', tableName);
+
+            const connId = selectedDatabaseId.replace('conn_', '');
+            const connections = getHostingerConnections();
+            const sourceConn = connections.find(c => c.id === connId);
+
+            if (!sourceConn) {
+                alert('❌ Connection not found');
+                return;
+            }
+
+            // Get current row count
+            const currentRows = migrationTablesRowCount[tableName] || 0;
+
+            // Confirmation
+            if (!confirm(`🧹 Empty Table: ${tableName}\n\n⚠️ This will DELETE ALL ${currentRows.toLocaleString()} RECORD(S) from this table!\n\nTable structure will be preserved.\n\nAre you sure?`)) {
+                console.log('User cancelled empty');
+                return;
+            }
+
+            // Show loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(245, 158, 11, 0.95); color: white; padding: 30px 50px; border-radius: 12px; border: 2px solid #fbbf24; z-index: 10000; text-align: center; box-shadow: 0 0 40px rgba(245, 158, 11, 0.6);';
+            loadingDiv.innerHTML = `
+                <div style="font-size: 48px; margin-bottom: 15px; animation: sweep 1s ease-in-out infinite;">🧹</div>
+                <div style="font-size: 18px; font-weight: bold;">Emptying Table...</div>
+                <div style="font-size: 14px; margin-top: 8px; opacity: 0.9;">${tableName}</div>
+                <div style="font-size: 12px; margin-top: 8px; opacity: 0.7;">Deleting ${currentRows.toLocaleString()} record(s)...</div>
+                <style>
+                    @keyframes sweep {
+                        0%, 100% { transform: translateX(0); }
+                        25% { transform: translateX(-10px); }
+                        75% { transform: translateX(10px); }
+                    }
+                </style>
+            `;
+            document.body.appendChild(loadingDiv);
+
+            try {
+                // Use TRUNCATE TABLE (faster) or DELETE FROM
+                console.log('Emptying table data:', tableName);
+                
+                // Try TRUNCATE first (faster and resets auto-increment)
+                let sql = `TRUNCATE TABLE \`${tableName}\`;`;
+                
+                const result = await apiRequest('execute_sql', {
+                    db_host: sourceConn.host,
+                    db_name: sourceConn.dbName,
+                    db_user: sourceConn.username,
+                    db_pass: sourceConn.password,
+                    db_port: sourceConn.port || '3306',
+                    sql_query: sql
+                });
+
+                if (!result.success) {
+                    // If TRUNCATE fails, try DELETE FROM
+                    console.log('TRUNCATE failed, trying DELETE FROM...');
+                    sql = `DELETE FROM \`${tableName}\`;`;
+                    
+                    const deleteResult = await apiRequest('execute_sql', {
+                        db_host: sourceConn.host,
+                        db_name: sourceConn.dbName,
+                        db_user: sourceConn.username,
+                        db_pass: sourceConn.password,
+                        db_port: sourceConn.port || '3306',
+                        sql_query: sql
+                    });
+                    
+                    if (!deleteResult.success) {
+                        throw new Error(deleteResult.message || 'Failed to empty table');
+                    }
+                }
+
+                console.log('✅ Table data emptied successfully');
+
+                // Success!
+                document.body.removeChild(loadingDiv);
+
+                // Show success message
+                const successDiv = document.createElement('div');
+                successDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 35px 55px; border-radius: 12px; border: 2px solid #fbbf24; z-index: 10000; text-align: center; box-shadow: 0 0 40px rgba(245, 158, 11, 0.7);';
+                successDiv.innerHTML = `
+                    <div style="font-size: 56px; margin-bottom: 15px;">✅</div>
+                    <div style="font-size: 20px; margin-bottom: 10px; font-weight: bold;">Table Emptied!</div>
+                    <div style="font-size: 14px; background: rgba(0,0,0,0.3); padding: 8px 14px; border-radius: 6px; display: inline-block;">
+                        ${tableName}
+                    </div>
+                    <div style="font-size: 12px; opacity: 0.8; margin-top: 10px;">All ${currentRows.toLocaleString()} record(s) deleted</div>
+                    <div style="font-size: 11px; opacity: 0.7; margin-top: 8px;">📋 Table structure preserved</div>
+                `;
+                document.body.appendChild(successDiv);
+
+                setTimeout(() => {
+                    document.body.removeChild(successDiv);
+                }, 3000);
+
+                // Refresh source tables to update row count
+                await loadMigrationTables();
+
+                console.log('✅ Table emptying completed!');
+
+            } catch (error) {
+                console.error('❌ Empty error:', error);
+                document.body.removeChild(loadingDiv);
+
+                alert(`❌ Empty Failed!\n\n${error.message}`);
             }
         }
 
