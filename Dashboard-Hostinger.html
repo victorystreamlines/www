@@ -6041,10 +6041,47 @@ ${errorDetails || 'Unknown error occurred'}
 
         // Migration: Load tables from selected database
         let migrationTables = [];
+        let migrationTablesRowCount = {};  // Store row counts
         let selectedMigrationTables = new Set();
         let destinationTables = [];
+        let destinationTablesRowCount = {};  // Store row counts
         let selectedDestinationTables = new Set();
         let selectedDestinationId = null;
+
+        // Load row counts for tables (parallel for speed)
+        async function loadTableRowCounts(conn, tables, rowCountObject) {
+            console.log('Loading row counts for', tables.length, 'tables...');
+            
+            // Load all row counts in parallel for better performance
+            const promises = tables.map(async (tableName) => {
+                try {
+                    const result = await apiRequest('get_table_data', {
+                        db_host: conn.host,
+                        db_name: conn.dbName,
+                        db_user: conn.username,
+                        db_pass: conn.password,
+                        db_port: conn.port || '3306',
+                        table_name: tableName,
+                        page: 1,
+                        limit: 1
+                    });
+                    
+                    if (result.success && result.pagination) {
+                        rowCountObject[tableName] = result.pagination.total_rows;
+                        console.log(`  ✅ ${tableName}: ${result.pagination.total_rows.toLocaleString()} rows`);
+                    } else {
+                        rowCountObject[tableName] = 0;
+                        console.log(`  ⚠️ ${tableName}: 0 rows (or error)`);
+                    }
+                } catch (error) {
+                    console.error(`  ❌ Failed to get row count for ${tableName}:`, error);
+                    rowCountObject[tableName] = 0;
+                }
+            });
+            
+            await Promise.all(promises);
+            console.log('✅ Row counts loaded for all tables');
+        }
 
         async function loadMigrationTables() {
             console.log('Loading migration tables...', selectedDatabaseId);
@@ -6111,6 +6148,10 @@ ${errorDetails || 'Unknown error occurred'}
                     migrationTables = result.tables;
                     selectedMigrationTables.clear(); // Clear selections when loading new tables
                     console.log('Tables loaded:', migrationTables);
+                    
+                    // Load row counts for each table
+                    await loadTableRowCounts(conn, migrationTables, migrationTablesRowCount);
+                    
                     renderMigrationTables();
                     updateMigrationCounts();
                     
@@ -6165,6 +6206,7 @@ ${errorDetails || 'Unknown error occurred'}
             const html = migrationTables.map(tableName => {
                 const emoji = getTableEmoji(tableName);
                 const isSelected = selectedMigrationTables.has(tableName);
+                const rowCount = migrationTablesRowCount[tableName] !== undefined ? migrationTablesRowCount[tableName] : '...';
                 
                 return `
                     <div class="migration-table-box ${isSelected ? 'selected' : ''}" 
@@ -6173,6 +6215,12 @@ ${errorDetails || 'Unknown error occurred'}
                          ondragstart="handleDragStart(event, '${tableName}', false)"
                          ondragend="handleDragEnd(event)"
                          style="cursor: grab; position: relative; padding-bottom: 35px;">
+                        
+                        <!-- Row Count Badge (Top Left) -->
+                        <div style="position: absolute; top: 3px; left: 3px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.8) 0%, rgba(29, 78, 216, 0.8) 100%); padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; color: white; border: 1px solid rgba(59, 130, 246, 0.6); box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3); z-index: 5;">
+                            <span style="font-size: 11px;">📊</span> ${typeof rowCount === 'number' ? rowCount.toLocaleString() : rowCount}
+                        </div>
+                        
                         <span class="migration-check-icon" onclick="toggleMigrationTable('${tableName}')">✓</span>
                         <span class="migration-table-emoji" onclick="toggleMigrationTable('${tableName}')">${emoji}</span>
                         <div class="migration-table-name" 
@@ -6376,6 +6424,10 @@ ${errorDetails || 'Unknown error occurred'}
 
                 if (result.success && result.tables) {
                     destinationTables = result.tables;
+                    
+                    // Load row counts for destination tables
+                    await loadTableRowCounts(conn, destinationTables, destinationTablesRowCount);
+                    
                     renderDestinationTables();
                     updateDestinationCount();
                 } else {
@@ -6423,12 +6475,19 @@ ${errorDetails || 'Unknown error occurred'}
 
             const html = destinationTables.map(tableName => {
                 const emoji = getTableEmoji(tableName);
+                const rowCount = destinationTablesRowCount[tableName] !== undefined ? destinationTablesRowCount[tableName] : '...';
 
                 return `
                     <div class="migration-table-box ${selectedDestinationTables.has(tableName) ? 'selected' : ''}" 
                          style="border-color: rgba(34, 197, 94, 0.4); background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);"
                          onclick="toggleDestinationTable('${tableName}')"
                          data-table="${tableName}">
+                        
+                        <!-- Row Count Badge (Top Left) -->
+                        <div style="position: absolute; top: 3px; left: 3px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.8) 0%, rgba(21, 128, 61, 0.8) 100%); padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; color: white; border: 1px solid rgba(34, 197, 94, 0.6); box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3); z-index: 5;">
+                            <span style="font-size: 11px;">📊</span> ${typeof rowCount === 'number' ? rowCount.toLocaleString() : rowCount}
+                        </div>
+                        
                         <span class="migration-table-emoji">${emoji}</span>
                         <div class="migration-table-name" style="color: #86efac;">${tableName}</div>
                         ${selectedDestinationTables.has(tableName) ? '<span style="position: absolute; top: 5px; right: 5px; font-size: 12px;">✅</span>' : ''}
