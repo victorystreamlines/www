@@ -4682,28 +4682,61 @@ OVERVIEW:
                             migrationLog.push(`  - Using OVERWRITE mode (with DROP)`);
                         }
 
-                        // Step 3: Split SQL into statements if needed
-                        const statements = sql.split(';').filter(s => s.trim().length > 0 && !s.trim().startsWith('--'));
-                        migrationLog.push(`  - Executing ${statements.length} SQL statement(s)...`);
+                        // Step 3: Execute complete SQL on destination
+                        migrationLog.push(`  - Executing SQL on destination...`);
 
-                        // Step 4: Execute each statement on destination
-                        for (const statement of statements) {
-                            const trimmedStmt = statement.trim();
-                            if (!trimmedStmt || trimmedStmt.startsWith('--')) continue;
-
+                        try {
+                            // Try executing the complete SQL first
                             const execResult = await apiRequest('execute_sql', {
                                 db_host: destConn.host,
                                 db_name: destConn.dbName,
                                 db_user: destConn.username,
                                 db_pass: destConn.password,
-                                db_port: destConn.port,
-                                sql_query: trimmedStmt + ';'
+                                db_port: destConn.port || '3306',
+                                sql_query: sql
                             });
 
-                            if (!execResult.success) {
-                                migrationLog.push(`  ⚠️ Statement failed: ${execResult.message.substring(0, 100)}`);
-                                // Continue with other statements
+                            if (execResult.success) {
+                                migrationLog.push(`  ✅ SQL executed successfully`);
+                            } else {
+                                // If complete SQL fails, try splitting and executing individually
+                                migrationLog.push(`  ⚠️ Complete SQL failed, trying statement by statement...`);
+                                console.warn('Complete SQL failed:', execResult.message);
+                                
+                                // Split into individual statements
+                                const statements = sql.split(/;\s*\n/).filter(s => {
+                                    const trimmed = s.trim();
+                                    return trimmed.length > 0 && 
+                                           !trimmed.startsWith('--') && 
+                                           !trimmed.match(/^--.*/);
+                                });
+
+                                migrationLog.push(`  - Found ${statements.length} statements to execute`);
+
+                                for (let i = 0; i < statements.length; i++) {
+                                    const statement = statements[i].trim();
+                                    if (!statement) continue;
+
+                                    const stmtResult = await apiRequest('execute_sql', {
+                                        db_host: destConn.host,
+                                        db_name: destConn.dbName,
+                                        db_user: destConn.username,
+                                        db_pass: destConn.password,
+                                        db_port: destConn.port || '3306',
+                                        sql_query: statement.endsWith(';') ? statement : statement + ';'
+                                    });
+
+                                    if (!stmtResult.success) {
+                                        migrationLog.push(`  ⚠️ Statement ${i + 1} failed: ${stmtResult.message.substring(0, 80)}`);
+                                        console.error(`Statement ${i + 1} error:`, stmtResult.message);
+                                    } else {
+                                        migrationLog.push(`  ✅ Statement ${i + 1} executed`);
+                                    }
+                                }
                             }
+                        } catch (execError) {
+                            migrationLog.push(`  ❌ Execution error: ${execError.message}`);
+                            throw execError;
                         }
 
                         // Table migrated successfully
@@ -6589,27 +6622,49 @@ ${errorDetails || 'Unknown error occurred'}
                 console.log('📥 Step 2: Executing SQL on destination database');
                 loadingDiv.querySelector('div:nth-child(2)').textContent = 'Step 2: Creating table in destination...';
                 
-                const executeRequestData = {
-                    db_host: destConn.host,
-                    db_name: destConn.dbName,
-                    db_user: destConn.username,
-                    db_pass: destConn.password,
-                    db_port: destConn.port || '3306',
-                    sql: sqlResult.sql
-                };
-
-                console.log('📤 Sending execute SQL request to destination');
-
-                const executeResult = await apiRequest('execute_sql', executeRequestData);
-
-                console.log('📥 Execute SQL result:', {
-                    success: executeResult.success,
-                    message: executeResult.message
+                // Split SQL into individual statements (DROP, CREATE, INSERT)
+                const sqlStatements = sqlResult.sql.split(/;\s*\n/).filter(s => {
+                    const trimmed = s.trim();
+                    return trimmed.length > 0 && 
+                           !trimmed.startsWith('--') &&
+                           !trimmed.match(/^--/);
                 });
 
-                if (!executeResult.success) {
-                    throw new Error(executeResult.message || 'Failed to execute SQL');
+                console.log(`Found ${sqlStatements.length} SQL statements to execute`);
+
+                // Execute each statement individually
+                let executedStatements = 0;
+                for (let i = 0; i < sqlStatements.length; i++) {
+                    const statement = sqlStatements[i].trim();
+                    if (!statement) continue;
+
+                    const finalStatement = statement.endsWith(';') ? statement : statement + ';';
+                    
+                    console.log(`Executing statement ${i + 1}/${sqlStatements.length}...`);
+
+                    const executeResult = await apiRequest('execute_sql', {
+                        db_host: destConn.host,
+                        db_name: destConn.dbName,
+                        db_user: destConn.username,
+                        db_pass: destConn.password,
+                        db_port: destConn.port || '3306',
+                        sql_query: finalStatement
+                    });
+
+                    if (!executeResult.success) {
+                        console.error(`Statement ${i + 1} failed:`, executeResult.message);
+                        // Continue with other statements, log but don't fail completely
+                    } else {
+                        executedStatements++;
+                        console.log(`✅ Statement ${i + 1} executed successfully`);
+                    }
                 }
+
+                if (executedStatements === 0) {
+                    throw new Error('All SQL statements failed to execute');
+                }
+
+                console.log(`✅ Successfully executed ${executedStatements}/${sqlStatements.length} statements`);
 
                 // Step 3: Delete table from source
                 console.log('🗑️ Step 3: Deleting table from source database');
