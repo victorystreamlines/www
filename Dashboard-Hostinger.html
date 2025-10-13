@@ -956,6 +956,71 @@ PHASE: Hostinger Edition
             opacity: 1;
         }
 
+        /* Drag and Drop styles */
+        .migration-table-box.dragging {
+            opacity: 0.5;
+            cursor: grabbing !important;
+            transform: scale(1.05) rotate(3deg);
+            transition: transform 0.2s;
+            box-shadow: 0 10px 30px rgba(251, 191, 36, 0.5);
+            border-color: #fbbf24 !important;
+            z-index: 1000;
+            animation: wiggle 0.3s ease-in-out infinite;
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: scale(1.05) rotate(3deg); }
+            50% { transform: scale(1.05) rotate(-3deg); }
+        }
+
+        .migration-drop-zone {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .migration-drop-zone.drag-over {
+            border-color: #22c55e !important;
+            border-width: 3px !important;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(251, 191, 36, 0.2) 100%) !important;
+            box-shadow: inset 0 0 40px rgba(34, 197, 94, 0.4), 0 0 20px rgba(251, 191, 36, 0.3);
+            animation: dropZonePulse 1s ease-in-out infinite;
+        }
+
+        @keyframes dropZonePulse {
+            0%, 100% { box-shadow: inset 0 0 40px rgba(34, 197, 94, 0.4), 0 0 20px rgba(251, 191, 36, 0.3); }
+            50% { box-shadow: inset 0 0 50px rgba(34, 197, 94, 0.6), 0 0 30px rgba(251, 191, 36, 0.5); }
+        }
+
+        .migration-drop-zone.drag-over::before {
+            content: '📥 Drop Here to Move Table';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #22c55e;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+            pointer-events: none;
+            z-index: 1000;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(34, 197, 94, 0.2) 100%);
+            padding: 25px 40px;
+            border-radius: 15px;
+            border: 3px solid #22c55e;
+            animation: fadeInScale 0.3s ease-out;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
         /* Migration tables container scrollbar */
         #migrationTablesContainer::-webkit-scrollbar {
             width: 8px;
@@ -2455,7 +2520,12 @@ PHASE: Hostinger Edition
                             </div>
 
                             <!-- Destination Tables Container -->
-                            <div id="migrationDestinationTablesContainer" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 200px; max-height: 340px; overflow-y: auto; padding: 5px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.2);">
+                            <div id="migrationDestinationTablesContainer" 
+                                 class="migration-drop-zone"
+                                 ondrop="handleDrop(event)"
+                                 ondragover="handleDragOver(event)"
+                                 ondragleave="handleDragLeave(event)"
+                                 style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 200px; max-height: 340px; overflow-y: auto; padding: 5px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.2); transition: all 0.3s;">
                                 <!-- Destination tables will be loaded here -->
                                 <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
                                     <div style="font-size: 48px; margin-bottom: 15px;">🎯</div>
@@ -2469,11 +2539,11 @@ PHASE: Hostinger Edition
                                 <span id="migrationDestinationCount">0 tables total</span>
                             </div>
 
-                            <!-- Migration Action Button -->
-                            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid rgba(34, 197, 94, 0.3);">
-                                <button onclick="startTableMigration()" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px; background: linear-gradient(135deg, #22c55e 0%, #059669 100%); border: none;">
-                                    <span>🚀</span> Start Migration
-                                </button>
+                            <!-- Drag & Drop Instruction -->
+                            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid rgba(34, 197, 94, 0.3); text-align: center; color: rgba(254, 243, 199, 0.7); font-size: 13px;">
+                                <div style="font-size: 32px; margin-bottom: 10px;">🖱️ ➜ 📥</div>
+                                <p style="margin: 5px 0;">Drag tables from source and drop here to migrate</p>
+                                <p style="font-size: 11px; opacity: 0.6; margin-top: 8px;">Table will be moved from source to destination</p>
                             </div>
                         </div>
                     </div>
@@ -6040,10 +6110,15 @@ ${errorDetails || 'Unknown error occurred'}
                 return `
                     <div class="migration-table-box ${isSelected ? 'selected' : ''}" 
                          onclick="toggleMigrationTable('${tableName}')"
-                         data-table="${tableName}">
+                         draggable="true"
+                         ondragstart="handleDragStart(event, '${tableName}')"
+                         ondragend="handleDragEnd(event)"
+                         data-table="${tableName}"
+                         style="cursor: grab;">
                         <span class="migration-check-icon">✓</span>
                         <span class="migration-table-emoji">${emoji}</span>
                         <div class="migration-table-name">${tableName}</div>
+                        <span style="position: absolute; bottom: 5px; right: 5px; font-size: 10px; opacity: 0.5;">🖱️</span>
                     </div>
                 `;
             }).join('');
@@ -6318,6 +6393,239 @@ ${errorDetails || 'Unknown error occurred'}
             });
 
             alert(`🚀 Migration Ready!\n\n📤 Source: ${selectedDatabaseId}\n📥 Destination: ${selectedDestinationId}\n📊 Tables: ${selectedMigrationTables.size}\n\n✓ Feature will be implemented next!`);
+        }
+
+        // ========================================
+        // Drag and Drop Functions
+        // ========================================
+        
+        let draggedTableName = null;
+        let draggedElement = null;
+
+        // Handle drag start
+        function handleDragStart(event, tableName) {
+            draggedTableName = tableName;
+            draggedElement = event.target;
+            event.target.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', tableName);
+            
+            // Create custom drag image (ghost element)
+            const dragImage = event.target.cloneNode(true);
+            dragImage.style.cssText = `
+                position: absolute;
+                top: -1000px;
+                transform: rotate(5deg) scale(1.1);
+                opacity: 0.9;
+                box-shadow: 0 15px 40px rgba(251, 191, 36, 0.6);
+                border-color: #fbbf24;
+            `;
+            document.body.appendChild(dragImage);
+            event.dataTransfer.setDragImage(dragImage, 60, 30);
+            setTimeout(() => document.body.removeChild(dragImage), 0);
+            
+            // Visual feedback
+            console.log('🖱️ Started dragging table:', tableName);
+            
+            // Show hint message
+            const hint = document.createElement('div');
+            hint.id = 'dragHint';
+            hint.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(251, 191, 36, 0.95); color: black; padding: 12px 25px; border-radius: 10px; font-size: 14px; font-weight: bold; z-index: 9999; box-shadow: 0 5px 20px rgba(0,0,0,0.3); animation: slideDown 0.3s ease-out;';
+            hint.innerHTML = `🖱️ Drag to destination to move <strong>${tableName}</strong>`;
+            hint.innerHTML += '<style>@keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 20px; opacity: 1; } }</style>';
+            document.body.appendChild(hint);
+        }
+
+        // Handle drag end
+        function handleDragEnd(event) {
+            event.target.classList.remove('dragging');
+            
+            // Remove hint message
+            const hint = document.getElementById('dragHint');
+            if (hint) {
+                hint.style.animation = 'slideUp 0.3s ease-out forwards';
+                hint.innerHTML += '<style>@keyframes slideUp { from { top: 20px; opacity: 1; } to { top: -50px; opacity: 0; } }</style>';
+                setTimeout(() => {
+                    if (hint.parentNode) {
+                        document.body.removeChild(hint);
+                    }
+                }, 300);
+            }
+            
+            console.log('🖱️ Finished dragging');
+        }
+
+        // Handle drag over (allow drop)
+        function handleDragOver(event) {
+            if (!selectedDestinationId) {
+                event.dataTransfer.dropEffect = 'none';
+                return;
+            }
+
+            event.preventDefault(); // Must prevent default to allow drop
+            event.dataTransfer.dropEffect = 'move';
+            
+            // Add visual feedback
+            const dropZone = document.getElementById('migrationDestinationTablesContainer');
+            if (dropZone && !dropZone.classList.contains('drag-over')) {
+                dropZone.classList.add('drag-over');
+            }
+        }
+
+        // Handle drag leave
+        function handleDragLeave(event) {
+            // Only remove class if leaving the drop zone itself, not child elements
+            if (event.target.id === 'migrationDestinationTablesContainer') {
+                event.target.classList.remove('drag-over');
+            }
+        }
+
+        // Handle drop
+        async function handleDrop(event) {
+            event.preventDefault();
+            
+            const dropZone = document.getElementById('migrationDestinationTablesContainer');
+            if (dropZone) {
+                dropZone.classList.remove('drag-over');
+            }
+
+            if (!draggedTableName) {
+                console.error('❌ No table being dragged');
+                return;
+            }
+
+            if (!selectedDestinationId) {
+                alert('⚠️ Please select a destination database first!');
+                return;
+            }
+
+            console.log('📥 Dropped table:', draggedTableName);
+
+            // Show loading indicator immediately (no confirmation for better UX)
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'dragMigrationLoading';
+            loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(34, 197, 94, 0.2) 100%); color: #22c55e; padding: 40px 60px; border-radius: 15px; border: 3px solid #22c55e; z-index: 10000; text-align: center; box-shadow: 0 0 50px rgba(34, 197, 94, 0.5); animation: fadeInScale 0.3s ease-out;';
+            loadingDiv.innerHTML = `
+                <div style="font-size: 56px; margin-bottom: 20px; animation: spin 2s linear infinite;">🔄</div>
+                <div style="font-size: 20px; margin-bottom: 12px; font-weight: bold;">Moving Table...</div>
+                <div style="font-size: 16px; opacity: 0.8; color: #fbbf24;">${draggedTableName}</div>
+                <div style="font-size: 12px; opacity: 0.6; margin-top: 15px;">From Source → To Destination</div>
+                <style>
+                    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                </style>
+            `;
+            document.body.appendChild(loadingDiv);
+
+            try {
+                // Get source connection
+                const allConnections = getHostingerConnections();
+                const sourceId = selectedDatabaseId.replace('conn_', '');
+                const sourceConn = allConnections.find(c => c.id === sourceId);
+                const destConn = allConnections.find(c => c.id === selectedDestinationId);
+
+                if (!sourceConn || !destConn) {
+                    throw new Error('Connection not found');
+                }
+
+                // Step 1: Get table structure with data
+                console.log('📋 Step 1: Generating SQL for table:', draggedTableName);
+                loadingDiv.querySelector('div:nth-child(2)').textContent = 'Step 1: Copying table structure & data...';
+                
+                const sqlResult = await apiRequest('generate_table_sql', {
+                    db_host: sourceConn.host,
+                    db_name: sourceConn.dbName,
+                    db_user: sourceConn.username,
+                    db_pass: sourceConn.password,
+                    db_port: sourceConn.port,
+                    table_name: draggedTableName,
+                    include_data: 'true'
+                });
+
+                if (!sqlResult.success || !sqlResult.sql) {
+                    throw new Error(sqlResult.message || 'Failed to generate SQL');
+                }
+
+                // Step 2: Execute SQL on destination
+                console.log('📥 Step 2: Executing SQL on destination database');
+                loadingDiv.querySelector('div:nth-child(2)').textContent = 'Step 2: Creating table in destination...';
+                
+                const executeResult = await apiRequest('execute_sql', {
+                    db_host: destConn.host,
+                    db_name: destConn.dbName,
+                    db_user: destConn.username,
+                    db_pass: destConn.password,
+                    db_port: destConn.port,
+                    sql: sqlResult.sql
+                });
+
+                if (!executeResult.success) {
+                    throw new Error(executeResult.message || 'Failed to execute SQL');
+                }
+
+                // Step 3: Delete table from source
+                console.log('🗑️ Step 3: Deleting table from source database');
+                loadingDiv.querySelector('div:nth-child(2)').textContent = 'Step 3: Removing from source...';
+                
+                const deleteResult = await apiRequest('delete_table', {
+                    db_host: sourceConn.host,
+                    db_name: sourceConn.dbName,
+                    db_user: sourceConn.username,
+                    db_pass: sourceConn.password,
+                    db_port: sourceConn.port,
+                    table_name: draggedTableName
+                });
+
+                if (!deleteResult.success) {
+                    console.warn('⚠️ Warning: Table copied but not deleted from source:', deleteResult.message);
+                }
+
+                // Success!
+                document.body.removeChild(loadingDiv);
+                
+                // Show success message with animation
+                const successDiv = document.createElement('div');
+                successDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, rgba(34, 197, 94, 0.98) 0%, rgba(16, 185, 129, 0.98) 100%); color: white; padding: 40px 60px; border-radius: 15px; border: 3px solid #86efac; z-index: 10000; text-align: center; box-shadow: 0 0 50px rgba(34, 197, 94, 0.7); animation: bounceIn 0.5s ease-out;';
+                successDiv.innerHTML = `
+                    <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
+                    <div style="font-size: 22px; margin-bottom: 12px; font-weight: bold;">Table Moved Successfully!</div>
+                    <div style="font-size: 16px; opacity: 0.95; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px; display: inline-block;">${draggedTableName}</div>
+                    <div style="font-size: 13px; opacity: 0.8; margin-top: 15px;">📤 Removed from source • 📥 Added to destination</div>
+                    <style>
+                        @keyframes bounceIn {
+                            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+                            50% { transform: translate(-50%, -50%) scale(1.05); }
+                            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+                        }
+                    </style>
+                `;
+                document.body.appendChild(successDiv);
+
+                setTimeout(() => {
+                    document.body.removeChild(successDiv);
+                }, 3000);
+
+                // Refresh both source and destination tables
+                await Promise.all([
+                    loadMigrationTables(),
+                    loadDestinationTables()
+                ]);
+
+                console.log('✅ Migration completed successfully!');
+
+            } catch (error) {
+                console.error('❌ Migration error:', error);
+                
+                // Remove loading indicator
+                const loading = document.getElementById('dragMigrationLoading');
+                if (loading) {
+                    document.body.removeChild(loading);
+                }
+
+                // Show error message
+                alert(`❌ Migration Failed!\n\n${error.message || error}`);
+            } finally {
+                draggedTableName = null;
+            }
         }
 
         // Load table templates
