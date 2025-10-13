@@ -2559,15 +2559,10 @@ PHASE: Hostinger Edition
                                         <strong style="color: #ef4444;">🗑️ Red "Delete" button:</strong> Permanently delete table
                                     </div>
                                     <div style="margin-bottom: 8px;">
-                                        <strong style="color: #fbbf24;">🖱️ Double-click table name:</strong> Rename table (Enter to save, Esc to cancel)
+                                        <strong style="color: #fbbf24;">🖱️ Hover + Right-click table name:</strong> Rename table (Enter to save, Esc to cancel)
                                     </div>
                                     <div style="font-size: 11px; opacity: 0.8; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(245, 158, 11, 0.2);">
-                                        💡 Buttons: Top-right corner | Green badge: Bottom-right | Double-click name to rename
-                                    </div>
-                                    <div style="margin-top: 10px; text-align: center;">
-                                        <button onclick="testRenameFunction()" class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px;">
-                                            🧪 Test Rename
-                                        </button>
+                                        💡 Row count: Top-left | Buttons: Top-right | Badges: Bottom | Hover name → cursor changes → Right-click to rename
                                     </div>
                                 </div>
                             </div>
@@ -6224,10 +6219,12 @@ ${errorDetails || 'Unknown error occurred'}
                         <span class="migration-check-icon" onclick="toggleMigrationTable('${tableName}')">✓</span>
                         <span class="migration-table-emoji" onclick="toggleMigrationTable('${tableName}')">${emoji}</span>
                         <div class="migration-table-name" 
-                             ondblclick="startRenameTable('${tableName}', this)"
+                             oncontextmenu="startRenameTable('${tableName}', this); event.preventDefault(); event.stopPropagation(); return false;"
                              onclick="event.stopPropagation(); toggleMigrationTable('${tableName}')"
-                             title="Double-click to rename | Single-click to select"
-                             style="cursor: pointer; user-select: none;">
+                             onmouseover="this.style.cursor='context-menu'; this.style.background='rgba(251, 191, 36, 0.15)'; this.style.borderRadius='4px'; this.style.padding='2px 4px';"
+                             onmouseout="this.style.cursor='pointer'; this.style.background=''; this.style.borderRadius=''; this.style.padding='';"
+                             title="Right-click to rename | Left-click to select"
+                             style="cursor: pointer; user-select: none; transition: all 0.2s;">
                             ${tableName}
                         </div>
                         
@@ -6540,19 +6537,6 @@ ${errorDetails || 'Unknown error occurred'}
         // Refresh destination tables
         function refreshDestinationTables() {
             loadDestinationTables();
-        }
-
-        // Test rename function
-        function testRenameFunction() {
-            alert('🧪 Test Rename:\n\n1. Find a table name in the source container\n2. Double-click DIRECTLY on the table name (center text)\n3. Input box should appear with golden border\n4. Type new name and press Enter\n\nIf input appears but is empty:\n- Type the new name anyway\n- It will work!\n\nCheck Console (F12) for detailed logs.');
-            
-            console.log('=== RENAME TEST ===');
-            console.log('Available tables:', migrationTables);
-            console.log('Try double-clicking on any table name');
-            
-            if (migrationTables.length > 0) {
-                console.log('Example: Double-click on "' + migrationTables[0] + '"');
-            }
         }
 
         // Start inline rename for table
