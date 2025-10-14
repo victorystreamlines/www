@@ -2459,8 +2459,13 @@ PHASE: Hostinger Edition
                                 </div>
                             </div>
 
-                            <!-- Tables Grid -->
-                            <div id="migrationTablesContainer" style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 200px; max-height: 500px; overflow-y: auto; padding: 5px;">
+                            <!-- Tables Grid - NOW ALSO A DROP ZONE (for reverse drag from Destination) -->
+                            <div id="migrationTablesContainer" 
+                                 class="migration-drop-zone"
+                                 ondrop="handleSourceDrop(event)"
+                                 ondragover="handleSourceDragOver(event)"
+                                 ondragleave="handleSourceDragLeave(event)"
+                                 style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 200px; max-height: 500px; overflow-y: auto; padding: 5px; transition: all 0.3s;">
                                 <!-- Tables will be loaded here dynamically -->
                                 <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
                                     <div style="font-size: 48px; margin-bottom: 15px;">�</div>
@@ -2475,11 +2480,11 @@ PHASE: Hostinger Edition
                             </div>
                         </div>
 
-                        <!-- Arrow Container (Center) -->
+                        <!-- Arrow Container (Center - Two-Way System) -->
                         <div style="flex: 0 0 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
                             <div style="font-size: 36px; animation: pulse 2s infinite;">➡️</div>
-                            <div style="width: 2px; height: 80px; background: linear-gradient(to bottom, rgba(251, 191, 36, 0.5), rgba(251, 191, 36, 0.1));"></div>
-                            <div style="font-size: 36px; animation: pulse 2s infinite; animation-delay: 1s;">➡️</div>
+                            <div style="width: 2px; height: 80px; background: linear-gradient(to bottom, rgba(251, 191, 36, 0.5), rgba(34, 197, 94, 0.5));"></div>
+                            <div style="font-size: 36px; animation: pulse 2s infinite; animation-delay: 1s;">⬅️</div>
                         </div>
 
                         <!-- Destination Database Container (Right Side - 48%) -->
@@ -2496,6 +2501,9 @@ PHASE: Hostinger Edition
                                     </p>
                                 </div>
                                 <div style="display: flex; gap: 8px;">
+                                    <button onclick="showDestinationDatabaseInfo()" class="btn btn-primary" style="padding: 8px 12px; font-size: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);" title="Show database credentials and selected tables info">
+                                        <span>🗄️</span> DB-Info
+                                    </button>
                                     <button onclick="refreshDestinationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Refresh tables">
                                         <span>🔄</span>
                                     </button>
@@ -2551,18 +2559,36 @@ PHASE: Hostinger Edition
                                 <span id="migrationDestinationCount">0 tables total</span>
                             </div>
 
-                            <!-- Drag & Drop Instruction -->
+                            <!-- Drag & Drop Instruction - TWO-WAY SYSTEM -->
                             <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid rgba(34, 197, 94, 0.3); color: rgba(254, 243, 199, 0.7); font-size: 13px;">
                                 <div style="text-align: center; margin-bottom: 15px;">
-                                    <div style="font-size: 32px; margin-bottom: 10px;">🖱️ ➜ 📥</div>
-                                    <p style="margin: 5px 0; font-weight: bold;">Drag tables to migrate</p>
+                                    <div style="font-size: 32px; margin-bottom: 10px;">⬅️ 🔄 ➡️</div>
+                                    <p style="margin: 5px 0; font-weight: bold; background: linear-gradient(135deg, #fbbf24 0%, #22c55e 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 16px;">TWO-WAY MIGRATION SYSTEM</p>
+                                    <p style="font-size: 12px; margin-top: 5px;">Drag Source ➡️ Destination OR Destination ⬅️ Source</p>
                                 </div>
                                 <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 6px; padding: 10px; font-size: 12px;">
-                                    <div style="margin-bottom: 8px;">
-                                        <strong style="color: #fbbf24;">🏗️ Drag from table card:</strong> Move (Structure Only)
+                                    <div style="margin-bottom: 12px; background: rgba(251, 191, 36, 0.1); padding: 8px; border-radius: 6px; border-left: 3px solid #fbbf24;">
+                                        <strong style="color: #fbbf24;">📤 SOURCE → DESTINATION (Left to Right):</strong>
                                     </div>
-                                    <div style="margin-bottom: 8px;">
-                                        <strong style="color: #22c55e;">✋ Drag from green badge:</strong> Move (Structure + Data)
+                                    <div style="margin-bottom: 8px; margin-left: 10px;">
+                                        <strong style="color: #fbbf24;">🏗️ Drag yellow badge:</strong> Move (Structure Only)
+                                    </div>
+                                    <div style="margin-bottom: 12px; margin-left: 10px;">
+                                        <strong style="color: #22c55e;">✋ Drag green badge:</strong> Move (Structure + Data)
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 12px; background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 6px; border-left: 3px solid #22c55e;">
+                                        <strong style="color: #86efac;">📥 DESTINATION → SOURCE (Right to Left):</strong>
+                                    </div>
+                                    <div style="margin-bottom: 8px; margin-left: 10px;">
+                                        <strong style="color: #22c55e;">🏗️ Drag green badge:</strong> Move (Structure Only)
+                                    </div>
+                                    <div style="margin-bottom: 12px; margin-left: 10px;">
+                                        <strong style="color: #10b981;">✋ Drag green badge:</strong> Move (Structure + Data)
+                                    </div>
+                                    
+                                    <div style="border-top: 1px dashed rgba(251, 191, 36, 0.3); margin: 12px 0; padding-top: 12px;">
+                                        <div style="font-weight: bold; color: #fbbf24; margin-bottom: 8px;">⚙️ COMMON OPERATIONS (Both Sides):</div>
                                     </div>
                                     <div style="margin-bottom: 8px;">
                                         <strong style="color: #3b82f6;">🎲 Blue "Dice" button:</strong> Inject 10 random records
@@ -2577,19 +2603,16 @@ PHASE: Hostinger Edition
                                         <strong style="color: #ef4444;">🗑️ Red "Delete" button:</strong> Permanently delete table
                                     </div>
                                     <div style="margin-bottom: 8px;">
-                                        <strong style="color: #06b6d4;">ℹ️ Cyan "Info" button (header):</strong> Select table → Click to see complete table info for AI
+                                        <strong style="color: #8b5cf6;">🗄️ Purple "DB-Info" button (header):</strong> View database credentials & connection strings
                                     </div>
                                     <div style="margin-bottom: 8px;">
-                                        <strong style="color: #8b5cf6;">🗄️ Purple "DB-Info" button (header):</strong> View database credentials & connection strings (PHP/Node.js/Python)
-                                    </div>
-                                    <div style="margin-bottom: 8px;">
-                                        <strong style="color: #fbbf24;">🖱️ Hover + Right-click name:</strong> Rename (Enter to save, Esc to cancel)
+                                        <strong style="color: #fbbf24;">🖱️ Right-click name:</strong> Rename inline (Enter to save, Esc to cancel)
                                     </div>
                                     <div style="margin-bottom: 8px; background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.3);">
-                                        <strong style="color: #86efac;">✨ Multi-Selection:</strong> Click multiple tables (they turn orange), then drag any of them → All selected tables migrate together!
+                                        <strong style="color: #86efac;">✨ Multi-Selection:</strong> Click multiple tables → Drag any one → All migrate together!
                                     </div>
                                     <div style="font-size: 11px; opacity: 0.8; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(245, 158, 11, 0.2);">
-                                        💡 Header: ℹ️ Info (table) | 🗄️ DB-Info (database credentials) | Multi-select + drag = batch migration
+                                        💡 Both containers support ALL operations • Full bi-directional migration
                                     </div>
                                 </div>
                             </div>
@@ -6616,7 +6639,7 @@ ${errorDetails || 'Unknown error occurred'}
             }
         }
 
-        // Render destination tables
+        // Render destination tables (FULL FUNCTIONALITY - Same as Source but reversed drag)
         function renderDestinationTables() {
             const container = document.getElementById('migrationDestinationTablesContainer');
 
@@ -6638,22 +6661,84 @@ ${errorDetails || 'Unknown error occurred'}
 
             const html = destinationTables.map(tableName => {
                 const emoji = getTableEmoji(tableName);
+                const isSelected = selectedDestinationTables.has(tableName);
                 const rowCount = destinationTablesRowCount[tableName] !== undefined ? destinationTablesRowCount[tableName] : '...';
 
                 return `
-                    <div class="migration-table-box ${selectedDestinationTables.has(tableName) ? 'selected' : ''}" 
-                         style="border-color: rgba(34, 197, 94, 0.4); background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);"
-                         onclick="toggleDestinationTable('${tableName}')"
-                         data-table="${tableName}">
+                    <div class="migration-table-box ${isSelected ? 'selected' : ''}" 
+                         data-table="${tableName}"
+                         draggable="true"
+                         ondragstart="handleDestinationDragStart(event, '${tableName}', false)"
+                         ondragend="handleDestinationDragEnd(event)"
+                         style="cursor: grab; position: relative; display: grid; grid-template-rows: auto auto auto; gap: 10px; padding: 10px; border-color: rgba(34, 197, 94, 0.4); background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%);">
                         
-                        <!-- Row Count Badge (Top Left) -->
-                        <div style="position: absolute; top: 3px; left: 3px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.8) 0%, rgba(21, 128, 61, 0.8) 100%); padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; color: white; border: 1px solid rgba(34, 197, 94, 0.6); box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3); z-index: 5;">
-                            <span style="font-size: 11px;">📊</span> ${typeof rowCount === 'number' ? rowCount.toLocaleString() : rowCount}
+                        <span class="migration-check-icon" onclick="toggleDestinationTable('${tableName}')" style="background: #22c55e;">✓</span>
+                        
+                        <!-- Row 1: 4 Action Buttons Only (Equal Distribution) -->
+                        <div style="display: flex; gap: 4px; justify-content: space-between;">
+                            <!-- Inject Button -->
+                            <button onclick="injectRandomIntoDestinationTable('${tableName}'); event.stopPropagation();" title="Inject 10 random records" style="flex: 1; background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); padding: 8px; border-radius: 6px; border: 1px solid rgba(59, 130, 246, 0.6); cursor: pointer; box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 10px rgba(59, 130, 246, 0.6)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(59, 130, 246, 0.3)';"><span style="font-size: 16px;">🎲</span></button>
+                            
+                            <!-- Copy Button -->
+                            <button onclick="duplicateDestinationTable('${tableName}'); event.stopPropagation();" title="Duplicate table" style="flex: 1; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); padding: 8px; border-radius: 6px; border: 1px solid rgba(139, 92, 246, 0.6); cursor: pointer; box-shadow: 0 2px 6px rgba(139, 92, 246, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 10px rgba(139, 92, 246, 0.6)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(139, 92, 246, 0.3)';"><span style="font-size: 16px;">📋</span></button>
+                            
+                            <!-- Empty Button -->
+                            <button onclick="emptyDestinationTableData('${tableName}'); event.stopPropagation();" title="Empty table data" style="flex: 1; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 8px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.6); cursor: pointer; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 10px rgba(245, 158, 11, 0.6)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(245, 158, 11, 0.3)';"><span style="font-size: 16px;">🧹</span></button>
+                            
+                            <!-- Delete Button -->
+                            <button onclick="deleteDestinationTableFromMigration('${tableName}'); event.stopPropagation();" title="Delete table" style="flex: 1; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 8px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.6); cursor: pointer; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3); transition: all 0.2s;" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 10px rgba(239, 68, 68, 0.6)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(239, 68, 68, 0.3)';"><span style="font-size: 16px;">🗑️</span></button>
                         </div>
                         
-                        <span class="migration-table-emoji">${emoji}</span>
-                        <div class="migration-table-name" style="color: #86efac;">${tableName}</div>
-                        ${selectedDestinationTables.has(tableName) ? '<span style="position: absolute; top: 5px; right: 5px; font-size: 12px;">✅</span>' : ''}
+                        <!-- Row 2: Row Count + Emoji + Table Name -->
+                        <div style="display: grid; grid-template-columns: auto auto 1fr; gap: 8px; align-items: center;">
+                            <!-- Row Count Badge -->
+                            <div style="background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); padding: 8px 10px; border-radius: 8px; font-size: 10px; font-weight: bold; color: white; border: 1px solid rgba(34, 197, 94, 0.6); box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 42px;">
+                                <div style="font-size: 12px; margin-bottom: 2px;">📊</div>
+                                <div style="font-size: 11px; font-weight: 700;">${typeof rowCount === 'number' ? rowCount.toLocaleString() : rowCount}</div>
+                            </div>
+                            
+                            <!-- Table Emoji -->
+                            <div style="font-size: 36px; display: flex; align-items: center; justify-content: center; min-height: 42px;">
+                                ${emoji}
+                            </div>
+                            
+                            <!-- Table Name (Takes most space) -->
+                            <div oncontextmenu="startRenameDestinationTable('${tableName}', this); event.preventDefault(); event.stopPropagation(); return false;"
+                                 onclick="event.stopPropagation(); toggleDestinationTable('${tableName}')"
+                                 onmouseover="this.style.cursor='context-menu'; this.style.background='rgba(34, 197, 94, 0.2)'; this.style.transform='scale(1.02)';"
+                                 onmouseout="this.style.cursor='pointer'; this.style.background='transparent'; this.style.transform='scale(1)';"
+                                 title="Right-click to rename"
+                                 style="font-size: 16px; font-weight: 700; color: #86efac; padding: 8px 12px; border-radius: 6px; cursor: pointer; user-select: none; transition: all 0.2s; text-align: left;">
+                                ${tableName}
+                            </div>
+                        </div>
+                        
+                        <!-- Row 3: Structure (Left) + Data (Right) - DRAGGABLE TO SOURCE -->
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <!-- Structure Label (Left - Draggable to Source) -->
+                            <div draggable="true"
+                                 ondragstart="handleDestinationDragStart(event, '${tableName}', false); event.stopPropagation();"
+                                 ondragend="handleDestinationDragEnd(event)"
+                                 onclick="event.stopPropagation();"
+                                 title="🏗️ Drag to move Structure Only to Source"
+                                 style="background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.6); cursor: grab; font-size: 11px; font-weight: bold; color: white; box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3); transition: all 0.2s; text-shadow: 0 1px 2px rgba(0,0,0,0.3);"
+                                 onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 10px rgba(34, 197, 94, 0.5)';"
+                                 onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(34, 197, 94, 0.3)';">
+                                🏗️ Structure
+                            </div>
+                            
+                            <!-- Data Badge (Right - Draggable to Source) -->
+                            <div draggable="true"
+                                 ondragstart="handleDestinationDragStart(event, '${tableName}', true); event.stopPropagation();"
+                                 ondragend="handleDestinationDragEnd(event)"
+                                 onclick="event.stopPropagation();"
+                                 title="✋ Drag for Structure + Data to Source"
+                                 style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 6px 12px; border-radius: 6px; cursor: grab; border: 1px solid rgba(16, 185, 129, 0.6); box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3); transition: all 0.2s; font-size: 11px; font-weight: bold; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3);"
+                                 onmouseover="this.style.background='linear-gradient(135deg, #22c55e 0%, #15803d 100%)'; this.style.transform='scale(1.1)'; this.style.cursor='grab'; this.style.boxShadow='0 4px 10px rgba(34, 197, 94, 0.5)';"
+                                 onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 6px rgba(16, 185, 129, 0.3)';">
+                                ✋ Data
+                            </div>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -10751,6 +10836,874 @@ ${'='.repeat(60)}
                 modal.classList.remove('active');
             }
         }
+
+        // ========================================
+        // DESTINATION DATABASE OPERATIONS (REVERSE FUNCTIONALITY)
+        // Mirror of Source operations but applied to Destination
+        // Drag direction: Destination → Source (opposite of Source → Destination)
+        // ========================================
+
+        // Inject random records into destination table
+        async function injectRandomIntoDestinationTable(tableName) {
+            if (!selectedDestinationId) {
+                alert('❌ No destination database selected');
+                return;
+            }
+
+            console.log('🎲 Injecting random data into DESTINATION table:', tableName);
+
+            const connections = getHostingerConnections();
+            const destConn = connections.find(c => c.id === selectedDestinationId);
+
+            if (!destConn) {
+                alert('❌ Destination connection not found');
+                return;
+            }
+
+            // Show loading toast
+            const loadingToast = document.createElement('div');
+            loadingToast.id = 'injectLoadingToastDest';
+            loadingToast.style.cssText = 'position: fixed; bottom: 30px; right: 30px; background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); color: white; padding: 15px 25px; border-radius: 10px; border: 2px solid #86efac; z-index: 10000; box-shadow: 0 5px 20px rgba(34, 197, 94, 0.5);';
+            loadingToast.innerHTML = `
+                <div style="font-size: 14px; font-weight: bold;">🎲 Generating random data...</div>
+                <div style="font-size: 12px; margin-top: 5px; opacity: 0.9;">📥 Destination: ${tableName}</div>
+            `;
+            document.body.appendChild(loadingToast);
+
+            try {
+                // Get table structure
+                const structResult = await apiRequest('get_table_structure', {
+                    db_host: destConn.host,
+                    db_name: destConn.dbName,
+                    db_user: destConn.username,
+                    db_pass: destConn.password,
+                    db_port: destConn.port || '3306',
+                    table_name: tableName
+                });
+
+                if (!structResult.success) {
+                    throw new Error(structResult.message || 'Failed to get table structure');
+                }
+
+                // Generate random records
+                const randomRecords = generateRandomRecords(structResult.columns, 10);
+
+                if (randomRecords.length === 0) {
+                    throw new Error('Could not generate records (table has only auto-increment columns?)');
+                }
+
+                // Insert records
+                const result = await apiRequest('insert_random_data', {
+                    db_host: destConn.host,
+                    db_name: destConn.dbName,
+                    db_user: destConn.username,
+                    db_pass: destConn.password,
+                    db_port: destConn.port || '3306',
+                    table_name: tableName,
+                    records_data: JSON.stringify(randomRecords),
+                    record_count: 10
+                });
+
+                document.body.removeChild(loadingToast);
+
+                if (result.success) {
+                    showCustomToast(`✅ ${result.message} in Destination: ${tableName}`, 'success', 3000);
+                    // Refresh destination tables to update row count
+                    await loadDestinationTables();
+                    console.log('✅ Random data injected successfully into destination');
+                } else {
+                    alert(`❌ Failed to inject data:\n\n${result.message}`);
+                }
+
+            } catch (error) {
+                if (document.getElementById('injectLoadingToastDest')) {
+                    document.body.removeChild(loadingToast);
+                }
+                console.error('❌ Inject error:', error);
+                alert(`❌ Inject Failed!\n\n${error.message}`);
+            }
+        }
+
+        // Duplicate destination table in same destination database
+        async function duplicateDestinationTable(tableName) {
+            if (!selectedDestinationId) {
+                alert('❌ No destination database selected');
+                return;
+            }
+
+            console.log('=== DUPLICATE DESTINATION TABLE ===');
+            console.log('Original table:', tableName);
+
+            const connections = getHostingerConnections();
+            const destConn = connections.find(c => c.id === selectedDestinationId);
+
+            if (!destConn) {
+                alert('❌ Destination connection not found');
+                return;
+            }
+
+            // Prompt for new table name
+            const newName = prompt(`📋 Duplicate Table: ${tableName}\n\n📥 In Destination Database\n\nEnter name for the copy:`, `${tableName}_copy`);
+            
+            if (!newName) {
+                console.log('User cancelled duplicate');
+                return;
+            }
+
+            if (newName === tableName) {
+                alert('❌ New name must be different from original table!');
+                return;
+            }
+
+            // Check if new name already exists
+            if (destinationTables.includes(newName)) {
+                if (!confirm(`⚠️ Table "${newName}" already exists in destination!\n\nOverwrite it?`)) {
+                    return;
+                }
+            }
+
+            // Show loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(139, 92, 246, 0.95); color: white; padding: 30px 50px; border-radius: 12px; border: 2px solid #a78bfa; z-index: 10000; text-align: center; box-shadow: 0 0 40px rgba(139, 92, 246, 0.6);';
+            loadingDiv.innerHTML = `
+                <div style="font-size: 48px; margin-bottom: 15px; animation: spin 1.5s linear infinite;">📋</div>
+                <div style="font-size: 18px; font-weight: bold;">Duplicating in Destination...</div>
+                <div style="font-size: 14px; margin-top: 8px; opacity: 0.9;">${tableName} → ${newName}</div>
+                <style>@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }</style>
+            `;
+            document.body.appendChild(loadingDiv);
+
+            try {
+                // Generate SQL with data from destination
+                const sqlResult = await apiRequest('generate_table_sql', {
+                    db_host: destConn.host,
+                    db_name: destConn.dbName,
+                    db_user: destConn.username,
+                    db_pass: destConn.password,
+                    db_port: destConn.port || '3306',
+                    table_name: tableName,
+                    include_data: 'true'
+                });
+
+                if (!sqlResult.success || !sqlResult.sql) {
+                    throw new Error(sqlResult.message || 'Failed to generate SQL');
+                }
+
+                // Modify SQL for new name
+                let modifiedSQL = sqlResult.sql;
+                modifiedSQL = modifiedSQL.replace(new RegExp(`\`${tableName}\``, 'g'), `\`${newName}\``);
+                modifiedSQL = modifiedSQL.replace(new RegExp(`DROP TABLE IF EXISTS \`${tableName}\``, 'g'), `DROP TABLE IF EXISTS \`${newName}\``);
+
+                // Execute in destination
+                const sqlWithoutComments = modifiedSQL
+                    .split('\n')
+                    .filter(line => !line.trim().startsWith('--'))
+                    .join('\n');
+                
+                const statements = sqlWithoutComments
+                    .split(';')
+                    .map(s => s.trim())
+                    .filter(s => s.length > 10);
+
+                for (let i = 0; i < statements.length; i++) {
+                    const finalStmt = statements[i].endsWith(';') ? statements[i] : statements[i] + ';';
+                    await apiRequest('execute_sql', {
+                        db_host: destConn.host,
+                        db_name: destConn.dbName,
+                        db_user: destConn.username,
+                        db_pass: destConn.password,
+                        db_port: destConn.port || '3306',
+                        sql_query: finalStmt
+                    });
+                }
+
+                // Success!
+                document.body.removeChild(loadingDiv);
+                showCustomToast(`✅ Table Duplicated in Destination!\n${tableName} → ${newName}`, 'success', 3000);
+
+                // Refresh destination tables
+                await loadDestinationTables();
+
+            } catch (error) {
+                console.error('❌ Duplicate error:', error);
+                document.body.removeChild(loadingDiv);
+                alert(`❌ Duplication Failed!\n\n${error.message}`);
+            }
+        }
+
+        // Empty destination table data
+        async function emptyDestinationTableData(tableName) {
+            if (!selectedDestinationId) {
+                alert('❌ No destination database selected');
+                return;
+            }
+
+            const connections = getHostingerConnections();
+            const destConn = connections.find(c => c.id === selectedDestinationId);
+
+            if (!destConn) {
+                alert('❌ Destination connection not found');
+                return;
+            }
+
+            const currentRows = destinationTablesRowCount[tableName] || 0;
+
+            if (!confirm(`🧹 Empty Table: ${tableName}\n\n📥 Destination Database\n\n⚠️ This will DELETE ALL ${currentRows.toLocaleString()} RECORD(S)!\n\nTable structure will be preserved.\n\nAre you sure?`)) {
+                return;
+            }
+
+            // Show loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(245, 158, 11, 0.95); color: white; padding: 30px 50px; border-radius: 12px; border: 2px solid #fbbf24; z-index: 10000; text-align: center; box-shadow: 0 0 40px rgba(245, 158, 11, 0.6);';
+            loadingDiv.innerHTML = `
+                <div style="font-size: 48px; margin-bottom: 15px; animation: sweep 1s ease-in-out infinite;">🧹</div>
+                <div style="font-size: 18px; font-weight: bold;">Emptying Destination Table...</div>
+                <div style="font-size: 14px; margin-top: 8px; opacity: 0.9;">${tableName}</div>
+                <style>@keyframes sweep { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }</style>
+            `;
+            document.body.appendChild(loadingDiv);
+
+            try {
+                const result = await apiRequest('execute_sql', {
+                    db_host: destConn.host,
+                    db_name: destConn.dbName,
+                    db_user: destConn.username,
+                    db_pass: destConn.password,
+                    db_port: destConn.port || '3306',
+                    sql_query: `TRUNCATE TABLE \`${tableName}\`;`
+                });
+
+                if (!result.success) {
+                    // Fallback to DELETE
+                    await apiRequest('execute_sql', {
+                        db_host: destConn.host,
+                        db_name: destConn.dbName,
+                        db_user: destConn.username,
+                        db_pass: destConn.password,
+                        db_port: destConn.port || '3306',
+                        sql_query: `DELETE FROM \`${tableName}\`;`
+                    });
+                }
+
+                document.body.removeChild(loadingDiv);
+                showCustomToast(`✅ Destination Table Emptied!\n${tableName} - All ${currentRows.toLocaleString()} records deleted`, 'success', 3000);
+
+                // Refresh destination tables
+                await loadDestinationTables();
+
+            } catch (error) {
+                document.body.removeChild(loadingDiv);
+                alert(`❌ Empty Failed!\n\n${error.message}`);
+            }
+        }
+
+        // Delete table from destination database
+        async function deleteDestinationTableFromMigration(tableName) {
+            if (!selectedDestinationId) {
+                alert('❌ No destination database selected');
+                return;
+            }
+
+            const connections = getHostingerConnections();
+            const destConn = connections.find(c => c.id === selectedDestinationId);
+
+            if (!destConn) {
+                alert('❌ Destination connection not found');
+                return;
+            }
+
+            if (!confirm(`🗑️ Delete Table: ${tableName}\n\n📥 From Destination Database\n\n⚠️ This will PERMANENTLY delete this table and ALL its data!\n\nAre you absolutely sure?`)) {
+                return;
+            }
+
+            if (!confirm(`⚠️ FINAL WARNING!\n\nDelete "${tableName}" from destination permanently?\n\nThis action CANNOT be undone!`)) {
+                return;
+            }
+
+            // Show loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(239, 68, 68, 0.95); color: white; padding: 30px 50px; border-radius: 12px; border: 2px solid #f87171; z-index: 10000; text-align: center; box-shadow: 0 0 40px rgba(239, 68, 68, 0.6);';
+            loadingDiv.innerHTML = `
+                <div style="font-size: 48px; margin-bottom: 15px; animation: shake 0.5s ease-in-out infinite;">🗑️</div>
+                <div style="font-size: 18px; font-weight: bold;">Deleting from Destination...</div>
+                <div style="font-size: 14px; margin-top: 8px; opacity: 0.9;">${tableName}</div>
+                <style>@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }</style>
+            `;
+            document.body.appendChild(loadingDiv);
+
+            try {
+                const deleteResult = await apiRequest('delete_table', {
+                    db_host: destConn.host,
+                    db_name: destConn.dbName,
+                    db_user: destConn.username,
+                    db_pass: destConn.password,
+                    db_port: destConn.port || '3306',
+                    table_name: tableName
+                });
+
+                if (!deleteResult.success) {
+                    throw new Error(deleteResult.message || 'Failed to delete table');
+                }
+
+                document.body.removeChild(loadingDiv);
+                showCustomToast(`✅ Table Deleted from Destination!\n${tableName}`, 'success', 3000);
+
+                // Refresh destination tables
+                await loadDestinationTables();
+
+            } catch (error) {
+                document.body.removeChild(loadingDiv);
+                alert(`❌ Deletion Failed!\n\n${error.message}`);
+            }
+        }
+
+        // Rename destination table (right-click inline rename)
+        function startRenameDestinationTable(oldName, element) {
+            console.log('✏️ Starting rename for DESTINATION table:', oldName);
+            
+            if (element.querySelector('input')) {
+                return;
+            }
+            
+            const originalContent = element.innerHTML;
+            
+            element.innerHTML = `
+                <input type="text" 
+                       value="${oldName}" 
+                       placeholder="${oldName}"
+                       class="rename-input"
+                       style="width: 100%; padding: 6px 10px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(16, 185, 129, 0.2) 100%); border: 2px solid #22c55e; border-radius: 6px; color: #fef3c7; font-size: 14px; font-weight: 600; text-align: center; outline: none; box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);">
+            `;
+            
+            const input = element.querySelector('input');
+            
+            setTimeout(() => {
+                input.focus();
+                input.select();
+            }, 50);
+            
+            input.addEventListener('keydown', async function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const newName = input.value.trim();
+                    
+                    if (!newName) {
+                        alert('❌ Table name cannot be empty!');
+                        input.focus();
+                        return;
+                    }
+                    
+                    if (newName === oldName) {
+                        element.innerHTML = originalContent;
+                        return;
+                    }
+                    
+                    if (!/^[a-zA-Z0-9_]+$/.test(newName)) {
+                        alert('❌ Table name can only contain letters, numbers, and underscores!');
+                        input.focus();
+                        return;
+                    }
+                    
+                    if (destinationTables.includes(newName)) {
+                        alert(`❌ Table "${newName}" already exists in destination!`);
+                        input.focus();
+                        return;
+                    }
+                    
+                    await performDestinationTableRename(oldName, newName, element, originalContent);
+                } else if (e.key === 'Escape') {
+                    element.innerHTML = originalContent;
+                }
+            });
+            
+            input.addEventListener('blur', function() {
+                setTimeout(() => {
+                    if (element.contains(input)) {
+                        element.innerHTML = originalContent;
+                    }
+                }, 200);
+            });
+        }
+
+        // Perform destination table rename
+        async function performDestinationTableRename(oldName, newName, element, originalContent) {
+            if (!selectedDestinationId) {
+                alert('❌ No destination database selected');
+                element.innerHTML = originalContent;
+                return;
+            }
+
+            const connections = getHostingerConnections();
+            const destConn = connections.find(c => c.id === selectedDestinationId);
+
+            if (!destConn) {
+                alert('❌ Connection not found');
+                element.innerHTML = originalContent;
+                return;
+            }
+
+            element.innerHTML = '<div style="font-size: 11px; color: #86efac;">Renaming...</div>';
+
+            try {
+                const result = await apiRequest('rename_table', {
+                    db_host: destConn.host,
+                    db_name: destConn.dbName,
+                    db_user: destConn.username,
+                    db_pass: destConn.password,
+                    db_port: destConn.port || '3306',
+                    old_table_name: oldName,
+                    new_table_name: newName
+                });
+
+                if (!result.success) {
+                    throw new Error(result.message || 'Failed to rename table');
+                }
+
+                element.innerHTML = `<div style="color: #22c55e; font-size: 12px;">✅ Renamed!</div>`;
+                
+                setTimeout(async () => {
+                    await loadDestinationTables();
+                    showCustomToast(`✅ Destination Table Renamed!\n${oldName} → ${newName}`, 'success', 3000);
+                }, 500);
+
+            } catch (error) {
+                element.innerHTML = originalContent;
+                alert(`❌ Rename Failed!\n\n${error.message}`);
+            }
+        }
+
+        // Show destination database info (credentials + selected tables)
+        async function showDestinationDatabaseInfo() {
+            if (!selectedDestinationId) {
+                alert('❌ No destination database selected\n\nPlease select a destination database from the dropdown.');
+                return;
+            }
+
+            const connections = getHostingerConnections();
+            const destConn = connections.find(c => c.id === selectedDestinationId);
+
+            if (!destConn) {
+                alert('❌ Connection not found');
+                return;
+            }
+
+            // Open modal
+            const modal = document.getElementById('databaseInfoModal');
+            modal.classList.add('active');
+            
+            const titleEl = document.getElementById('databaseInfoDbName');
+            const textArea = document.getElementById('databaseInfoText');
+            
+            if (titleEl) titleEl.textContent = destConn.dbName + ' (Destination)';
+            if (textArea) textArea.value = 'Loading destination database information...';
+
+            // Build info
+            let dbPrompt = `DATABASE CONNECTION INFORMATION FOR AI (DESTINATION)
+=====================================
+
+🗄️ DESTINATION DATABASE CREDENTIALS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Connection Name: ${destConn.name}
+Host: ${destConn.host}
+Database Name: ${destConn.dbName}
+Username: ${destConn.username}
+Password: ${destConn.password}
+Port: ${destConn.port || '3306'}
+Server Type: ${destConn.type === 'vps' ? 'VPS Server' : 'Shared Hosting'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+
+            // Add selected tables info if any
+            if (selectedDestinationTables && selectedDestinationTables.size > 0) {
+                dbPrompt += `
+📊 SELECTED TABLES (${selectedDestinationTables.size}):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+`;
+                
+                const selectedTablesArray = Array.from(selectedDestinationTables);
+                
+                for (let i = 0; i < selectedTablesArray.length; i++) {
+                    const tableName = selectedTablesArray[i];
+                    
+                    if (textArea) {
+                        textArea.value = `Loading destination database information...\n\nFetching table ${i + 1}/${selectedTablesArray.length}: ${tableName}`;
+                    }
+                    
+                    const structResult = await apiRequest('get_table_structure', {
+                        db_host: destConn.host,
+                        db_name: destConn.dbName,
+                        db_user: destConn.username,
+                        db_pass: destConn.password,
+                        db_port: destConn.port || '3306',
+                        table_name: tableName
+                    });
+
+                    const dataResult = await apiRequest('get_table_data', {
+                        db_host: destConn.host,
+                        db_name: destConn.dbName,
+                        db_user: destConn.username,
+                        db_pass: destConn.password,
+                        db_port: destConn.port || '3306',
+                        table_name: tableName,
+                        page: 1,
+                        limit: 5
+                    });
+
+                    if (structResult.success && dataResult.success) {
+                        const rowCount = dataResult.pagination.total_rows;
+                        const engine = dataResult.table_info.engine;
+                        const collation = dataResult.table_info.collation;
+                        const dataSize = formatBytes(dataResult.table_info.data_length);
+                        
+                        dbPrompt += `
+${i + 1}. TABLE: ${tableName}
+   ├─ Total Records: ${rowCount.toLocaleString()}
+   ├─ Columns: ${structResult.columns.length}
+   ├─ Engine: ${engine}
+   ├─ Collation: ${collation}
+   ├─ Data Size: ${dataSize}
+   └─ Structure:
+`;
+                        
+                        structResult.columns.forEach((col, idx) => {
+                            const keyInfo = col.Key ? 
+                                (col.Key === 'PRI' ? ' [PRIMARY KEY]' : 
+                                 col.Key === 'UNI' ? ' [UNIQUE]' : 
+                                 col.Key === 'MUL' ? ' [INDEX]' : '') : '';
+                            const nullInfo = col.Null === 'YES' ? ' NULL' : ' NOT NULL';
+                            const defaultInfo = col.Default !== null ? ` DEFAULT '${col.Default}'` : '';
+                            const extraInfo = col.Extra ? ` ${col.Extra.toUpperCase()}` : '';
+                            
+                            dbPrompt += `      ${idx + 1}. ${col.Field} - ${col.Type}${nullInfo}${defaultInfo}${extraInfo}${keyInfo}\n`;
+                        });
+                        
+                        dbPrompt += '\n';
+                    }
+                }
+                
+                dbPrompt += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+`;
+            }
+
+            // Add connection examples (same as source)
+            dbPrompt += `
+📋 CONNECTION STRING (PHP - PDO):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\`\`\`php
+$host = '${destConn.host}';
+$dbname = '${destConn.dbName}';
+$username = '${destConn.username}';
+$password = '${destConn.password}';
+$port = '${destConn.port || '3306'}';
+
+try {
+    $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
+    $pdo = new PDO($dsn, $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    echo "✅ Connected to destination database!";
+} catch(PDOException $e) {
+    echo "❌ Connection failed: " . $e->getMessage();
+}
+\`\`\`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You can now use this DESTINATION database connection!
+`;
+
+            if (textArea) {
+                textArea.value = dbPrompt;
+            }
+        }
+
+        // ========================================
+        // REVERSE DRAG & DROP HANDLERS (Destination → Source)
+        // ========================================
+
+        let draggedDestinationTables = [];
+        let draggedDestinationIncludeData = false;
+
+        // Handle destination drag start (drag FROM destination TO source)
+        function handleDestinationDragStart(event, tableName, includeData = false) {
+            console.log('=== DESTINATION DRAG START ===');
+            console.log('Table:', tableName);
+            console.log('Include Data:', includeData);
+            console.log('Selected destination tables:', Array.from(selectedDestinationTables));
+            
+            let tablesToDrag = [];
+            
+            if (selectedDestinationTables.has(tableName) && selectedDestinationTables.size > 1) {
+                tablesToDrag = Array.from(selectedDestinationTables);
+                console.log('🎯 MULTI-SELECTION MODE: Dragging', tablesToDrag.length, 'tables from destination');
+            } else {
+                tablesToDrag = [tableName];
+                console.log('🎯 SINGLE TABLE MODE: Dragging 1 table from destination');
+            }
+            
+            draggedDestinationTables = tablesToDrag;
+            draggedDestinationIncludeData = includeData;
+            
+            event.target.classList.add('dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', JSON.stringify({
+                tables: tablesToDrag,
+                includeData: includeData,
+                source: 'destination'
+            }));
+            
+            // Add dragging class to all selected destination tables
+            tablesToDrag.forEach(tName => {
+                const card = document.querySelector(`#migrationDestinationTablesContainer .migration-table-box[data-table="${tName}"]`);
+                if (card) {
+                    card.classList.add('dragging');
+                }
+            });
+            
+            // Hint message with green theme for destination
+            const hint = document.createElement('div');
+            hint.id = 'dragHintDestination';
+            const bgColor = includeData ? 'rgba(16, 185, 129, 0.95)' : 'rgba(34, 197, 94, 0.95)';
+            const modeText = includeData ? '📦 Structure + Data' : '🏗️ Structure Only';
+            const borderColor = includeData ? '#22c55e' : '#86efac';
+            
+            const tableNames = tablesToDrag.length > 1 
+                ? `${tablesToDrag.length} tables` 
+                : tableName;
+            
+            hint.style.cssText = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: ${bgColor}; color: white; padding: 15px 30px; border-radius: 10px; font-size: 14px; font-weight: bold; z-index: 9999; box-shadow: 0 5px 20px rgba(0,0,0,0.5); border: 2px solid ${borderColor};`;
+            hint.innerHTML = `⬅️ Dragging: <strong>${tableNames}</strong><br><span style="font-size: 12px; opacity: 0.9;">${modeText} (Destination → Source)</span>`;
+            document.body.appendChild(hint);
+            
+            console.log(`🖱️ Started dragging ${tablesToDrag.length} table(s) from DESTINATION to SOURCE`);
+        }
+
+        // Handle destination drag end
+        function handleDestinationDragEnd(event) {
+            if (draggedDestinationTables && draggedDestinationTables.length > 0) {
+                draggedDestinationTables.forEach(tName => {
+                    const card = document.querySelector(`#migrationDestinationTablesContainer .migration-table-box[data-table="${tName}"]`);
+                    if (card) {
+                        card.classList.remove('dragging');
+                    }
+                });
+            }
+            
+            event.target.classList.remove('dragging');
+            
+            const hint = document.getElementById('dragHintDestination');
+            if (hint && hint.parentNode) {
+                document.body.removeChild(hint);
+            }
+            
+            console.log('🖱️ Finished dragging from DESTINATION');
+        }
+
+        // Handle SOURCE drag over (when dragging FROM destination TO source)
+        function handleSourceDragOver(event) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            
+            const dropZone = document.getElementById('migrationTablesContainer');
+            if (dropZone && !dropZone.classList.contains('drag-over')) {
+                dropZone.classList.add('drag-over');
+            }
+        }
+
+        // Handle SOURCE drag leave
+        function handleSourceDragLeave(event) {
+            if (event.target.id === 'migrationTablesContainer') {
+                event.target.classList.remove('drag-over');
+            }
+        }
+
+        // Handle SOURCE drop (REVERSE: Destination → Source)
+        async function handleSourceDrop(event) {
+            event.preventDefault();
+            
+            const dropZone = document.getElementById('migrationTablesContainer');
+            if (dropZone) {
+                dropZone.classList.remove('drag-over');
+            }
+
+            if (!draggedDestinationTables || draggedDestinationTables.length === 0) {
+                console.error('❌ No destination tables being dragged');
+                return;
+            }
+
+            if (!selectedDatabaseId) {
+                alert('⚠️ Please select a source database first!');
+                return;
+            }
+
+            console.log('📥 Dropped DESTINATION tables to SOURCE:', draggedDestinationTables);
+            console.log('📊 Total tables to migrate:', draggedDestinationTables.length);
+            console.log('📊 Include data:', draggedDestinationIncludeData);
+
+            // Show loading
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'reverseDragMigrationLoading';
+            loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(34, 197, 94, 0.2) 100%); color: #22c55e; padding: 40px 60px; border-radius: 15px; border: 3px solid #22c55e; z-index: 10000; text-align: center; box-shadow: 0 0 50px rgba(34, 197, 94, 0.5);';
+            const modeText = draggedDestinationIncludeData ? 'Structure + Data' : 'Structure Only';
+            const tableCountText = draggedDestinationTables.length > 1 
+                ? `${draggedDestinationTables.length} Tables` 
+                : draggedDestinationTables[0];
+            
+            loadingDiv.innerHTML = `
+                <div style="font-size: 56px; margin-bottom: 20px; animation: spin 2s linear infinite;">🔄</div>
+                <div style="font-size: 20px; margin-bottom: 12px; font-weight: bold;">⬅️ Reverse Migration</div>
+                <div style="font-size: 16px; margin-bottom: 8px;">Moving ${tableCountText}...</div>
+                <div style="font-size: 14px; opacity: 0.8; color: #fbbf24;">${modeText}</div>
+                <div id="reverseMigrationProgress" style="font-size: 13px; opacity: 0.7; margin-top: 10px;">Preparing...</div>
+                <div style="font-size: 12px; opacity: 0.6; margin-top: 15px;">From Destination ⬅️ To Source</div>
+                <style>@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }</style>
+            `;
+            document.body.appendChild(loadingDiv);
+
+            try {
+                const allConnections = getHostingerConnections();
+                const sourceId = selectedDatabaseId.replace('conn_', '');
+                const sourceConn = allConnections.find(c => c.id === sourceId);
+                const destConn = allConnections.find(c => c.id === selectedDestinationId);
+
+                if (!sourceConn || !destConn) {
+                    throw new Error('Source or Destination connection not found');
+                }
+
+                const includeDataMode = draggedDestinationIncludeData ? 'true' : 'false';
+                
+                let successCount = 0;
+                let failCount = 0;
+                const failedTables = [];
+                
+                // Loop through each destination table
+                for (let tableIndex = 0; tableIndex < draggedDestinationTables.length; tableIndex++) {
+                    const currentTable = draggedDestinationTables[tableIndex];
+                    
+                    const progressEl = document.getElementById('reverseMigrationProgress');
+                    if (progressEl) {
+                        progressEl.textContent = `Table ${tableIndex + 1}/${draggedDestinationTables.length}: ${currentTable}`;
+                    }
+                    
+                    try {
+                        // Generate SQL from DESTINATION
+                        const sqlResult = await apiRequest('generate_table_sql', {
+                            db_host: destConn.host,
+                            db_name: destConn.dbName,
+                            db_user: destConn.username,
+                            db_pass: destConn.password,
+                            db_port: destConn.port || '3306',
+                            table_name: currentTable,
+                            include_data: includeDataMode
+                        });
+
+                        if (!sqlResult.success || !sqlResult.sql) {
+                            throw new Error(sqlResult.message || 'Failed to generate SQL');
+                        }
+
+                        // Execute SQL on SOURCE
+                        const sqlWithoutComments = sqlResult.sql
+                            .split('\n')
+                            .filter(line => !line.trim().startsWith('--'))
+                            .join('\n');
+                        
+                        const sqlStatements = sqlWithoutComments
+                            .split(';')
+                            .map(s => s.trim())
+                            .filter(s => s.length > 10);
+
+                        for (let i = 0; i < sqlStatements.length; i++) {
+                            const statement = sqlStatements[i].trim();
+                            if (!statement) continue;
+
+                            const finalStatement = statement.endsWith(';') ? statement : statement + ';';
+                            
+                            await apiRequest('execute_sql', {
+                                db_host: sourceConn.host,
+                                db_name: sourceConn.dbName,
+                                db_user: sourceConn.username,
+                                db_pass: sourceConn.password,
+                                db_port: sourceConn.port || '3306',
+                                sql_query: finalStatement
+                            });
+                        }
+
+                        // Delete from DESTINATION
+                        const deleteResult = await apiRequest('delete_table', {
+                            db_host: destConn.host,
+                            db_name: destConn.dbName,
+                            db_user: destConn.username,
+                            db_pass: destConn.password,
+                            db_port: destConn.port || '3306',
+                            table_name: currentTable
+                        });
+
+                        if (!deleteResult.success) {
+                            console.warn(`⚠️ ${currentTable} copied but not deleted from destination:`, deleteResult.message);
+                        }
+
+                        successCount++;
+                        
+                    } catch (tableError) {
+                        failCount++;
+                        failedTables.push({ table: currentTable, error: tableError.message });
+                        console.error(`❌ Failed to migrate ${currentTable}:`, tableError.message);
+                    }
+                }
+                
+                // Success!
+                document.body.removeChild(loadingDiv);
+                
+                const successDiv = document.createElement('div');
+                const modeIcon = draggedDestinationIncludeData ? '📦' : '🏗️';
+                const modeLabel = draggedDestinationIncludeData ? 'Structure + Data' : 'Structure Only';
+                const modeColor = draggedDestinationIncludeData ? '#22c55e' : '#86efac';
+                
+                const tableText = draggedDestinationTables.length > 1 
+                    ? `${successCount} Table(s) Moved`
+                    : `Table Moved: ${draggedDestinationTables[0]}`;
+                
+                successDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, rgba(34, 197, 94, 0.98) 0%, rgba(16, 185, 129, 0.98) 100%); color: white; padding: 40px 60px; border-radius: 15px; border: 3px solid #86efac; z-index: 10000; text-align: center; box-shadow: 0 0 50px rgba(34, 197, 94, 0.7);';
+                successDiv.innerHTML = `
+                    <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
+                    <div style="font-size: 22px; margin-bottom: 12px; font-weight: bold;">⬅️ ${tableText}</div>
+                    <div style="font-size: 14px; opacity: 0.95; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px; display: inline-block; margin: 5px 0;">${successCount} of ${draggedDestinationTables.length} successful</div>
+                    <div style="font-size: 13px; opacity: 0.9; margin-top: 10px; background: rgba(0,0,0,0.3); padding: 8px 14px; border-radius: 6px; display: inline-block; border: 1px solid ${modeColor};">
+                        <span style="color: ${modeColor}; font-size: 16px;">${modeIcon}</span> <strong>${modeLabel}</strong>
+                    </div>
+                    <div style="font-size: 13px; opacity: 0.8; margin-top: 15px;">📥 Removed from Destination • 📤 Added to Source</div>
+                `;
+                document.body.appendChild(successDiv);
+
+                setTimeout(() => {
+                    document.body.removeChild(successDiv);
+                }, 3000);
+
+                // Refresh both
+                await loadMigrationTables();
+                if (selectedDestinationId) {
+                    await loadDestinationTables();
+                }
+
+            } catch (error) {
+                console.error('❌ Reverse migration error:', error);
+                
+                const loading = document.getElementById('reverseDragMigrationLoading');
+                if (loading && loading.parentNode) {
+                    document.body.removeChild(loading);
+                }
+
+                alert(`❌ Reverse Migration Failed!\n\n${error.message}`);
+            } finally {
+                draggedDestinationTables = [];
+                draggedDestinationIncludeData = false;
+            }
+        }
+
     </script>
 </body>
 </html>
