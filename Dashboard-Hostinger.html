@@ -2424,21 +2424,31 @@ PHASE: Hostinger Edition
                             <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(167, 139, 250, 0.1) 100%); border: 2px solid rgba(139, 92, 246, 0.4); border-radius: 12px; padding: 20px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                                     <h4 style="color: #a78bfa; margin: 0;">🎯 Generated AI Prompt</h4>
-                                    <div style="display: flex; gap: 10px;">
-                                        <button class="btn btn-primary" onclick="copyGeneratedPrompt()" style="background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);">
-                                            <span>📋</span> Copy to Clipboard
+                                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                        <!-- Update button - Shows only in Edit mode -->
+                                        <button id="saveEditBtn" class="btn btn-primary" onclick="saveEditedPrompt()" style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); display: none;">
+                                            <span>✏️</span> Save Edit
                                         </button>
-                                        <button class="btn btn-secondary" onclick="downloadGeneratedPrompt()" style="padding: 8px 16px;">
-                                            <span>💾</span> Download
+                                        <!-- Save as New - Always visible -->
+                                        <button class="btn btn-primary" onclick="saveAsNewPrompt()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                                            <span>💾</span> Save as New
+                                        </button>
+                                        <button class="btn btn-primary" onclick="copyGeneratedPrompt()" style="background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);">
+                                            <span>📋</span> Copy
                                         </button>
                                     </div>
                                 </div>
                                 
-                                <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
-                                    <strong style="color: #86efac;">✅ Ready!</strong> Copy this prompt and paste it into any AI code editor (Cursor, GitHub Copilot, Claude, ChatGPT, etc.)
+                                <!-- Editing indicator - Shows which prompt we're editing -->
+                                <div id="editingIndicator" style="display: none; background: rgba(59, 130, 246, 0.2); border: 2px solid #3b82f6; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 14px;">
+                                    <strong style="color: #60a5fa;">✏️ Editing:</strong> <span id="editingPromptName" style="color: #fbbf24; font-weight: bold;"></span>
                                 </div>
 
-                                <textarea id="promptGenOutput" readonly style="width: 100%; min-height: 500px; padding: 20px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(139, 92, 246, 0.3); border-radius: 8px; color: #86efac; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.6; resize: vertical;"></textarea>
+                                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
+                                    <strong style="color: #fbbf24;">✏️ Editable!</strong> You can edit the prompt below before saving or copying.
+                                </div>
+
+                                <textarea id="promptGenOutput" style="width: 100%; min-height: 500px; padding: 20px; background: rgba(0, 0, 0, 0.4); border: 2px solid rgba(139, 92, 246, 0.3); border-radius: 8px; color: #86efac; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.6; resize: vertical;"></textarea>
 
                                 <!-- Stats -->
                                 <div id="promptGenStats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 15px;"></div>
@@ -2467,15 +2477,42 @@ PHASE: Hostinger Edition
                     </div>
                 </div>
 
-                <!-- Security Notice -->
-                <div style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; border-radius: 8px; padding: 15px; margin-top: 20px;">
-                    <strong style="color: #fca5a5;">⚠️ Security Warning:</strong>
-                    <ul style="margin: 10px 0 0 20px; line-height: 1.8; font-size: 13px; color: rgba(254, 243, 199, 0.8);">
-                        <li>This prompt contains your <strong>database password</strong> in plain text</li>
-                        <li>Only share with trusted AI assistants in secure environments</li>
-                        <li>Do not paste in public channels or forums</li>
-                        <li>Consider using temporary credentials for AI interactions</li>
-                    </ul>
+                        <!-- Saved Prompts Table - Directly under Generated Prompt -->
+                        <div id="savedPromptsSection" style="margin-top: 30px;">
+                            <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 139, 250, 0.05) 100%); border: 2px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 20px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                                    <h4 style="color: #a78bfa; margin: 0; display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 24px;">📚</span>
+                                        <span>Saved Prompts</span>
+                                    </h4>
+                                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                        <button class="btn btn-primary" onclick="exportSavedPrompts()" style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);">
+                                            <span>📤</span> Export All
+                                        </button>
+                                        <button class="btn btn-primary" onclick="importSavedPrompts()" style="background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);">
+                                            <span>📥</span> Import
+                                        </button>
+                                        <button class="btn btn-danger" onclick="clearAllPrompts()">
+                                            <span>🗑️</span> Clear All
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="savedPromptsTable"></div>
+
+                                <div style="margin-top: 15px; background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 8px; padding: 12px; font-size: 13px;">
+                                    <strong style="color: #60a5fa;">💡 Quick Guide:</strong>
+                                    <div style="color: rgba(254, 243, 199, 0.7); margin-top: 8px; line-height: 1.6;">
+                                        <strong>💾 Save as New:</strong> Add new prompt to table (always creates new record)<br>
+                                        <strong>✏️ Edit:</strong> Load prompt for editing (shows "Save Edit" button)<br>
+                                        <strong>📋 Copy:</strong> Quick copy to clipboard<br>
+                                        <strong>🗑️ Delete:</strong> Remove from table<br>
+                                        <strong>📤 Export/📥 Import:</strong> Backup and restore all prompts (file picker)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -3296,8 +3333,9 @@ PHASE: Hostinger Edition
                 updateSelectedDatabaseDisplay();
             } else if (sectionId === 'aiPrompt') {
                 updateAIPromptDisplay();
-                // Load databases for prompt generator
+                // Load databases and prompts table for prompt generator
                 loadPromptGenDatabases();
+                loadSavedPromptsTable();
             } else if (sectionId === 'createTable') {
                 updateCreateTableDatabaseDisplay();
             } else if (sectionId === 'editTable') {
@@ -3496,8 +3534,9 @@ Please confirm you can connect successfully before proceeding with any operation
             } else if (tabName === 'promptGenerator') {
                 aiSection.querySelector('.tab-btn:nth-child(3)').classList.add('active');
                 document.getElementById('aiPromptGeneratorTab').classList.add('active');
-                // Load databases when opening prompt generator
+                // Load databases and prompts table when opening prompt generator
                 loadPromptGenDatabases();
+                loadSavedPromptsTable();
             }
         }
 
@@ -11677,6 +11716,11 @@ ${'='.repeat(80)}
                 // Remove loading
                 document.body.removeChild(loadingDiv);
 
+                // Clear edit mode (fresh generation)
+                window.currentEditingPromptId = null;
+                document.getElementById('saveEditBtn').style.display = 'none';
+                document.getElementById('editingIndicator').style.display = 'none';
+
                 // Show success message
                 let successMsg = `✅ AI Prompt Generated!\n${selectedPromptGenTables.size} tables, ${totalColumns} columns analyzed`;
                 if (appTypeSingleChecked) {
@@ -11762,10 +11806,402 @@ ${'='.repeat(80)}
             document.getElementById('doubleApiFilenamesSection').style.display = 'none';
             resetAppTypeStyles();
             
+            // Clear edit mode
+            window.currentEditingPromptId = null;
+            document.getElementById('saveEditBtn').style.display = 'none';
+            document.getElementById('editingIndicator').style.display = 'none';
+            
             selectedPromptGenDatabaseId = null;
             promptGenTables = [];
             selectedPromptGenTables.clear();
             updatePromptGenCounts();
+        }
+
+        // ========================================
+        // SAVED PROMPTS MANAGEMENT (Simple & Clear)
+        // ========================================
+
+        const SAVED_PROMPTS_KEY = 'saved_ai_prompts';
+        const PROMPTS_EXPORT_PATH_KEY = 'prompts_export_path';
+
+        // Get saved prompts from localStorage
+        function getSavedPrompts() {
+            const saved = localStorage.getItem(SAVED_PROMPTS_KEY);
+            return saved ? JSON.parse(saved) : [];
+        }
+
+        // Save prompts to localStorage
+        function savePromptsToStorage(prompts) {
+            localStorage.setItem(SAVED_PROMPTS_KEY, JSON.stringify(prompts));
+        }
+
+        // Save as NEW prompt (always creates new record)
+        function saveAsNewPrompt() {
+            const promptText = document.getElementById('promptGenOutput').value.trim();
+            
+            if (!promptText) {
+                alert('❌ No prompt to save!');
+                return;
+            }
+
+            // Ask for name
+            const connections = getHostingerConnections();
+            const conn = selectedPromptGenDatabaseId ? connections.find(c => c.id === selectedPromptGenDatabaseId) : null;
+            const dbName = conn ? conn.dbName : 'DB';
+            const architecture = document.getElementById('appTypeSingle').checked ? 'PHP' :
+                               document.getElementById('appTypeDouble').checked ? 'API' : 'Gen';
+            const date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).replace(',', '');
+            
+            const systematicName = `${dbName}_${selectedPromptGenTables.size}Tables_${architecture}_${date}`;
+            const promptName = prompt(`💾 Save as New Prompt\n\nEnter name for this prompt:\n\n💡 Suggested: ${systematicName}`, systematicName);
+            
+            if (!promptName) return;
+
+            const promptData = {
+                id: Date.now().toString(),
+                name: promptName.trim(),
+                prompt: promptText,
+                database: dbName,
+                databaseId: selectedPromptGenDatabaseId,
+                tablesCount: selectedPromptGenTables.size,
+                tables: Array.from(selectedPromptGenTables),
+                architecture: document.getElementById('appTypeSingle').checked ? 'Single-PHP' :
+                             document.getElementById('appTypeDouble').checked ? 'Double-API' : 'Generic',
+                createdAt: new Date().toISOString(),
+                size: promptText.length
+            };
+
+            const prompts = getSavedPrompts();
+            prompts.unshift(promptData);
+            savePromptsToStorage(prompts);
+
+            showCustomToast(`✅ Prompt saved!\n"${promptData.name}"`, 'success', 3000);
+            loadSavedPromptsTable();
+        }
+
+        // Save edited prompt (updates existing record)
+        function saveEditedPrompt() {
+            if (!window.currentEditingPromptId) {
+                alert('❌ No prompt in edit mode!');
+                return;
+            }
+
+            const promptText = document.getElementById('promptGenOutput').value.trim();
+            
+            if (!promptText) {
+                alert('❌ Prompt cannot be empty!');
+                return;
+            }
+
+            const prompts = getSavedPrompts();
+            const promptIndex = prompts.findIndex(p => p.id === window.currentEditingPromptId);
+            
+            if (promptIndex === -1) {
+                alert('❌ Original prompt not found!');
+                return;
+            }
+
+            // Confirm
+            if (!confirm(`✏️ Save Edit\n\n"${prompts[promptIndex].name}"\n\nThis will update the saved prompt.\n\nContinue?`)) {
+                return;
+            }
+
+            // Update
+            prompts[promptIndex].prompt = promptText;
+            prompts[promptIndex].size = promptText.length;
+            prompts[promptIndex].updatedAt = new Date().toISOString();
+
+            savePromptsToStorage(prompts);
+            showCustomToast(`✅ Prompt updated!\n"${prompts[promptIndex].name}"`, 'success', 3000);
+            loadSavedPromptsTable();
+        }
+
+        // Load saved prompts table
+        function loadSavedPromptsTable() {
+            const tableEl = document.getElementById('savedPromptsTable');
+            if (!tableEl) return;
+
+            const prompts = getSavedPrompts();
+
+            if (prompts.length === 0) {
+                tableEl.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; background: rgba(139, 92, 246, 0.05); border: 2px dashed rgba(139, 92, 246, 0.3); border-radius: 10px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">📭</div>
+                        <div style="font-size: 16px; color: #a78bfa; margin-bottom: 8px; font-weight: bold;">No Saved Prompts Yet</div>
+                        <div style="font-size: 14px; color: rgba(254, 243, 199, 0.7);">
+                            Generate a prompt and click <strong style="color: #fbbf24;">💾 Save as New</strong>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: rgba(139, 92, 246, 0.1); border-bottom: 2px solid rgba(139, 92, 246, 0.3);">
+                                <th style="padding: 12px; text-align: left; color: #a78bfa;">Name</th>
+                                <th style="padding: 12px; text-align: left; color: #a78bfa;">Database</th>
+                                <th style="padding: 12px; text-align: center; color: #a78bfa;">Tables</th>
+                                <th style="padding: 12px; text-align: center; color: #a78bfa;">Type</th>
+                                <th style="padding: 12px; text-align: center; color: #a78bfa;">Size</th>
+                                <th style="padding: 12px; text-align: left; color: #a78bfa;">Date</th>
+                                <th style="padding: 12px; text-align: center; color: #a78bfa;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+            prompts.forEach(p => {
+                const date = new Date(p.createdAt).toLocaleString();
+                const archIcon = p.architecture === 'Single-PHP' ? '📄' : p.architecture === 'Double-API' ? '🔄' : '📝';
+                
+                html += `
+                    <tr style="border-bottom: 1px solid rgba(139, 92, 246, 0.1);" onmouseover="this.style.background='rgba(139, 92, 246, 0.1)'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 12px; color: #fef3c7;"><strong>${p.name}</strong></td>
+                        <td style="padding: 12px; color: rgba(254, 243, 199, 0.7); font-family: monospace; font-size: 13px;">${p.database}</td>
+                        <td style="padding: 12px; text-align: center; color: #a78bfa; font-weight: bold;">${p.tablesCount}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <span style="background: rgba(139, 92, 246, 0.2); padding: 4px 10px; border-radius: 6px; font-size: 12px; color: #a78bfa;">
+                                ${archIcon} ${p.architecture}
+                            </span>
+                        </td>
+                        <td style="padding: 12px; text-align: center; color: rgba(254, 243, 199, 0.7); font-size: 13px;">${formatBytes(p.size)}</td>
+                        <td style="padding: 12px; color: rgba(254, 243, 199, 0.7); font-size: 13px;">${date}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <div style="display: flex; gap: 5px; justify-content: center;">
+                                <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);" onclick="editPrompt('${p.id}')">
+                                    ✏️ Edit
+                                </button>
+                                <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);" onclick="copyPromptById('${p.id}')">
+                                    📋
+                                </button>
+                                <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="deletePrompt('${p.id}')">
+                                    🗑️
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 15px; padding: 10px; background: rgba(139, 92, 246, 0.05); border-radius: 6px; text-align: center; font-size: 13px; color: rgba(254, 243, 199, 0.7);">
+                    📊 Total: <strong style="color: #a78bfa;">${prompts.length}</strong> saved prompt${prompts.length !== 1 ? 's' : ''}
+                </div>
+            `;
+
+            tableEl.innerHTML = html;
+        }
+
+        // Edit prompt (load into generator)
+        function editPrompt(promptId) {
+            const prompts = getSavedPrompts();
+            const p = prompts.find(pr => pr.id === promptId);
+            
+            if (!p) {
+                alert('❌ Prompt not found!');
+                return;
+            }
+
+            // Set edit mode
+            window.currentEditingPromptId = promptId;
+
+            // Show prompt in textarea
+            document.getElementById('promptGenOutput').value = p.prompt;
+            document.getElementById('promptGenOutputSection').style.display = 'block';
+
+            // Show edit indicator
+            document.getElementById('editingIndicator').style.display = 'block';
+            document.getElementById('editingPromptName').textContent = p.name;
+
+            // Show Save Edit button
+            document.getElementById('saveEditBtn').style.display = 'inline-flex';
+
+            // Scroll to prompt
+            setTimeout(() => {
+                document.getElementById('promptGenOutputSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+
+            showCustomToast(`✏️ Editing: "${p.name}"`, 'info', 2000);
+        }
+
+        // Copy prompt by ID
+        async function copyPromptById(promptId) {
+            const prompts = getSavedPrompts();
+            const p = prompts.find(pr => pr.id === promptId);
+            
+            if (!p) {
+                alert('❌ Prompt not found!');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(p.prompt);
+                showCustomToast(`✅ Copied!\n"${p.name}"`, 'success', 2000);
+            } catch (err) {
+                alert('❌ Copy failed!');
+            }
+        }
+
+        // Delete prompt
+        function deletePrompt(promptId) {
+            const prompts = getSavedPrompts();
+            const p = prompts.find(pr => pr.id === promptId);
+            
+            if (!p) {
+                alert('❌ Prompt not found!');
+                return;
+            }
+
+            if (!confirm(`🗑️ Delete Prompt\n\n"${p.name}"\n\nAre you sure?`)) {
+                return;
+            }
+
+            const updated = prompts.filter(pr => pr.id !== promptId);
+            savePromptsToStorage(updated);
+            
+            showCustomToast(`✅ Deleted!\n"${p.name}"`, 'success', 2000);
+            loadSavedPromptsTable();
+
+            // Clear edit mode if deleting current editing prompt
+            if (window.currentEditingPromptId === promptId) {
+                window.currentEditingPromptId = null;
+                document.getElementById('saveEditBtn').style.display = 'none';
+                document.getElementById('editingIndicator').style.display = 'none';
+            }
+        }
+
+        // Clear all prompts
+        function clearAllPrompts() {
+            const prompts = getSavedPrompts();
+            
+            if (prompts.length === 0) {
+                alert('ℹ️ No prompts to clear.');
+                return;
+            }
+
+            if (!confirm(`🗑️ Clear All\n\nDelete ${prompts.length} prompt(s)?\n\nThis cannot be undone!`)) {
+                return;
+            }
+
+            localStorage.removeItem(SAVED_PROMPTS_KEY);
+            showCustomToast(`✅ All cleared! (${prompts.length} deleted)`, 'success', 3000);
+            loadSavedPromptsTable();
+        }
+
+        // Export prompts
+        async function exportSavedPrompts() {
+            const prompts = getSavedPrompts();
+            
+            if (prompts.length === 0) {
+                alert('❌ No prompts to export!');
+                return;
+            }
+
+            const exportData = {
+                exported_at: new Date().toLocaleString(),
+                total: prompts.length,
+                prompts: prompts
+            };
+
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            const filename = `ai_prompts_backup_${timestamp}.json`;
+            const jsonData = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonData], { type: 'application/json' });
+
+            if ('showSaveFilePicker' in window) {
+                try {
+                    const options = {
+                        suggestedName: filename,
+                        types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }]
+                    };
+
+                    const fileHandle = await window.showSaveFilePicker(options);
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+
+                    showCustomToast(`✅ Exported!\n📁 ${filename}\n📊 ${prompts.length} prompts`, 'success', 3000);
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        downloadFile(blob, filename);
+                        showCustomToast(`✅ Exported!\n📁 ${filename}`, 'success', 3000);
+                    }
+                }
+            } else {
+                downloadFile(blob, filename);
+                showCustomToast(`✅ Exported!\n📁 ${filename}`, 'success', 3000);
+            }
+        }
+
+        // Import prompts
+        async function importSavedPrompts() {
+            if ('showOpenFilePicker' in window) {
+                try {
+                    const options = {
+                        types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }],
+                        multiple: false
+                    };
+
+                    const [fileHandle] = await window.showOpenFilePicker(options);
+                    const file = await fileHandle.getFile();
+                    await processImportFile(file);
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        alert(`❌ Error: ${error.message}`);
+                    }
+                }
+            } else {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (file) await processImportFile(file);
+                };
+                input.click();
+            }
+        }
+
+        // Process import file
+        async function processImportFile(file) {
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+
+                if (!data.prompts || !Array.isArray(data.prompts)) {
+                    alert('❌ Invalid file format!');
+                    return;
+                }
+
+                if (!confirm(`📥 Import ${data.prompts.length} prompts?\n\nFrom: ${file.name}\n\nThis will MERGE with existing prompts.`)) {
+                    return;
+                }
+
+                let current = getSavedPrompts();
+                let added = 0, updated = 0;
+
+                data.prompts.forEach(imported => {
+                    const existingIndex = current.findIndex(p => p.id === imported.id);
+                    if (existingIndex !== -1) {
+                        current[existingIndex] = imported;
+                        updated++;
+                    } else {
+                        current.push(imported);
+                        added++;
+                    }
+                });
+
+                savePromptsToStorage(current);
+                loadSavedPromptsTable();
+
+                showCustomToast(`✅ Import complete!\n➕ ${added} added\n✏️ ${updated} updated`, 'success', 3000);
+            } catch (error) {
+                alert(`❌ Import failed: ${error.message}`);
+            }
         }
 
         // Select app type (visual feedback)
@@ -12693,6 +13129,7 @@ You can now use this DESTINATION database connection!
     </script>
 </body>
 </html>
+
 
 
 
