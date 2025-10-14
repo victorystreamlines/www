@@ -4871,13 +4871,16 @@ OVERVIEW:
                                 migrationLog.push(`  ⚠️ Complete SQL failed, trying statement by statement...`);
                                 console.warn('Complete SQL failed:', execResult.message);
                                 
-                                // Split into individual statements
-                                const statements = sql.split(/;\s*\n/).filter(s => {
-                                    const trimmed = s.trim();
-                                    return trimmed.length > 0 && 
-                                           !trimmed.startsWith('--') && 
-                                           !trimmed.match(/^--.*/);
-                                });
+                                // Remove comment lines then split
+                                const sqlWithoutComments = sql
+                                    .split('\n')
+                                    .filter(line => !line.trim().startsWith('--'))
+                                    .join('\n');
+                                
+                                const statements = sqlWithoutComments
+                                    .split(';')
+                                    .map(s => s.trim())
+                                    .filter(s => s.length > 10);
 
                                 migrationLog.push(`  - Found ${statements.length} statements to execute`);
 
@@ -7629,17 +7632,27 @@ You can now use these credentials to build your application!
                 // Step 3: Execute SQL in same database
                 console.log('Step 3: Creating duplicate table:', newName);
                 
-                // Split and execute statements
-                const statements = modifiedSQL.split(/;\s*\n/).filter(s => {
-                    const trimmed = s.trim();
-                    return trimmed.length > 0 && !trimmed.startsWith('--');
-                });
+                // Remove comment lines then split
+                const sqlWithoutComments = modifiedSQL
+                    .split('\n')
+                    .filter(line => !line.trim().startsWith('--'))
+                    .join('\n');
+                
+                const statements = sqlWithoutComments
+                    .split(';')
+                    .map(s => s.trim())
+                    .filter(s => s.length > 10);
 
                 console.log(`Found ${statements.length} statements to execute`);
 
-                for (const statement of statements) {
-                    const trimmed = statement.trim();
+                for (let i = 0; i < statements.length; i++) {
+                    const trimmed = statements[i].trim();
                     if (!trimmed) continue;
+
+                    const finalStmt = trimmed.endsWith(';') ? trimmed : trimmed + ';';
+                    const isInsert = finalStmt.toUpperCase().includes('INSERT INTO');
+                    
+                    console.log(`📝 Statement ${i + 1}: ${finalStmt.substring(0, 30)}... (${finalStmt.length} chars, INSERT: ${isInsert})`);
 
                     const execResult = await apiRequest('execute_sql', {
                         db_host: sourceConn.host,
@@ -7647,11 +7660,13 @@ You can now use these credentials to build your application!
                         db_user: sourceConn.username,
                         db_pass: sourceConn.password,
                         db_port: sourceConn.port || '3306',
-                        sql_query: trimmed.endsWith(';') ? trimmed : trimmed + ';'
+                        sql_query: finalStmt
                     });
 
                     if (!execResult.success) {
-                        console.error('Statement failed:', execResult.message);
+                        console.error(`❌ Statement ${i + 1} failed:`, execResult.message);
+                    } else {
+                        console.log(`✅ Statement ${i + 1} success!`);
                     }
                 }
 
@@ -7983,15 +7998,36 @@ You can now use these credentials to build your application!
                 console.log('📥 Step 2: Executing SQL on destination database');
                 loadingDiv.querySelector('div:nth-child(2)').textContent = 'Step 2: Creating table in destination...';
                 
+                // Debug: Show raw SQL
+                console.log('🔍 RAW SQL LENGTH:', sqlResult.sql.length, 'bytes');
+                console.log('🔍 RAW SQL PREVIEW (first 500 chars):', sqlResult.sql.substring(0, 500));
+                console.log('🔍 RAW SQL PREVIEW (last 500 chars):', sqlResult.sql.substring(sqlResult.sql.length - 500));
+                
+                // Count semicolons in SQL
+                const semicolonCount = (sqlResult.sql.match(/;/g) || []).length;
+                console.log('🔍 Total semicolons in SQL:', semicolonCount);
+                
                 // Split SQL into individual statements (DROP, CREATE, INSERT)
-                const sqlStatements = sqlResult.sql.split(/;\s*\n/).filter(s => {
-                    const trimmed = s.trim();
-                    return trimmed.length > 0 && 
-                           !trimmed.startsWith('--') &&
-                           !trimmed.match(/^--/);
-                });
+                // First remove all comment lines, then split
+                const sqlWithoutComments = sqlResult.sql
+                    .split('\n')
+                    .filter(line => !line.trim().startsWith('--'))
+                    .join('\n');
+                
+                console.log('🔍 SQL after removing comments (first 400):', sqlWithoutComments.substring(0, 400));
+                console.log('🔍 SQL after removing comments (last 400):', sqlWithoutComments.substring(sqlWithoutComments.length - 400));
+                
+                // Now split by semicolon
+                const sqlStatements = sqlWithoutComments
+                    .split(';')
+                    .map(s => s.trim())
+                    .filter(s => s.length > 10); // Minimum 10 chars to be valid
 
-                console.log(`Found ${sqlStatements.length} SQL statements to execute`);
+                console.log(`🔍 Found ${sqlStatements.length} SQL statements AFTER comment removal`);
+                console.log('🔍 Statement types:', sqlStatements.map((s, i) => {
+                    const type = s.substring(0, 30);
+                    return `${i + 1}: ${type}...`;
+                }));
 
                 // Execute each statement individually
                 let executedStatements = 0;
@@ -8001,7 +8037,21 @@ You can now use these credentials to build your application!
 
                     const finalStatement = statement.endsWith(';') ? statement : statement + ';';
                     
-                    console.log(`Executing statement ${i + 1}/${sqlStatements.length}...`);
+                    // Show statement type and length
+                    const stmtType = finalStatement.substring(0, 30).trim();
+                    const isInsert = finalStatement.toUpperCase().includes('INSERT INTO');
+                    
+                    console.log(`\n📝 Executing statement ${i + 1}/${sqlStatements.length}:`);
+                    console.log(`   Type: ${stmtType}...`);
+                    console.log(`   Length: ${finalStatement.length} chars`);
+                    console.log(`   Is INSERT: ${isInsert}`);
+                    
+                    if (isInsert) {
+                        // Count rows in this INSERT
+                        const valueMatches = finalStatement.match(/\([^)]+\)/g);
+                        const rowsInInsert = valueMatches ? valueMatches.length : 0;
+                        console.log(`   📊 Contains ${rowsInInsert} rows of data`);
+                    }
 
                     const executeResult = await apiRequest('execute_sql', {
                         db_host: destConn.host,
@@ -8013,11 +8063,12 @@ You can now use these credentials to build your application!
                     });
 
                     if (!executeResult.success) {
-                        console.error(`Statement ${i + 1} failed:`, executeResult.message);
+                        console.error(`❌ Statement ${i + 1} FAILED:`, executeResult.message);
+                        console.error(`   SQL Preview:`, finalStatement.substring(0, 200) + '...');
                         // Continue with other statements, log but don't fail completely
                     } else {
                         executedStatements++;
-                        console.log(`✅ Statement ${i + 1} executed successfully`);
+                        console.log(`✅ Statement ${i + 1} executed successfully!`);
                     }
                 }
 
