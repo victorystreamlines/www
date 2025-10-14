@@ -2585,8 +2585,11 @@ PHASE: Hostinger Edition
                                     <div style="margin-bottom: 8px;">
                                         <strong style="color: #fbbf24;">🖱️ Hover + Right-click name:</strong> Rename (Enter to save, Esc to cancel)
                                     </div>
+                                    <div style="margin-bottom: 8px; background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.3);">
+                                        <strong style="color: #86efac;">✨ Multi-Selection:</strong> Click multiple tables (they turn orange), then drag any of them → All selected tables migrate together!
+                                    </div>
                                     <div style="font-size: 11px; opacity: 0.8; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(245, 158, 11, 0.2);">
-                                        💡 Header: ℹ️ Info (table) | 🗄️ DB-Info (database credentials) | Card: 4 action buttons | Bottom: Drag options
+                                        💡 Header: ℹ️ Info (table) | 🗄️ DB-Info (database credentials) | Multi-select + drag = batch migration
                                     </div>
                                 </div>
                             </div>
@@ -7738,6 +7741,7 @@ You can now use these credentials to build your application!
         // ========================================
         
         let draggedTableName = null;
+        let draggedTables = []; // NEW: Array of tables to transfer (for multi-selection)
         let draggedElement = null;
         let dragIncludeData = false; // Track if dragging with data or structure only
 
@@ -7746,28 +7750,48 @@ You can now use these credentials to build your application!
             console.log('=== DRAG START ===');
             console.log('Table:', tableName);
             console.log('Include Data:', includeData);
+            console.log('Currently selected tables:', Array.from(selectedMigrationTables));
             
-            draggedTableName = tableName;
+            // Check if dragged table is part of multi-selection
+            let tablesToDrag = [];
+            
+            if (selectedMigrationTables.has(tableName) && selectedMigrationTables.size > 1) {
+                // Multi-selection mode: drag all selected tables
+                tablesToDrag = Array.from(selectedMigrationTables);
+                console.log('🎯 MULTI-SELECTION MODE: Dragging', tablesToDrag.length, 'tables');
+            } else {
+                // Single table mode
+                tablesToDrag = [tableName];
+                console.log('🎯 SINGLE TABLE MODE: Dragging 1 table');
+            }
+            
+            draggedTableName = tableName; // Keep for compatibility
+            draggedTables = tablesToDrag; // NEW: Array of tables
             draggedElement = event.target;
-            dragIncludeData = includeData; // Store whether to include data
+            dragIncludeData = includeData;
             
-            // Store in event.target as well for persistence
+            // Store in event data
             event.target.setAttribute('data-include-data', includeData ? 'true' : 'false');
             
+            console.log('✅ Set draggedTables to:', draggedTables);
             console.log('✅ Set dragIncludeData to:', dragIncludeData);
-            console.log('✅ Set data-include-data attribute to:', includeData ? 'true' : 'false');
             
             event.target.classList.add('dragging');
             event.dataTransfer.effectAllowed = 'move';
             event.dataTransfer.setData('text/plain', JSON.stringify({
-                table: tableName,
+                tables: tablesToDrag,
                 includeData: includeData
             }));
             
-            // Also set a simple text for debugging
-            event.dataTransfer.setData('application/x-include-data', includeData ? 'true' : 'false');
+            // Add dragging class to all selected tables
+            tablesToDrag.forEach(tName => {
+                const card = document.querySelector(`.migration-table-box[data-table="${tName}"]`);
+                if (card) {
+                    card.classList.add('dragging');
+                }
+            });
             
-            // Create custom drag image (ghost element)
+            // Create custom drag image
             const dragImage = event.target.cloneNode(true);
             dragImage.style.cssText = `
                 position: absolute;
@@ -7782,24 +7806,37 @@ You can now use these credentials to build your application!
             setTimeout(() => document.body.removeChild(dragImage), 0);
             
             // Visual feedback
-            console.log('🖱️ Started dragging table:', tableName);
+            console.log(`🖱️ Started dragging ${tablesToDrag.length} table(s)`);
             
-            // Show hint message with mode indicator
+            // Show hint message with mode and count
             const hint = document.createElement('div');
             hint.id = 'dragHint';
             const bgColor = includeData ? 'rgba(16, 185, 129, 0.95)' : 'rgba(251, 191, 36, 0.95)';
             const modeText = includeData ? '📦 Structure + Data' : '🏗️ Structure Only';
-            const modeColor = 'white';
             const borderColor = includeData ? '#22c55e' : '#fbbf24';
             
-            hint.style.cssText = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: ${bgColor}; color: ${modeColor}; padding: 12px 25px; border-radius: 10px; font-size: 14px; font-weight: bold; z-index: 9999; box-shadow: 0 5px 20px rgba(0,0,0,0.5); border: 2px solid ${borderColor}; animation: slideDown 0.3s ease-out;`;
-            hint.innerHTML = `🖱️ Dragging: <strong>${tableName}</strong><br><span style="font-size: 12px; opacity: 0.9;">${modeText}</span>`;
+            const tableNames = tablesToDrag.length > 1 
+                ? `${tablesToDrag.length} tables` 
+                : tableName;
+            
+            hint.style.cssText = `position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: ${bgColor}; color: white; padding: 15px 30px; border-radius: 10px; font-size: 14px; font-weight: bold; z-index: 9999; box-shadow: 0 5px 20px rgba(0,0,0,0.5); border: 2px solid ${borderColor}; animation: slideDown 0.3s ease-out;`;
+            hint.innerHTML = `🖱️ Dragging: <strong>${tableNames}</strong><br><span style="font-size: 12px; opacity: 0.9;">${modeText}</span>`;
             hint.innerHTML += '<style>@keyframes slideDown { from { top: -50px; opacity: 0; } to { top: 20px; opacity: 1; } }</style>';
             document.body.appendChild(hint);
         }
 
         // Handle drag end
         function handleDragEnd(event) {
+            // Remove dragging class from all dragged tables
+            if (draggedTables && draggedTables.length > 0) {
+                draggedTables.forEach(tName => {
+                    const card = document.querySelector(`.migration-table-box[data-table="${tName}"]`);
+                    if (card) {
+                        card.classList.remove('dragging');
+                    }
+                });
+            }
+            
             event.target.classList.remove('dragging');
             
             // Remove hint message
@@ -7851,8 +7888,8 @@ You can now use these credentials to build your application!
                 dropZone.classList.remove('drag-over');
             }
 
-            if (!draggedTableName) {
-                console.error('❌ No table being dragged');
+            if (!draggedTables || draggedTables.length === 0) {
+                console.error('❌ No tables being dragged');
                 return;
             }
 
@@ -7861,16 +7898,24 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            console.log('📥 Dropped table:', draggedTableName);
+            console.log('📥 Dropped tables:', draggedTables);
+            console.log('📊 Total tables to migrate:', draggedTables.length);
+            console.log('📊 Include data:', dragIncludeData);
 
             // Show loading indicator immediately (no confirmation for better UX)
             const loadingDiv = document.createElement('div');
             loadingDiv.id = 'dragMigrationLoading';
             loadingDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(34, 197, 94, 0.2) 100%); color: #22c55e; padding: 40px 60px; border-radius: 15px; border: 3px solid #22c55e; z-index: 10000; text-align: center; box-shadow: 0 0 50px rgba(34, 197, 94, 0.5); animation: fadeInScale 0.3s ease-out;';
+            const modeText = dragIncludeData ? 'Structure + Data' : 'Structure Only';
+            const tableCountText = draggedTables.length > 1 
+                ? `${draggedTables.length} Tables` 
+                : draggedTables[0];
+            
             loadingDiv.innerHTML = `
                 <div style="font-size: 56px; margin-bottom: 20px; animation: spin 2s linear infinite;">🔄</div>
-                <div style="font-size: 20px; margin-bottom: 12px; font-weight: bold;">Moving Table...</div>
-                <div style="font-size: 16px; opacity: 0.8; color: #fbbf24;">${draggedTableName}</div>
+                <div style="font-size: 20px; margin-bottom: 12px; font-weight: bold;">Migrating ${tableCountText}...</div>
+                <div style="font-size: 14px; opacity: 0.8; color: #fbbf24;">${modeText}</div>
+                <div id="migrationProgress" style="font-size: 13px; opacity: 0.7; margin-top: 10px;">Preparing...</div>
                 <div style="font-size: 12px; opacity: 0.6; margin-top: 15px;">From Source → To Destination</div>
                 <style>
                     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -7916,195 +7961,139 @@ You can now use these credentials to build your application!
                     port: destConn.port
                 });
 
-                // Step 1: Get table structure (with or without data based on drag mode)
+                // Process all tables in draggedTables array
                 console.log('=== INSIDE handleDrop ===');
                 console.log('🔍 Current dragIncludeData value:', dragIncludeData);
-                console.log('🔍 Type of dragIncludeData:', typeof dragIncludeData);
-                
-                // Force to true for testing - REMOVE THIS AFTER DEBUGGING
-                // dragIncludeData = true;
+                console.log('🔍 Tables to migrate:', draggedTables);
                 
                 const includeDataMode = dragIncludeData ? 'true' : 'false';
                 const modeText = dragIncludeData ? 'structure & data' : 'structure only';
                 
-                console.log(`📋 Step 1: Generating SQL for table (${modeText}):`, draggedTableName);
-                console.log(`📊 include_data parameter will be:`, includeDataMode);
-                console.log(`📊 Will send to Backend: include_data = "${includeDataMode}"`);
+                let successCount = 0;
+                let failCount = 0;
+                const failedTables = [];
                 
-                loadingDiv.querySelector('div:nth-child(2)').textContent = `Step 1: Copying table ${modeText}...`;
+                console.log(`📋 Starting migration of ${draggedTables.length} table(s) (${modeText})`);
                 
-                const sqlRequestData = {
-                    db_host: sourceConn.host,
-                    db_name: sourceConn.dbName,
-                    db_user: sourceConn.username,
-                    db_pass: sourceConn.password,
-                    db_port: sourceConn.port || '3306',
-                    table_name: draggedTableName,
-                    include_data: includeDataMode
-                };
-
-                console.log('📤 Sending SQL generation request:', {
-                    ...sqlRequestData,
-                    db_pass: '***hidden***',
-                    include_data: includeDataMode  // Show this clearly
-                });
-
-                const sqlResult = await apiRequest('generate_table_sql', sqlRequestData);
-
-                console.log('📥 SQL generation result:', {
-                    success: sqlResult.success,
-                    message: sqlResult.message,
-                    hasSql: !!sqlResult.sql,
-                    hasData: sqlResult.has_data,
-                    rowCount: sqlResult.row_count,
-                    sqlLength: sqlResult.sql_length
-                });
-
-                console.log('🔍 VERIFICATION:');
-                console.log('  - Requested include_data:', includeDataMode);
-                console.log('  - Backend returned has_data:', sqlResult.has_data);
-                console.log('  - Backend returned row_count:', sqlResult.row_count);
-
-                if (!sqlResult.success || !sqlResult.sql) {
-                    throw new Error(sqlResult.message || 'Failed to generate SQL');
-                }
-
-                // Verify data was included
-                if (dragIncludeData && sqlResult.row_count === 0) {
-                    console.warn('⚠️ Warning: Data requested but table appears to be empty (0 rows)');
-                    // Show alert for debugging
-                    if (confirm('⚠️ Table appears to be EMPTY (0 rows).\n\nContinue with structure only?')) {
-                        console.log('User chose to continue with structure only');
-                    } else {
-                        throw new Error('Migration cancelled - table is empty');
-                    }
-                } else if (dragIncludeData && sqlResult.row_count > 0) {
-                    console.log(`✅ Confirmed: SQL includes ${sqlResult.row_count} rows of data`);
-                    console.log(`✅ SQL length: ${sqlResult.sql_length} bytes`);
-                } else if (!dragIncludeData) {
-                    console.log('✅ Structure only mode - no data included (as intended)');
-                }
-                
-                // Additional check - does SQL contain INSERT?
-                const hasInsertStatements = sqlResult.sql.includes('INSERT INTO');
-                console.log('🔍 SQL contains INSERT statements:', hasInsertStatements);
-                
-                if (dragIncludeData && !hasInsertStatements) {
-                    console.error('❌ ERROR: Data was requested but SQL has NO INSERT statements!');
-                    console.error('This means Backend did not include data even though include_data=true was sent');
-                }
-
-                // Step 2: Execute SQL on destination
-                console.log('📥 Step 2: Executing SQL on destination database');
-                loadingDiv.querySelector('div:nth-child(2)').textContent = 'Step 2: Creating table in destination...';
-                
-                // Debug: Show raw SQL
-                console.log('🔍 RAW SQL LENGTH:', sqlResult.sql.length, 'bytes');
-                console.log('🔍 RAW SQL PREVIEW (first 500 chars):', sqlResult.sql.substring(0, 500));
-                console.log('🔍 RAW SQL PREVIEW (last 500 chars):', sqlResult.sql.substring(sqlResult.sql.length - 500));
-                
-                // Count semicolons in SQL
-                const semicolonCount = (sqlResult.sql.match(/;/g) || []).length;
-                console.log('🔍 Total semicolons in SQL:', semicolonCount);
-                
-                // Split SQL into individual statements (DROP, CREATE, INSERT)
-                // First remove all comment lines, then split
-                const sqlWithoutComments = sqlResult.sql
-                    .split('\n')
-                    .filter(line => !line.trim().startsWith('--'))
-                    .join('\n');
-                
-                console.log('🔍 SQL after removing comments (first 400):', sqlWithoutComments.substring(0, 400));
-                console.log('🔍 SQL after removing comments (last 400):', sqlWithoutComments.substring(sqlWithoutComments.length - 400));
-                
-                // Now split by semicolon
-                const sqlStatements = sqlWithoutComments
-                    .split(';')
-                    .map(s => s.trim())
-                    .filter(s => s.length > 10); // Minimum 10 chars to be valid
-
-                console.log(`🔍 Found ${sqlStatements.length} SQL statements AFTER comment removal`);
-                console.log('🔍 Statement types:', sqlStatements.map((s, i) => {
-                    const type = s.substring(0, 30);
-                    return `${i + 1}: ${type}...`;
-                }));
-
-                // Execute each statement individually
-                let executedStatements = 0;
-                for (let i = 0; i < sqlStatements.length; i++) {
-                    const statement = sqlStatements[i].trim();
-                    if (!statement) continue;
-
-                    const finalStatement = statement.endsWith(';') ? statement : statement + ';';
+                // Loop through each table
+                for (let tableIndex = 0; tableIndex < draggedTables.length; tableIndex++) {
+                    const currentTable = draggedTables[tableIndex];
                     
-                    // Show statement type and length
-                    const stmtType = finalStatement.substring(0, 30).trim();
-                    const isInsert = finalStatement.toUpperCase().includes('INSERT INTO');
+                    console.log(`\n${'='.repeat(60)}`);
+                    console.log(`📋 Processing table ${tableIndex + 1}/${draggedTables.length}: ${currentTable}`);
+                    console.log(`${'='.repeat(60)}`);
                     
-                    console.log(`\n📝 Executing statement ${i + 1}/${sqlStatements.length}:`);
-                    console.log(`   Type: ${stmtType}...`);
-                    console.log(`   Length: ${finalStatement.length} chars`);
-                    console.log(`   Is INSERT: ${isInsert}`);
+                    // Update progress
+                    const progressEl = document.getElementById('migrationProgress');
+                    if (progressEl) {
+                        progressEl.textContent = `Table ${tableIndex + 1}/${draggedTables.length}: ${currentTable}`;
+                    }
                     
-                    if (isInsert) {
-                        // Count rows in this INSERT
-                        const valueMatches = finalStatement.match(/\([^)]+\)/g);
-                        const rowsInInsert = valueMatches ? valueMatches.length : 0;
-                        console.log(`   📊 Contains ${rowsInInsert} rows of data`);
-                    }
+                    try {
+                        // Step 1: Generate SQL for current table
+                        console.log(`📋 Step 1: Generating SQL for ${currentTable}`);
+                        
+                        const sqlRequestData = {
+                            db_host: sourceConn.host,
+                            db_name: sourceConn.dbName,
+                            db_user: sourceConn.username,
+                            db_pass: sourceConn.password,
+                            db_port: sourceConn.port || '3306',
+                            table_name: currentTable,
+                            include_data: includeDataMode
+                        };
 
-                    const executeResult = await apiRequest('execute_sql', {
-                        db_host: destConn.host,
-                        db_name: destConn.dbName,
-                        db_user: destConn.username,
-                        db_pass: destConn.password,
-                        db_port: destConn.port || '3306',
-                        sql_query: finalStatement
-                    });
+                        const sqlResult = await apiRequest('generate_table_sql', sqlRequestData);
 
-                    if (!executeResult.success) {
-                        console.error(`❌ Statement ${i + 1} FAILED:`, executeResult.message);
-                        console.error(`   SQL Preview:`, finalStatement.substring(0, 200) + '...');
-                        // Continue with other statements, log but don't fail completely
-                    } else {
-                        executedStatements++;
-                        console.log(`✅ Statement ${i + 1} executed successfully!`);
-                    }
-                }
+                        if (!sqlResult.success || !sqlResult.sql) {
+                            throw new Error(sqlResult.message || 'Failed to generate SQL');
+                        }
 
-                if (executedStatements === 0) {
-                    throw new Error('All SQL statements failed to execute');
-                }
-
-                console.log(`✅ Successfully executed ${executedStatements}/${sqlStatements.length} statements`);
-
-                // Step 3: Delete table from source
-                console.log('🗑️ Step 3: Deleting table from source database');
-                loadingDiv.querySelector('div:nth-child(2)').textContent = 'Step 3: Removing from source...';
+                        console.log(`✅ SQL generated: ${sqlResult.row_count || 0} rows, ${sqlResult.sql.length} bytes`);
                 
-                const deleteRequestData = {
-                    db_host: sourceConn.host,
-                    db_name: sourceConn.dbName,
-                    db_user: sourceConn.username,
-                    db_pass: sourceConn.password,
-                    db_port: sourceConn.port || '3306',
-                    table_name: draggedTableName
-                };
+                        // Step 2: Execute SQL on destination
+                        console.log(`📥 Step 2: Executing SQL on destination for ${currentTable}`);
+                        
+                        // Remove comment lines then split
+                        const sqlWithoutComments = sqlResult.sql
+                            .split('\n')
+                            .filter(line => !line.trim().startsWith('--'))
+                            .join('\n');
+                        
+                        const sqlStatements = sqlWithoutComments
+                            .split(';')
+                            .map(s => s.trim())
+                            .filter(s => s.length > 10);
 
-                console.log('📤 Sending delete table request');
+                        console.log(`   Found ${sqlStatements.length} statements`);
 
-                const deleteResult = await apiRequest('delete_table', deleteRequestData);
+                        // Execute each statement
+                        for (let i = 0; i < sqlStatements.length; i++) {
+                            const statement = sqlStatements[i].trim();
+                            if (!statement) continue;
 
-                console.log('📥 Delete table result:', {
-                    success: deleteResult.success,
-                    message: deleteResult.message
-                });
+                            const finalStatement = statement.endsWith(';') ? statement : statement + ';';
+                            
+                            const executeResult = await apiRequest('execute_sql', {
+                                db_host: destConn.host,
+                                db_name: destConn.dbName,
+                                db_user: destConn.username,
+                                db_pass: destConn.password,
+                                db_port: destConn.port || '3306',
+                                sql_query: finalStatement
+                            });
 
-                if (!deleteResult.success) {
-                    console.warn('⚠️ Warning: Table copied but not deleted from source:', deleteResult.message);
+                            if (!executeResult.success) {
+                                console.error(`   ❌ Statement ${i + 1} failed:`, executeResult.message);
+                            } else {
+                                console.log(`   ✅ Statement ${i + 1} executed`);
+                            }
+                        }
+
+                        // Step 3: Delete table from source
+                        console.log(`🗑️ Step 3: Deleting ${currentTable} from source database`);
+                        
+                        console.log(`📤 Sending delete table request for ${currentTable}`);
+
+                        const deleteRequestData = {
+                            db_host: sourceConn.host,
+                            db_name: sourceConn.dbName,
+                            db_user: sourceConn.username,
+                            db_pass: sourceConn.password,
+                            db_port: sourceConn.port || '3306',
+                            table_name: currentTable
+                        };
+
+                        const deleteResult = await apiRequest('delete_table', deleteRequestData);
+
+                        console.log(`📥 Delete table result for ${currentTable}:`, deleteResult.message);
+
+                        if (!deleteResult.success) {
+                            console.warn(`⚠️ ${currentTable} copied but not deleted from source:`, deleteResult.message);
+                        }
+
+                        // Success for this table!
+                        successCount++;
+                        console.log(`✅ Table ${tableIndex + 1}/${draggedTables.length} (${currentTable}) migrated successfully!`);
+                        
+                    } catch (tableError) {
+                        // Error for this specific table
+                        failCount++;
+                        failedTables.push({ table: currentTable, error: tableError.message });
+                        console.error(`❌ Failed to migrate ${currentTable}:`, tableError.message);
+                    }
+                } // End of tables loop
+                
+                console.log(`\n${'='.repeat(60)}`);
+                console.log(`📊 MIGRATION SUMMARY:`);
+                console.log(`   ✅ Successful: ${successCount}/${draggedTables.length}`);
+                console.log(`   ❌ Failed: ${failCount}/${draggedTables.length}`);
+                if (failedTables.length > 0) {
+                    console.log(`   Failed tables:`, failedTables);
                 }
+                console.log(`${'='.repeat(60)}\n`);
 
-                // Success!
+                // Remove loading
                 document.body.removeChild(loadingDiv);
                 
                 // Show success message with animation
@@ -8112,19 +8101,24 @@ You can now use these credentials to build your application!
                 const modeIcon = dragIncludeData ? '📦' : '🏗️';
                 const modeLabel = dragIncludeData ? 'Structure + Data' : 'Structure Only';
                 const modeColor = dragIncludeData ? '#22c55e' : '#fbbf24';
-                const recordsInfo = (dragIncludeData && sqlResult.row_count > 0) 
-                    ? `<div style="font-size: 12px; opacity: 0.8; margin-top: 8px;">📊 ${sqlResult.row_count.toLocaleString()} record(s) copied</div>` 
+                
+                const tableText = draggedTables.length > 1 
+                    ? `${successCount} Table(s) Migrated`
+                    : `Table Moved: ${draggedTables[0]}`;
+                
+                const failInfo = failCount > 0 
+                    ? `<div style="font-size: 12px; opacity: 0.8; margin-top: 8px; color: #fca5a5;">⚠️ ${failCount} table(s) failed</div>` 
                     : '';
                 
                 successDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, rgba(34, 197, 94, 0.98) 0%, rgba(16, 185, 129, 0.98) 100%); color: white; padding: 40px 60px; border-radius: 15px; border: 3px solid #86efac; z-index: 10000; text-align: center; box-shadow: 0 0 50px rgba(34, 197, 94, 0.7); animation: bounceIn 0.5s ease-out;';
                 successDiv.innerHTML = `
                     <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
-                    <div style="font-size: 22px; margin-bottom: 12px; font-weight: bold;">Table Moved Successfully!</div>
-                    <div style="font-size: 16px; opacity: 0.95; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px; display: inline-block;">${draggedTableName}</div>
+                    <div style="font-size: 22px; margin-bottom: 12px; font-weight: bold;">${tableText}</div>
+                    <div style="font-size: 14px; opacity: 0.95; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px; display: inline-block; margin: 5px 0;">${successCount} of ${draggedTables.length} successful</div>
                     <div style="font-size: 13px; opacity: 0.9; margin-top: 10px; background: rgba(0,0,0,0.3); padding: 8px 14px; border-radius: 6px; display: inline-block; border: 1px solid ${modeColor};">
                         <span style="color: ${modeColor}; font-size: 16px;">${modeIcon}</span> <strong>${modeLabel}</strong>
                     </div>
-                    ${recordsInfo}
+                    ${failInfo}
                     <div style="font-size: 13px; opacity: 0.8; margin-top: 15px;">📤 Removed from source • 📥 Added to destination</div>
                     <style>
                         @keyframes bounceIn {
