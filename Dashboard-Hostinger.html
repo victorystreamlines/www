@@ -1281,31 +1281,152 @@ PHASE: Hostinger Edition
             }
         }
 
-        /* Deselect button */
-        .deselect-btn {
-            display: none;
-            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        /* Connection state indicator */
+        .connection-state-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 12px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .connection-state-badge.connected {
+            background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
             color: white;
-            border: 1px solid #ef4444;
-            padding: 8px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+            box-shadow: 0 2px 10px rgba(34, 197, 94, 0.4);
         }
 
-        .deselect-btn:hover {
-            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
+        .connection-state-badge.disconnected {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            box-shadow: 0 2px 10px rgba(239, 68, 68, 0.4);
         }
 
-        .deselect-btn.active {
+        /* Fade in animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Connect Toggle Button */
+        .connect-toggle-btn {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 2px solid;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .connect-toggle-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .connect-toggle-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        /* Disconnected State (Red) */
+        .connect-toggle-btn.disconnected {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            border-color: #ef4444;
+            box-shadow: 0 5px 20px rgba(220, 38, 38, 0.4);
+        }
+
+        .connect-toggle-btn.disconnected:hover {
+            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.6);
+        }
+
+        .connect-toggle-btn.disconnected .toggle-icon {
+            animation: disconnectPulse 2s ease-in-out infinite;
+        }
+
+        /* Connected State (Green) */
+        .connect-toggle-btn.connected {
+            background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+            color: white;
+            border-color: #86efac;
+            box-shadow: 0 5px 20px rgba(34, 197, 94, 0.4), 0 0 30px rgba(34, 197, 94, 0.3);
+            animation: connectedGlow 3s ease-in-out infinite;
+        }
+
+        .connect-toggle-btn.connected:hover {
+            background: linear-gradient(135deg, #16a34a 0%, #14532d 100%);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.6), 0 0 40px rgba(34, 197, 94, 0.5);
+        }
+
+        .connect-toggle-btn.connected .toggle-icon {
+            animation: connectedSpin 3s linear infinite;
+        }
+
+        .toggle-icon {
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        .toggle-text {
+            z-index: 1;
+            letter-spacing: 0.5px;
+        }
+
+        @keyframes disconnectPulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes connectedSpin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes connectedGlow {
+            0%, 100% {
+                box-shadow: 0 5px 20px rgba(34, 197, 94, 0.4), 0 0 30px rgba(34, 197, 94, 0.3);
+            }
+            50% {
+                box-shadow: 0 5px 25px rgba(34, 197, 94, 0.6), 0 0 45px rgba(34, 197, 94, 0.5);
+            }
         }
 
         /* Card header with button */
@@ -1520,7 +1641,10 @@ PHASE: Hostinger Edition
     <!-- Main Content -->
     <main class="main-content" id="mainContent">
         <div class="content-header">
-            <h1 class="page-title">Hostinger Database Control Panel</h1>
+            <h1 class="page-title">
+                Hostinger Database Control Panel
+                <span id="connectionStateBadge" class="connection-state-badge disconnected">🔴 Disconnected</span>
+            </h1>
             <button class="toggle-sidebar-btn" onclick="toggleSidebar()">☰ Menu</button>
         </div>
 
@@ -1532,9 +1656,9 @@ PHASE: Hostinger Edition
                         <span class="card-title-icon">🌐</span>
                         Configured Hostinger Connections
                     </h2>
-                    <button id="deselectDatabaseBtn" class="deselect-btn" onclick="deselectAllDatabases()">
-                        <span>✖️</span>
-                        <span>Deselect Database</span>
+                    <button id="connectToggleBtn" class="connect-toggle-btn disconnected" onclick="toggleHostingerConnection()">
+                        <span class="toggle-icon">🔌</span>
+                        <span class="toggle-text">Connect Hostinger Shared</span>
                     </button>
                 </div>
                 <div id="dashboardMessage"></div>
@@ -3176,10 +3300,12 @@ PHASE: Hostinger Edition
         const API_URL = 'http://localhost/Backend-Hostinger.php';
         const HOSTINGER_CONNECTIONS_KEY = 'hostinger_connections';
         const SELECTED_DATABASE_KEY = 'selected_database_id';
+        const CONNECTION_STATE_KEY = 'hostinger_connection_state'; // NEW: Track connection state
         let currentDatabase = null;
         let currentConnection = null;
         let columnCounter = 0;
         let selectedTemplate = null;
+        let isHostingerConnected = false; // NEW: Global connection state
 
         // Custom toast notification function
         function showCustomToast(message, type = 'success', duration = 3000) {
@@ -3277,6 +3403,9 @@ PHASE: Hostinger Edition
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            // Load connection state from localStorage
+            loadConnectionState();
+            
             loadDashboardConnections();
             loadHostingerConnectionsTable();
             addColumnRow(); // Add initial column row for table creation
@@ -3294,6 +3423,198 @@ PHASE: Hostinger Edition
                 }, 200);
             }, 100);
         });
+
+        // ========================================
+        // HOSTINGER CONNECTION TOGGLE SYSTEM
+        // ========================================
+
+        // Load connection state from localStorage
+        function loadConnectionState() {
+            const savedState = localStorage.getItem(CONNECTION_STATE_KEY);
+            isHostingerConnected = savedState === 'connected';
+            
+            console.log('🔌 Loaded connection state:', isHostingerConnected ? 'CONNECTED' : 'DISCONNECTED');
+            
+            updateConnectionToggleButton();
+        }
+
+        // Save connection state to localStorage
+        function saveConnectionState(connected) {
+            localStorage.setItem(CONNECTION_STATE_KEY, connected ? 'connected' : 'disconnected');
+            isHostingerConnected = connected;
+            console.log('💾 Saved connection state:', connected ? 'CONNECTED' : 'DISCONNECTED');
+        }
+
+        // Toggle Hostinger connection
+        function toggleHostingerConnection() {
+            const newState = !isHostingerConnected;
+            const connections = getHostingerConnections();
+            const dbCount = connections.length;
+            
+            if (newState) {
+                // CONNECTING
+                console.log('🟢 CONNECTING to all Hostinger databases...');
+                saveConnectionState(true);
+                updateConnectionToggleButton();
+                
+                // Show beautiful connection animation
+                showConnectionAnimation('connecting');
+                
+                // Load and display all connections
+                setTimeout(() => {
+                    loadDashboardConnections();
+                    
+                    const countMsg = dbCount > 0 ? `\n📊 ${dbCount} database${dbCount !== 1 ? 's' : ''} now accessible` : '';
+                    showCustomToast(`✅ Connected to Hostinger Shared!${countMsg}\nAll databases are now visible.`, 'success', 3500);
+                    
+                    // Play success sound effect (vibrate on mobile if supported)
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate([100, 50, 100]);
+                    }
+                }, 800);
+                
+            } else {
+                // DISCONNECTING
+                console.log('🔴 DISCONNECTING from all Hostinger databases...');
+                
+                // Confirm if databases are visible
+                if (dbCount > 0) {
+                    const confirmMsg = `🔴 Disconnect from Hostinger Shared?\n\n${dbCount} database${dbCount !== 1 ? 's' : ''} will be hidden.\n\nContinue?`;
+                    if (!confirm(confirmMsg)) {
+                        return; // User cancelled
+                    }
+                }
+                
+                saveConnectionState(false);
+                updateConnectionToggleButton();
+                
+                // Show disconnection animation
+                showConnectionAnimation('disconnecting');
+                
+                // Hide all connections
+                setTimeout(() => {
+                    loadDashboardConnections();
+                    showCustomToast('⚠️ Disconnected from Hostinger Shared!\nDatabases are now hidden for security.', 'warning', 3000);
+                    
+                    // Play warning sound effect
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate([200, 100, 200]);
+                    }
+                }, 800);
+            }
+        }
+
+        // Update connection toggle button appearance
+        function updateConnectionToggleButton() {
+            const btn = document.getElementById('connectToggleBtn');
+            const badge = document.getElementById('connectionStateBadge');
+            
+            if (!btn) return;
+
+            const icon = btn.querySelector('.toggle-icon');
+            const text = btn.querySelector('.toggle-text');
+            const connections = getHostingerConnections();
+            const dbCount = connections.length;
+
+            if (isHostingerConnected) {
+                // CONNECTED STATE (Green)
+                btn.classList.remove('disconnected');
+                btn.classList.add('connected');
+                icon.textContent = '🔗';
+                
+                // Show count if databases exist
+                if (dbCount > 0) {
+                    text.textContent = `Connected (${dbCount} DB${dbCount !== 1 ? 's' : ''})`;
+                } else {
+                    text.textContent = 'Connected to Hostinger';
+                }
+                
+                // Update badge in page title
+                if (badge) {
+                    badge.className = 'connection-state-badge connected';
+                    badge.textContent = dbCount > 0 ? `🟢 ${dbCount} DB${dbCount !== 1 ? 's' : ''}` : '🟢 Connected';
+                }
+            } else {
+                // DISCONNECTED STATE (Red)
+                btn.classList.remove('connected');
+                btn.classList.add('disconnected');
+                icon.textContent = '🔌';
+                text.textContent = 'Connect Hostinger Shared';
+                
+                // Update badge in page title
+                if (badge) {
+                    badge.className = 'connection-state-badge disconnected';
+                    badge.textContent = '🔴 Disconnected';
+                }
+            }
+        }
+
+        // Show connection/disconnection animation
+        function showConnectionAnimation(type) {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);';
+            
+            if (type === 'connecting') {
+                overlay.innerHTML = `
+                    <div style="text-align: center; animation: scaleIn 0.5s ease-out;">
+                        <div style="font-size: 80px; margin-bottom: 20px; animation: connectedSpin 2s linear infinite;">🔗</div>
+                        <div style="font-size: 28px; color: #22c55e; font-weight: bold; margin-bottom: 10px;">Connecting...</div>
+                        <div style="font-size: 16px; color: #86efac;">Establishing connection to Hostinger Shared</div>
+                        <div style="margin-top: 20px;">
+                            <div style="width: 200px; height: 6px; background: rgba(34, 197, 94, 0.3); border-radius: 10px; overflow: hidden;">
+                                <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #22c55e, #86efac); animation: loadingBar 0.8s ease-out;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <style>
+                        @keyframes scaleIn {
+                            from { transform: scale(0.5); opacity: 0; }
+                            to { transform: scale(1); opacity: 1; }
+                        }
+                        @keyframes loadingBar {
+                            from { transform: translateX(-100%); }
+                            to { transform: translateX(0); }
+                        }
+                    </style>
+                `;
+            } else {
+                overlay.innerHTML = `
+                    <div style="text-align: center; animation: scaleIn 0.5s ease-out;">
+                        <div style="font-size: 80px; margin-bottom: 20px; animation: disconnectPulse 1s ease-in-out infinite;">🔌</div>
+                        <div style="font-size: 28px; color: #ef4444; font-weight: bold; margin-bottom: 10px;">Disconnecting...</div>
+                        <div style="font-size: 16px; color: #fca5a5;">Closing connection to Hostinger Shared</div>
+                        <div style="margin-top: 20px;">
+                            <div style="width: 200px; height: 6px; background: rgba(239, 68, 68, 0.3); border-radius: 10px; overflow: hidden;">
+                                <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #ef4444, #fca5a5); animation: loadingBar 0.8s ease-out;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <style>
+                        @keyframes scaleIn {
+                            from { transform: scale(0.5); opacity: 0; }
+                            to { transform: scale(1); opacity: 1; }
+                        }
+                        @keyframes loadingBar {
+                            from { transform: translateX(-100%); }
+                            to { transform: translateX(0); }
+                        }
+                    </style>
+                `;
+            }
+            
+            document.body.appendChild(overlay);
+            
+            // Remove after animation
+            setTimeout(() => {
+                overlay.style.animation = 'fadeOut 0.3s ease-out forwards';
+                overlay.innerHTML += '<style>@keyframes fadeOut { to { opacity: 0; } }</style>';
+                setTimeout(() => {
+                    if (overlay.parentNode) {
+                        document.body.removeChild(overlay);
+                    }
+                }, 300);
+            }, 800);
+        }
 
         // Sidebar toggle
         function toggleSidebar() {
@@ -3326,6 +3647,7 @@ PHASE: Hostinger Edition
 
             // Load data when entering certain sections
             if (sectionId === 'dashboard') {
+                updateConnectionToggleButton(); // Update button state
                 loadDashboardConnections();
             } else if (sectionId === 'settings') {
                 loadHostingerConnectionsTable();
@@ -5762,6 +6084,9 @@ ${errorDetails || 'Unknown error occurred'}
             
             loadHostingerConnectionsTable();
             loadDashboardConnections();
+            
+            // Update toggle button to reflect new count
+            updateConnectionToggleButton();
         }
 
         // Edit connection
@@ -5809,6 +6134,9 @@ ${errorDetails || 'Unknown error occurred'}
             
             loadHostingerConnectionsTable();
             loadDashboardConnections();
+            
+            // Update toggle button to reflect new count
+            updateConnectionToggleButton();
         }
 
         // Clear all connections
@@ -5825,6 +6153,9 @@ ${errorDetails || 'Unknown error occurred'}
             
             loadHostingerConnectionsTable();
             loadDashboardConnections();
+            
+            // Update toggle button to reflect no connections
+            updateConnectionToggleButton();
         }
 
         // Toggle password visibility in Settings
@@ -5958,12 +6289,39 @@ ${errorDetails || 'Unknown error occurred'}
             const listEl = document.getElementById('configuredConnectionsList');
             const connections = getHostingerConnections();
 
+            // CHECK CONNECTION STATE FIRST
+            if (!isHostingerConnected) {
+                // DISCONNECTED - Show security message
+                listEl.innerHTML = `
+                    <div style="text-align: center; padding: 60px 40px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%); border: 2px dashed #ef4444; border-radius: 15px; backdrop-filter: blur(10px);">
+                        <div style="font-size: 72px; margin-bottom: 20px; animation: disconnectPulse 2s ease-in-out infinite;">🔌</div>
+                        <div style="font-size: 24px; color: #fca5a5; font-weight: bold; margin-bottom: 15px;">Disconnected from Hostinger</div>
+                        <div style="font-size: 16px; color: rgba(254, 243, 199, 0.8); margin-bottom: 20px; line-height: 1.6;">
+                            Your databases are hidden for security.<br>
+                            Click <strong style="color: #fbbf24;">"Connect Hostinger Shared"</strong> button above to access your databases.
+                        </div>
+                        <div style="font-size: 14px; color: rgba(254, 243, 199, 0.6); background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3); max-width: 500px; margin: 0 auto;">
+                            🔒 <strong>Security Notice:</strong> Connections are locally stored and only visible when connected.
+                        </div>
+                    </div>
+                `;
+                console.log('🔴 Dashboard: DISCONNECTED - Hiding all databases');
+                return;
+            }
+
+            // CONNECTED - Show databases
+            console.log('🟢 Dashboard: CONNECTED - Displaying all databases');
+
             if (connections.length === 0) {
                 listEl.innerHTML = `
-                    <p style="color: rgba(254, 243, 199, 0.6); text-align: center; padding: 40px;">
-                        No Hostinger connections configured.<br>
-                        <span style="font-size: 14px;">Go to <strong>Hostinger Connections</strong> in the sidebar to add your first connection.</span>
-                    </p>`;
+                    <div style="text-align: center; padding: 60px 40px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(22, 163, 74, 0.1) 100%); border: 2px dashed #22c55e; border-radius: 15px; backdrop-filter: blur(10px);">
+                        <div style="font-size: 72px; margin-bottom: 20px;">🗄️</div>
+                        <div style="font-size: 20px; color: #86efac; font-weight: bold; margin-bottom: 10px;">No Connections Configured</div>
+                        <div style="font-size: 15px; color: rgba(254, 243, 199, 0.7);">
+                            Go to <strong style="color: #fbbf24;">Hostinger Connections</strong> in the sidebar to add your first connection.
+                        </div>
+                    </div>
+                `;
                 return;
             }
 
@@ -6000,7 +6358,7 @@ ${errorDetails || 'Unknown error occurred'}
 
             listEl.innerHTML = html;
 
-            // Auto-test all connections
+            // Auto-test all connections (only if connected)
             connections.forEach(conn => {
                 testConnection(conn.id);
             });
@@ -6009,6 +6367,46 @@ ${errorDetails || 'Unknown error occurred'}
             setTimeout(() => {
                 loadSelectedDatabase();
             }, 50);
+            
+            // Show connection stats
+            showConnectionStats(connections.length);
+        }
+
+        // Show connection statistics when connected
+        function showConnectionStats(count) {
+            const dashboardMessage = document.getElementById('dashboardMessage');
+            if (!dashboardMessage) return;
+            
+            if (!isHostingerConnected) {
+                // Clear message when disconnected
+                dashboardMessage.innerHTML = '';
+                return;
+            }
+            
+            if (count === 0) {
+                // No connections configured
+                dashboardMessage.innerHTML = '';
+                return;
+            }
+            
+            // Add subtle stats indicator
+            dashboardMessage.innerHTML = `
+                <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.05) 100%); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; animation: fadeIn 0.5s ease-out;">
+                    <div style="font-size: 36px;">✅</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 15px; color: #86efac; font-weight: bold; margin-bottom: 5px;">
+                            Successfully Connected to Hostinger Shared
+                        </div>
+                        <div style="font-size: 13px; color: rgba(254, 243, 199, 0.7);">
+                            📊 Displaying <strong style="color: #fbbf24;">${count}</strong> configured database connection${count !== 1 ? 's' : ''} • All credentials loaded from localStorage
+                        </div>
+                    </div>
+                    <div style="padding: 10px 16px; background: rgba(34, 197, 94, 0.2); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.4);">
+                        <div style="font-size: 24px; font-weight: bold; color: #22c55e;">${count}</div>
+                        <div style="font-size: 10px; color: rgba(254, 243, 199, 0.6); text-transform: uppercase; letter-spacing: 0.5px;">Active</div>
+                    </div>
+                </div>
+            `;
         }
 
         // Test connection (automatic on load)
@@ -11068,6 +11466,9 @@ ${'='.repeat(60)}
                 // Refresh UI
                 loadHostingerConnectionsTable();
                 loadDashboardConnections();
+                
+                // Update toggle button to reflect new count
+                updateConnectionToggleButton();
 
                 showMessage('settingsMessage', 
                     `✅ Import successful!\n📊 Total: ${importData.connections.length}\n✏️ Updated: ${updatedCount}\n➕ Added: ${addedCount}\n📅 Exported: ${importData.exported_at || 'Unknown'}`, 
