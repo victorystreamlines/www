@@ -1569,8 +1569,8 @@ PHASE: Hostinger Edition
             </li>
             <li class="nav-item">
                 <a class="nav-link" onclick="showSection('create')">
-                    <span class="nav-icon">➕</span>
-                    <span>Create Database</span>
+                    <span class="nav-icon">🖥️</span>
+                    <span>Create Database (Localhost)</span>
                 </a>
             </li>
             <li class="nav-item">
@@ -1764,11 +1764,33 @@ PHASE: Hostinger Edition
                     <span class="card-title-icon">➕</span>
                     Create New Database
                 </h2>
+                
+                <!-- Localhost Indicator -->
+                <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(30, 64, 175, 0.1) 100%); border: 2px solid rgba(59, 130, 246, 0.4); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
+                    <div style="font-size: 36px;">🖥️</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 16px; color: #60a5fa; font-weight: bold; margin-bottom: 5px;">
+                            Creating Database on Localhost Laragon
+                        </div>
+                        <div style="font-size: 13px; color: rgba(147, 197, 253, 0.8); line-height: 1.5;">
+                            Server: <strong>localhost</strong> • User: <strong>root</strong> • Password: <strong>(empty)</strong><br>
+                            💡 <strong>Note:</strong> Hostinger Shared Hosting doesn't allow database creation via API<br>
+                            ⚡ Database will appear in Dashboard after connecting to Localhost
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 11px; color: rgba(147, 197, 253, 0.6); margin-bottom: 5px;">STATUS</div>
+                        <div id="createDbStatus" style="padding: 6px 12px; background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; border-radius: 6px; color: #fca5a5; font-size: 12px; font-weight: bold;">
+                            🔴 Not Connected
+                        </div>
+                    </div>
+                </div>
+                
                 <div id="createMessage"></div>
                 <form onsubmit="createDatabase(event)">
                     <div class="form-group">
                         <label class="form-label">Database Name *</label>
-                        <input type="text" id="newDbName" class="form-input" placeholder="Enter database name" required>
+                        <input type="text" id="newDbName" class="form-input" placeholder="e.g., my_database, test_db, project_db" required>
                         <div class="helper-text">Use alphanumeric characters and underscores only</div>
                     </div>
 
@@ -1778,24 +1800,53 @@ PHASE: Hostinger Edition
                             <span id="createCredentialsToggle">▼</span>
                         </div>
                         <div id="createCredentials" class="expandable-content">
-                            <div class="helper-text" style="margin-bottom: 15px;">
-                                Set specific username/password for this database (optional). Leave empty to use default credentials. Credentials will be saved for future use.
+                            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px;">
+                                <strong style="color: #fbbf24;">💡 Optional Settings:</strong>
+                                <div style="color: rgba(254, 243, 199, 0.8); margin-top: 5px;">
+                                    • <strong>Leave empty:</strong> Database will use default localhost credentials (root, no password)<br>
+                                    • <strong>Fill both:</strong> Creates dedicated MySQL user with these credentials
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Database Username</label>
-                                <input type="text" id="newDbUsername" class="form-input" placeholder="Enter username (optional)">
+                                <label class="form-label">Database Username (Optional)</label>
+                                <input type="text" id="newDbUsername" class="form-input" placeholder="e.g., db_user, admin_user (leave empty for default)">
+                                <div class="helper-text">Custom MySQL user for this database only</div>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Database Password</label>
-                                <input type="password" id="newDbPassword" class="form-input" placeholder="Enter password (optional)">
+                                <label class="form-label">Database Password (Optional)</label>
+                                <input type="password" id="newDbPassword" class="form-input" placeholder="Enter secure password (leave empty for default)">
+                                <div class="helper-text">Password for the custom user</div>
                             </div>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">
-                        <span>➕</span> Create Database
+                    <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);">
+                        <span>➕</span> Create Database on Localhost
                     </button>
                 </form>
+                
+                <!-- Examples Section -->
+                <div style="margin-top: 25px; background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; border-radius: 10px; padding: 15px;">
+                    <h4 style="color: #86efac; margin: 0 0 12px 0;">✨ Examples:</h4>
+                    <div style="font-size: 13px; color: rgba(254, 243, 199, 0.8); line-height: 1.8;">
+                        <strong style="color: #fbbf24;">1️⃣ Simple Database (No credentials):</strong><br>
+                        <code style="background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 4px; color: #86efac;">
+                            Name: my_project • Username: (empty) • Password: (empty)
+                        </code><br>
+                        <span style="font-size: 12px; color: rgba(254, 243, 199, 0.6);">
+                            → Uses default: root@localhost with no password
+                        </span>
+                        <br><br>
+                        
+                        <strong style="color: #fbbf24;">2️⃣ Secure Database (With credentials):</strong><br>
+                        <code style="background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 4px; color: #86efac;">
+                            Name: my_secure_db • Username: db_admin • Password: MyPass123
+                        </code><br>
+                        <span style="font-size: 12px; color: rgba(254, 243, 199, 0.6);">
+                            → Creates MySQL user 'db_admin' with full privileges on 'my_secure_db'
+                        </span>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -3517,6 +3568,7 @@ PHASE: Hostinger Edition
                         
                         setTimeout(() => {
                             loadDashboardConnections();
+                            updateCreateDatabaseStatus(); // Update Create DB page status
                             const countMsg = databases.length > 0 ? `\n📊 ${databases.length} database${databases.length !== 1 ? 's' : ''} found` : '';
                             showCustomToast(`✅ Connected to Localhost Laragon!${countMsg}\nAll local databases are now visible.`, 'success', 3500);
                             
@@ -3569,6 +3621,7 @@ PHASE: Hostinger Edition
                 
                 setTimeout(() => {
                     loadDashboardConnections();
+                    updateCreateDatabaseStatus(); // Update Create DB page status
                     showCustomToast('⚠️ Disconnected from Localhost Laragon!\nLocal databases are now hidden.', 'warning', 3000);
                     
                     if ('vibrate' in navigator) {
@@ -3962,6 +4015,8 @@ try {
                 updateConnectionToggleButton(); // Update Hostinger button state
                 updateLocalhostToggleButton(); // Update Localhost button state
                 loadDashboardConnections();
+            } else if (sectionId === 'create') {
+                updateCreateDatabaseStatus(); // Update status indicator
             } else if (sectionId === 'settings') {
                 loadHostingerConnectionsTable();
             } else if (sectionId === 'generateDatabase') {
@@ -7038,7 +7093,25 @@ ${errorDetails || 'Unknown error occurred'}
             }
         }
 
-        // Create database
+        // Update create database status indicator
+        function updateCreateDatabaseStatus() {
+            const statusEl = document.getElementById('createDbStatus');
+            if (!statusEl) return;
+            
+            if (isLocalhostConnected) {
+                statusEl.style.background = 'rgba(34, 197, 94, 0.2)';
+                statusEl.style.borderColor = '#22c55e';
+                statusEl.style.color = '#86efac';
+                statusEl.textContent = '🟢 Connected';
+            } else {
+                statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
+                statusEl.style.borderColor = '#ef4444';
+                statusEl.style.color = '#fca5a5';
+                statusEl.textContent = '🔴 Not Connected';
+            }
+        }
+
+        // Create database (Localhost Laragon only)
         async function createDatabase(event) {
             event.preventDefault();
             
@@ -7051,9 +7124,29 @@ ${errorDetails || 'Unknown error occurred'}
                 return;
             }
             
-            showMessage('createMessage', '🔄 Creating database...', 'info');
+            // Validate database name format
+            if (!/^[a-zA-Z0-9_-]+$/.test(dbName)) {
+                showMessage('createMessage', '❌ Invalid database name! Use only letters, numbers, underscores, and hyphens.', 'error');
+                return;
+            }
             
+            // Warn if trying to create with custom credentials
+            if ((username && !password) || (!username && password)) {
+                showMessage('createMessage', '⚠️ Both username and password are required if setting credentials!', 'error');
+                return;
+            }
+            
+            showMessage('createMessage', '🔄 Creating database on Localhost Laragon...', 'info');
+            
+            // Send request with localhost credentials
             const result = await apiRequest('create_database', {
+                // Server connection credentials (Localhost)
+                server_host: LOCALHOST_CONFIG.host,
+                server_user: LOCALHOST_CONFIG.username,
+                server_pass: LOCALHOST_CONFIG.password,
+                server_port: LOCALHOST_CONFIG.port,
+                
+                // Database details
                 db_name: dbName,
                 db_username: username,
                 db_password: password
@@ -7061,18 +7154,61 @@ ${errorDetails || 'Unknown error occurred'}
             
             if (result.success) {
                 showMessage('createMessage', `✅ ${result.message}`, 'success');
+                
+                // Show success animation
+                const successOverlay = document.createElement('div');
+                successOverlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px);';
+                successOverlay.innerHTML = `
+                    <div style="text-align: center; animation: scaleIn 0.5s ease-out;">
+                        <div style="font-size: 100px; margin-bottom: 25px; animation: checkmarkPop 0.8s ease-out;">✅</div>
+                        <div style="font-size: 32px; color: #22c55e; font-weight: bold; margin-bottom: 15px;">Database Created!</div>
+                        <div style="font-size: 20px; color: #86efac; background: rgba(59, 130, 246, 0.2); padding: 12px 25px; border-radius: 10px; border: 2px solid #3b82f6; display: inline-block;">
+                            🖥️ ${dbName}
+                        </div>
+                        ${username ? `<div style="font-size: 14px; color: rgba(254, 243, 199, 0.7); margin-top: 12px;">With user: <strong style="color: #60a5fa;">${username}</strong></div>` : ''}
+                        <div style="font-size: 13px; color: rgba(254, 243, 199, 0.6); margin-top: 15px;">Created on Localhost Laragon</div>
+                    </div>
+                    <style>
+                        @keyframes checkmarkPop {
+                            0% { transform: scale(0); }
+                            50% { transform: scale(1.2); }
+                            100% { transform: scale(1); }
+                        }
+                    </style>
+                `;
+                document.body.appendChild(successOverlay);
+                
+                setTimeout(() => {
+                    successOverlay.style.animation = 'fadeOut 0.4s ease-out forwards';
+                    successOverlay.innerHTML += '<style>@keyframes fadeOut { to { opacity: 0; } }</style>';
+                    setTimeout(() => {
+                        if (successOverlay.parentNode) {
+                            document.body.removeChild(successOverlay);
+                        }
+                    }, 400);
+                }, 2000);
+                
+                // Clear form
                 document.getElementById('newDbName').value = '';
                 document.getElementById('newDbUsername').value = '';
                 document.getElementById('newDbPassword').value = '';
                 
-                // Save credentials if provided
-                if (username && password) {
-                    saveCredentials(dbName, username, password);
-                    showMessage('createMessage', `✅ ${result.message} (Credentials saved for future use)`, 'success');
+                // Refresh localhost databases if connected
+                if (isLocalhostConnected) {
+                    setTimeout(async () => {
+                        try {
+                            const databases = await fetchLocalhostDatabases();
+                            localStorage.setItem(LOCALHOST_DATABASES_KEY, JSON.stringify(databases));
+                            updateLocalhostToggleButton();
+                            loadDashboardConnections();
+                            showCustomToast(`✅ Database updated in Dashboard!\n🖥️ ${dbName} is now accessible`, 'success', 3000);
+                        } catch (error) {
+                            console.error('Failed to refresh localhost databases:', error);
+                        }
+                    }, 2500);
+                } else {
+                    showCustomToast('💡 Database created! Click "Connect Localhost Laragon" to see it in Dashboard.', 'info', 3500);
                 }
-                
-                loadDatabasesForDropdowns();
-                loadDatabases();
             } else {
                 showMessage('createMessage', `❌ ${result.message}`, 'error');
             }

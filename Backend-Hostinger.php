@@ -202,7 +202,7 @@ function connectToDatabase($dbName, $username = '', $password = '') {
 }
 
 /**
- * Create a new database
+ * Create a new database (supports localhost with default credentials)
  */
 function createDatabase($dbName, $username = '', $password = '') {
     if (!validateDatabaseName($dbName)) {
@@ -210,10 +210,22 @@ function createDatabase($dbName, $username = '', $password = '') {
         sendResponse(false, 'Invalid database name. Use only alphanumeric characters, underscores, and hyphens.');
     }
 
-    $conn = getConnection();
-    if (!$conn) {
+    // Get server credentials from POST (for localhost connection)
+    $serverHost = $_POST['server_host'] ?? 'localhost';
+    $serverUser = $_POST['server_user'] ?? 'root';
+    $serverPass = $_POST['server_pass'] ?? '';
+    $serverPort = $_POST['server_port'] ?? '3306';
+
+    // Connect to MySQL server (without specifying database)
+    try {
+        $dsn = "mysql:host={$serverHost};port={$serverPort};charset=utf8mb4";
+        $conn = new PDO($dsn, $serverUser, $serverPass);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+    } catch (PDOException $e) {
         http_response_code(500);
-        sendResponse(false, 'Failed to connect to database server');
+        sendResponse(false, 'Failed to connect to database server: ' . $e->getMessage());
+        return;
     }
 
     try {
