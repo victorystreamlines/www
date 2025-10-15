@@ -4584,20 +4584,32 @@ OVERVIEW:
         // Update selected database display in Edit Table section
         function updateEditTableDatabaseDisplay() {
             const displayEl = document.getElementById('editTableDbName');
+            const helperEl = document.getElementById('editTableHelper');
             if (!displayEl) return;
 
             if (selectedDatabaseId) {
-                const connId = selectedDatabaseId.replace('conn_', '');
-                const connections = getHostingerConnections();
-                const conn = connections.find(c => c.id === connId);
+                // Get connection info (supports both Localhost and Hostinger)
+                const conn = getConnectionById(selectedDatabaseId);
                 
                 if (conn) {
                     displayEl.textContent = `${conn.name} (${conn.dbName})`;
+                    if (helperEl) {
+                        helperEl.innerHTML = '✅ Database connected - Loading tables...';
+                        helperEl.style.color = '#86efac';
+                    }
                 } else {
                     displayEl.textContent = 'None - Please select from Dashboard';
+                    if (helperEl) {
+                        helperEl.innerHTML = '💡 Select a database from Dashboard to see available tables';
+                        helperEl.style.color = '';
+                    }
                 }
             } else {
                 displayEl.textContent = 'None - Please select from Dashboard';
+                if (helperEl) {
+                    helperEl.innerHTML = '💡 Select a database from Dashboard to see available tables';
+                    helperEl.style.color = '';
+                }
             }
         }
 
@@ -11142,9 +11154,8 @@ You can now use these credentials to build your application!
         async function loadTablesForDropdowns() {
             if (!selectedDatabaseId) return;
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) return;
             
@@ -11164,6 +11175,25 @@ You can now use these credentials to build your application!
                 document.getElementById('editTableSelect').innerHTML = '<option value="">-- Select Table --</option>' + options;
                 document.getElementById('deleteTableSelect').innerHTML = '<option value="">-- Select Table --</option>' + options;
                 document.getElementById('renameTableOldSelect').innerHTML = '<option value="">-- Select Table --</option>' + options;
+                
+                // Update helper text to show tables loaded
+                const helperEl = document.getElementById('editTableHelper');
+                if (helperEl) {
+                    if (result.tables.length > 0) {
+                        helperEl.innerHTML = `✅ ${result.tables.length} table(s) loaded - Select one to edit`;
+                        helperEl.style.color = '#86efac';
+                    } else {
+                        helperEl.innerHTML = '⚠️ No tables found in this database';
+                        helperEl.style.color = '#fbbf24';
+                    }
+                }
+            } else {
+                // Update helper text on error
+                const helperEl = document.getElementById('editTableHelper');
+                if (helperEl) {
+                    helperEl.innerHTML = '❌ Failed to load tables - Check connection';
+                    helperEl.style.color = '#fca5a5';
+                }
             }
         }
 
@@ -11327,9 +11357,8 @@ You can now use these credentials to build your application!
 
             currentEditTableName = tableName;
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('editTableMessage', '❌ Connection not found', 'error');
@@ -11520,9 +11549,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) return;
 
@@ -11905,9 +11933,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 document.getElementById('tableInfoText').value = 'Connection not found...';
@@ -12072,9 +12099,8 @@ ${'='.repeat(60)}
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('editTableMessage', '❌ Connection not found', 'error');
@@ -12130,9 +12156,8 @@ ${'='.repeat(60)}
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('editTableMessage', '❌ Connection not found', 'error');
