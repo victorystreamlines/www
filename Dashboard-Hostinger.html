@@ -1334,6 +1334,19 @@ PHASE: Hostinger Edition
             }
         }
 
+        /* Database name suggestion buttons */
+        .db-suggestion-btn:hover {
+            background: rgba(34, 197, 94, 0.2) !important;
+            border-color: #22c55e !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3) !important;
+        }
+
+        .db-suggestion-btn:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3) !important;
+        }
+
         /* Connect Toggle Button */
         .connect-toggle-btn {
             display: inline-flex;
@@ -1562,14 +1575,8 @@ PHASE: Hostinger Edition
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" onclick="showSection('list')">
-                    <span class="nav-icon">📋</span>
-                    <span>List Databases</span>
-                </a>
-            </li>
-            <li class="nav-item">
                 <a class="nav-link" onclick="showSection('create')">
-                    <span class="nav-icon">🖥️</span>
+                    <span class="nav-icon">➕</span>
                     <span>Create Database (Localhost)</span>
                 </a>
             </li>
@@ -1742,20 +1749,6 @@ PHASE: Hostinger Edition
             </div>
         </section>
 
-        <!-- List Databases Section -->
-        <section id="list" class="section">
-            <div class="card">
-                <h2 class="card-title">
-                    <span class="card-title-icon">📋</span>
-                    Available Databases
-                </h2>
-                <div id="listMessage"></div>
-                <button class="btn btn-primary" onclick="loadDatabases()">
-                    <span>🔄</span> Refresh List
-                </button>
-                <div id="databaseList" class="database-grid"></div>
-            </div>
-        </section>
 
         <!-- Create Database Section -->
         <section id="create" class="section">
@@ -1788,10 +1781,82 @@ PHASE: Hostinger Edition
                 
                 <div id="createMessage"></div>
                 <form onsubmit="createDatabase(event)">
+                    <!-- Database Name Suggestions -->
                     <div class="form-group">
-                        <label class="form-label">Database Name *</label>
-                        <input type="text" id="newDbName" class="form-input" placeholder="e.g., my_database, test_db, project_db" required>
-                        <div class="helper-text">Use alphanumeric characters and underscores only</div>
+                        <label class="form-label">💡 Quick Database Name Suggestions (Click to Use)</label>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px;">
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('my_project_db')">
+                                <span>📁</span> my_project_db
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('website_db')">
+                                <span>🌐</span> website_db
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('ecommerce_store')">
+                                <span>🛒</span> ecommerce_store
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('blog_platform')">
+                                <span>📝</span> blog_platform
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('user_management')">
+                                <span>👥</span> user_management
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('inventory_system')">
+                                <span>📦</span> inventory_system
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('crm_database')">
+                                <span>💼</span> crm_database
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('api_backend')">
+                                <span>🔌</span> api_backend
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('app_data')">
+                                <span>📱</span> app_data
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('test_environment')">
+                                <span>🧪</span> test_environment
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('development_db')">
+                                <span>💻</span> development_db
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('analytics_data')">
+                                <span>📊</span> analytics_data
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('portfolio_site')">
+                                <span>🎨</span> portfolio_site
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('learning_platform')">
+                                <span>📚</span> learning_platform
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('booking_system')">
+                                <span>📅</span> booking_system
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('social_network')">
+                                <span>💬</span> social_network
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('customer_portal')">
+                                <span>🏢</span> customer_portal
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('task_manager')">
+                                <span>✅</span> task_manager
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('finance_tracker')">
+                                <span>💰</span> finance_tracker
+                            </button>
+                            <button type="button" class="btn btn-secondary db-suggestion-btn" style="padding: 10px 15px; font-size: 13px; text-align: left; display: flex; align-items: center; gap: 8px;" onclick="setDatabaseName('event_manager')">
+                                <span>🎉</span> event_manager
+                            </button>
+                        </div>
+                        <div style="text-align: center; margin-top: 10px;">
+                            <button type="button" class="btn btn-secondary" onclick="generateRandomDbName()" style="padding: 8px 16px; font-size: 13px;">
+                                <span>🎲</span> Generate Random Name
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Database Name (Custom or Selected) *</label>
+                        <input type="text" id="newDbName" class="form-input" placeholder="Click suggestion above or type your own name" required>
+                        <div class="helper-text">💡 Click a suggestion above or type your custom database name</div>
                     </div>
 
                     <div class="expandable-section">
@@ -7029,36 +7094,10 @@ ${errorDetails || 'Unknown error occurred'}
         // These will need to be updated for Hostinger connections
         // ========================================
 
-        // Load databases
+        // Load databases (deprecated - redirects to dashboard)
         async function loadDatabases() {
-            const listEl = document.getElementById('databaseList');
-            listEl.innerHTML = '<div class="spinner"></div> Loading databases...';
-            
-            const result = await apiRequest('list_databases');
-            
-            if (result.success) {
-                const credentials = getSavedCredentials();
-                if (result.databases.length === 0) {
-                    listEl.innerHTML = '<p style="color: rgba(254, 243, 199, 0.6); text-align: center; padding: 20px;">No databases found</p>';
-                } else {
-                    listEl.innerHTML = result.databases.map(db => {
-                        const hasCredentials = credentials.some(c => c.dbName === db);
-                        return `
-                            <div class="database-item" onclick="connectToDatabase('${db}')">
-                                ${hasCredentials ? '<span class="lock-icon">🔒</span>' : ''}
-                                <div class="database-name">
-                                    <span class="database-icon">🗄️</span>
-                                    <span>${db}</span>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                }
-                showMessage('listMessage', `✅ Found ${result.databases.length} database(s)`, 'success');
-            } else {
-                listEl.innerHTML = '';
-                showMessage('listMessage', '❌ ' + result.message, 'error');
-            }
+            console.log('ℹ️ loadDatabases() is deprecated - use Dashboard instead');
+            showSection('dashboard');
         }
 
         // Load databases for dropdowns (Localhost only)
@@ -7171,6 +7210,72 @@ ${errorDetails || 'Unknown error occurred'}
                 statusEl.style.color = '#fca5a5';
                 statusEl.textContent = '🔴 Not Connected';
             }
+        }
+
+        // Set database name from suggestion
+        function setDatabaseName(name) {
+            const input = document.getElementById('newDbName');
+            if (input) {
+                input.value = name;
+                input.focus();
+                
+                // Visual feedback
+                input.style.background = 'rgba(34, 197, 94, 0.15)';
+                input.style.borderColor = '#22c55e';
+                
+                setTimeout(() => {
+                    input.style.background = '';
+                    input.style.borderColor = '';
+                }, 800);
+                
+                showCustomToast(`✅ Database name selected!\n📁 ${name}`, 'success', 1500);
+            }
+        }
+
+        // Generate random database name
+        function generateRandomDbName() {
+            const prefixes = [
+                'project', 'app', 'site', 'web', 'api', 'data', 'system', 
+                'platform', 'service', 'portal', 'store', 'hub', 'network',
+                'dashboard', 'panel', 'admin', 'client', 'backend', 'frontend'
+            ];
+            
+            const suffixes = [
+                'db', 'database', 'data', 'storage', 'repo', 'vault',
+                'core', 'main', 'primary', 'master', 'prod', 'dev', 'test'
+            ];
+            
+            const types = [
+                'cms', 'crm', 'erp', 'blog', 'shop', 'forum', 'news',
+                'analytics', 'reporting', 'inventory', 'logistics', 'sales'
+            ];
+            
+            // Random combination strategy
+            const strategy = Math.floor(Math.random() * 3);
+            let randomName = '';
+            
+            if (strategy === 0) {
+                // prefix + suffix
+                const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+                const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+                randomName = `${prefix}_${suffix}`;
+            } else if (strategy === 1) {
+                // type + suffix
+                const type = types[Math.floor(Math.random() * types.length)];
+                const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+                randomName = `${type}_${suffix}`;
+            } else {
+                // prefix + type
+                const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+                const type = types[Math.floor(Math.random() * types.length)];
+                randomName = `${prefix}_${type}`;
+            }
+            
+            // Add random number for uniqueness
+            const randomNum = Math.floor(Math.random() * 999) + 1;
+            randomName += `_${randomNum}`;
+            
+            setDatabaseName(randomName);
         }
 
         // Update delete database status indicator
