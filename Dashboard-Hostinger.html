@@ -4547,9 +4547,8 @@ OVERVIEW:
             if (!displayEl) return;
 
             if (selectedDatabaseId) {
-                const connId = selectedDatabaseId.replace('conn_', '');
-                const connections = getHostingerConnections();
-                const conn = connections.find(c => c.id === connId);
+                // Get connection info (supports both Localhost and Hostinger)
+                const conn = getConnectionById(selectedDatabaseId);
                 
                 if (conn) {
                     displayEl.textContent = `${conn.name} (${conn.dbName})`;
@@ -4567,9 +4566,8 @@ OVERVIEW:
             if (!displayEl) return;
 
             if (selectedDatabaseId) {
-                const connId = selectedDatabaseId.replace('conn_', '');
-                const connections = getHostingerConnections();
-                const conn = connections.find(c => c.id === connId);
+                // Get connection info (supports both Localhost and Hostinger)
+                const conn = getConnectionById(selectedDatabaseId);
                 
                 if (conn) {
                     displayEl.textContent = `${conn.name} (${conn.dbName})`;
@@ -11206,9 +11204,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('deleteTableMessage', '❌ Connection not found', 'error');
@@ -11259,9 +11256,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('renameTableMessage', '❌ Connection not found', 'error');
