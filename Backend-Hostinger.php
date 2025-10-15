@@ -267,7 +267,7 @@ function createDatabase($dbName, $username = '', $password = '') {
 }
 
 /**
- * Delete a database
+ * Delete a database (supports localhost with default credentials)
  */
 function deleteDatabase($dbName) {
     if (!validateDatabaseName($dbName)) {
@@ -275,10 +275,22 @@ function deleteDatabase($dbName) {
         sendResponse(false, 'Invalid database name');
     }
 
-    $conn = getConnection();
-    if (!$conn) {
+    // Get server credentials from POST (for localhost connection)
+    $serverHost = $_POST['server_host'] ?? 'localhost';
+    $serverUser = $_POST['server_user'] ?? 'root';
+    $serverPass = $_POST['server_pass'] ?? '';
+    $serverPort = $_POST['server_port'] ?? '3306';
+
+    // Connect to MySQL server (without specifying database)
+    try {
+        $dsn = "mysql:host={$serverHost};port={$serverPort};charset=utf8mb4";
+        $conn = new PDO($dsn, $serverUser, $serverPass);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+    } catch (PDOException $e) {
         http_response_code(500);
-        sendResponse(false, 'Failed to connect to database server');
+        sendResponse(false, 'Failed to connect to database server: ' . $e->getMessage());
+        return;
     }
 
     try {
@@ -301,7 +313,7 @@ function deleteDatabase($dbName) {
 }
 
 /**
- * Rename a database
+ * Rename a database (supports localhost with default credentials)
  * MySQL doesn't have RENAME DATABASE, so we create new, copy tables, drop old
  */
 function renameDatabase($oldName, $newName) {
@@ -315,10 +327,22 @@ function renameDatabase($oldName, $newName) {
         sendResponse(false, 'New name must be different from old name');
     }
 
-    $conn = getConnection();
-    if (!$conn) {
+    // Get server credentials from POST (for localhost connection)
+    $serverHost = $_POST['server_host'] ?? 'localhost';
+    $serverUser = $_POST['server_user'] ?? 'root';
+    $serverPass = $_POST['server_pass'] ?? '';
+    $serverPort = $_POST['server_port'] ?? '3306';
+
+    // Connect to MySQL server (without specifying database)
+    try {
+        $dsn = "mysql:host={$serverHost};port={$serverPort};charset=utf8mb4";
+        $conn = new PDO($dsn, $serverUser, $serverPass);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+    } catch (PDOException $e) {
         http_response_code(500);
-        sendResponse(false, 'Failed to connect to database server');
+        sendResponse(false, 'Failed to connect to database server: ' . $e->getMessage());
+        return;
     }
 
     try {
