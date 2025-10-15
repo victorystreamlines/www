@@ -108,13 +108,25 @@ function checkConnection() {
 }
 
 /**
- * List all databases
+ * List all databases (supports localhost with default credentials)
  */
 function listDatabases() {
-    $conn = getConnection();
-    if (!$conn) {
+    // Try to use provided credentials first, fallback to localhost defaults
+    $host = $_POST['db_host'] ?? 'localhost';
+    $username = $_POST['db_user'] ?? 'root';
+    $password = $_POST['db_pass'] ?? '';
+    $port = $_POST['db_port'] ?? '3306';
+    
+    // For list_databases, we connect without specifying a database
+    try {
+        $dsn = "mysql:host={$host};port={$port};charset=utf8mb4";
+        $conn = new PDO($dsn, $username, $password);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+    } catch (PDOException $e) {
         http_response_code(500);
-        sendResponse(false, 'Failed to connect to database server');
+        sendResponse(false, 'Failed to connect to database server: ' . $e->getMessage());
+        return;
     }
 
     try {
@@ -125,7 +137,7 @@ function listDatabases() {
         $systemDatabases = ['information_schema', 'mysql', 'performance_schema', 'sys'];
         $databases = array_values(array_diff($databases, $systemDatabases));
         
-        sendResponse(true, 'Databases retrieved successfully', ['databases' => $databases]);
+        sendResponse(true, 'Databases retrieved successfully', ['databases' => $databases, 'count' => count($databases)]);
     } catch (PDOException $e) {
         http_response_code(500);
         sendResponse(false, 'Error retrieving databases: ' . $e->getMessage());

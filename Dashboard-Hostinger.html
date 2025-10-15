@@ -283,6 +283,24 @@ PHASE: Hostinger Edition
             box-shadow: 0 5px 20px rgba(251, 191, 36, 0.3);
         }
 
+        /* Localhost database card hover - Blue theme */
+        .database-item[id^="localhost_"]:hover {
+            background: rgba(59, 130, 246, 0.2) !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4) !important;
+        }
+
+        /* Localhost database card selected - Blue glow */
+        .database-item[id^="localhost_"].selected {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(30, 64, 175, 0.25) 100%) !important;
+            border: 2px solid #3b82f6 !important;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.6), 0 8px 40px rgba(59, 130, 246, 0.4) !important;
+        }
+
+        .database-item[id^="localhost_"].selected .database-icon {
+            filter: drop-shadow(0 0 15px rgba(59, 130, 246, 1)) !important;
+        }
+
         /* Row 1: Logo/Icon (Centered) */
         .database-icon-row {
             display: flex;
@@ -1654,12 +1672,21 @@ PHASE: Hostinger Edition
                 <div class="card-header-with-action">
                     <h2 class="card-title" style="margin-bottom: 0;">
                         <span class="card-title-icon">🌐</span>
-                        Configured Hostinger Connections
+                        All Database Connections
                     </h2>
-                    <button id="connectToggleBtn" class="connect-toggle-btn disconnected" onclick="toggleHostingerConnection()">
-                        <span class="toggle-icon">🔌</span>
-                        <span class="toggle-text">Connect Hostinger Shared</span>
-                    </button>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                        <button id="connectLocalhostBtn" class="connect-toggle-btn disconnected" onclick="toggleLocalhostConnection()">
+                            <span class="toggle-icon">🔌</span>
+                            <span class="toggle-text">Connect Localhost Laragon</span>
+                        </button>
+                        <button id="connectToggleBtn" class="connect-toggle-btn disconnected" onclick="toggleHostingerConnection()">
+                            <span class="toggle-icon">🔌</span>
+                            <span class="toggle-text">Connect Hostinger Shared</span>
+                        </button>
+                        <button id="refreshAllBtn" class="btn btn-secondary" onclick="refreshAllConnections()" style="padding: 12px 20px; display: none;">
+                            <span>🔄</span> Refresh All
+                        </button>
+                    </div>
                 </div>
                 <div id="dashboardMessage"></div>
                 <div id="configuredConnectionsList" class="database-grid" style="margin-top: 20px;">
@@ -1694,14 +1721,24 @@ PHASE: Hostinger Edition
                     <span class="card-title-icon">📊</span>
                     Quick Guide
                 </h2>
-                <p>Welcome to the Hostinger Database Control Panel. Manage your Hostinger databases (Shared Hosting or VPS).</p>
+                <p>Welcome to the Database Control Panel. Manage both Localhost (Laragon) and Hostinger databases.</p>
                 <ul style="margin-top: 15px; line-height: 1.8;">
-                    <li>✅ Add multiple Hostinger database connections</li>
+                    <li>✅ <strong style="color: #3b82f6;">🖥️ Localhost Laragon:</strong> Connect to your local MySQL databases (auto-fetch)</li>
+                    <li>✅ <strong style="color: #fbbf24;">🌐 Hostinger Remote:</strong> Add multiple remote connections (Shared/VPS)</li>
+                    <li>✅ Toggle connections ON/OFF for security (databases hidden when disconnected)</li>
                     <li>✅ Test connection status for each database</li>
-                    <li>✅ Manage tables, create, edit, delete operations</li>
-                    <li>✅ Supports both Shared Hosting and VPS databases</li>
+                    <li>✅ Manage tables, create, edit, delete, migrate operations</li>
                     <li>✅ All credentials stored locally in your browser</li>
+                    <li>✅ Mix local and remote databases in same workspace</li>
                 </ul>
+                <div style="margin-top: 20px; background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 8px; padding: 12px; font-size: 13px;">
+                    <strong style="color: #60a5fa;">💡 Quick Start:</strong>
+                    <div style="color: rgba(254, 243, 199, 0.8); margin-top: 8px; line-height: 1.6;">
+                        1️⃣ Click <strong style="color: #3b82f6;">🖥️ Connect Localhost Laragon</strong> to access local databases<br>
+                        2️⃣ Click <strong style="color: #fbbf24;">🌐 Connect Hostinger Shared</strong> for remote databases<br>
+                        3️⃣ Select any database to start working with tables
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -3300,12 +3337,23 @@ PHASE: Hostinger Edition
         const API_URL = 'http://localhost/Backend-Hostinger.php';
         const HOSTINGER_CONNECTIONS_KEY = 'hostinger_connections';
         const SELECTED_DATABASE_KEY = 'selected_database_id';
-        const CONNECTION_STATE_KEY = 'hostinger_connection_state'; // NEW: Track connection state
+        const CONNECTION_STATE_KEY = 'hostinger_connection_state'; // Track Hostinger connection state
+        const LOCALHOST_CONNECTION_STATE_KEY = 'localhost_connection_state'; // NEW: Track localhost connection state
+        const LOCALHOST_DATABASES_KEY = 'localhost_databases'; // NEW: Cache localhost databases
         let currentDatabase = null;
         let currentConnection = null;
         let columnCounter = 0;
         let selectedTemplate = null;
-        let isHostingerConnected = false; // NEW: Global connection state
+        let isHostingerConnected = false; // Hostinger connection state
+        let isLocalhostConnected = false; // NEW: Localhost connection state
+        
+        // Localhost Laragon credentials (static)
+        const LOCALHOST_CONFIG = {
+            host: 'localhost',
+            username: 'root',
+            password: '',
+            port: '3306'
+        };
 
         // Custom toast notification function
         function showCustomToast(message, type = 'success', duration = 3000) {
@@ -3403,8 +3451,9 @@ PHASE: Hostinger Edition
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Load connection state from localStorage
-            loadConnectionState();
+            // Load connection states from localStorage
+            loadConnectionState(); // Hostinger
+            loadLocalhostConnectionState(); // NEW: Localhost
             
             loadDashboardConnections();
             loadHostingerConnectionsTable();
@@ -3423,6 +3472,279 @@ PHASE: Hostinger Edition
                 }, 200);
             }, 100);
         });
+
+        // ========================================
+        // LOCALHOST LARAGON CONNECTION SYSTEM
+        // ========================================
+
+        // Load localhost connection state
+        function loadLocalhostConnectionState() {
+            const savedState = localStorage.getItem(LOCALHOST_CONNECTION_STATE_KEY);
+            isLocalhostConnected = savedState === 'connected';
+            
+            console.log('🖥️ Loaded localhost state:', isLocalhostConnected ? 'CONNECTED' : 'DISCONNECTED');
+            
+            updateLocalhostToggleButton();
+        }
+
+        // Save localhost connection state
+        function saveLocalhostConnectionState(connected) {
+            localStorage.setItem(LOCALHOST_CONNECTION_STATE_KEY, connected ? 'connected' : 'disconnected');
+            isLocalhostConnected = connected;
+            console.log('💾 Saved localhost state:', connected ? 'CONNECTED' : 'DISCONNECTED');
+        }
+
+        // Toggle Localhost connection
+        async function toggleLocalhostConnection() {
+            const newState = !isLocalhostConnected;
+            
+            if (newState) {
+                // CONNECTING TO LOCALHOST
+                console.log('🟢 CONNECTING to Localhost Laragon...');
+                
+                // Show beautiful connection animation
+                showConnectionAnimation('connecting', 'Localhost Laragon');
+                
+                // Try to fetch databases from localhost
+                try {
+                    const databases = await fetchLocalhostDatabases();
+                    
+                    if (databases && databases.length > 0) {
+                        // Success! Save databases and update state
+                        localStorage.setItem(LOCALHOST_DATABASES_KEY, JSON.stringify(databases));
+                        saveLocalhostConnectionState(true);
+                        updateLocalhostToggleButton();
+                        
+                        setTimeout(() => {
+                            loadDashboardConnections();
+                            const countMsg = databases.length > 0 ? `\n📊 ${databases.length} database${databases.length !== 1 ? 's' : ''} found` : '';
+                            showCustomToast(`✅ Connected to Localhost Laragon!${countMsg}\nAll local databases are now visible.`, 'success', 3500);
+                            
+                            if ('vibrate' in navigator) {
+                                navigator.vibrate([100, 50, 100]);
+                            }
+                        }, 800);
+                    } else {
+                        // No databases found
+                        setTimeout(() => {
+                            showCustomToast('⚠️ Connected but no databases found on Localhost Laragon.', 'warning', 3000);
+                        }, 800);
+                        
+                        saveLocalhostConnectionState(true);
+                        updateLocalhostToggleButton();
+                        loadDashboardConnections();
+                    }
+                } catch (error) {
+                    // Connection failed - keep disconnected
+                    console.error('❌ Localhost connection failed:', error);
+                    
+                    // Ensure button stays RED (disconnected)
+                    saveLocalhostConnectionState(false);
+                    updateLocalhostToggleButton();
+                    
+                    setTimeout(() => {
+                        showCustomToast(`❌ Failed to connect to Localhost Laragon!\n${error.message}\n\nMake sure Laragon MySQL is running.`, 'error', 4000);
+                    }, 800);
+                }
+                
+            } else {
+                // DISCONNECTING FROM LOCALHOST
+                console.log('🔴 DISCONNECTING from Localhost Laragon...');
+                
+                const databases = getLocalhostDatabases();
+                const dbCount = databases.length;
+                
+                // Confirm if databases are visible
+                if (dbCount > 0) {
+                    const confirmMsg = `🔴 Disconnect from Localhost Laragon?\n\n${dbCount} database${dbCount !== 1 ? 's' : ''} will be hidden.\n\nContinue?`;
+                    if (!confirm(confirmMsg)) {
+                        return;
+                    }
+                }
+                
+                saveLocalhostConnectionState(false);
+                updateLocalhostToggleButton();
+                
+                showConnectionAnimation('disconnecting', 'Localhost Laragon');
+                
+                setTimeout(() => {
+                    loadDashboardConnections();
+                    showCustomToast('⚠️ Disconnected from Localhost Laragon!\nLocal databases are now hidden.', 'warning', 3000);
+                    
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate([200, 100, 200]);
+                    }
+                }, 800);
+            }
+        }
+
+        // Fetch databases from localhost
+        async function fetchLocalhostDatabases() {
+            console.log('📡 Fetching databases from Localhost Laragon...');
+            console.log('🔑 Using credentials:', {
+                host: LOCALHOST_CONFIG.host,
+                user: LOCALHOST_CONFIG.username,
+                password: '(empty)',
+                port: LOCALHOST_CONFIG.port
+            });
+            
+            // Get list of databases with localhost credentials
+            const result = await apiRequest('list_databases', {
+                db_host: LOCALHOST_CONFIG.host,
+                db_user: LOCALHOST_CONFIG.username,
+                db_pass: LOCALHOST_CONFIG.password,
+                db_port: LOCALHOST_CONFIG.port
+            });
+            
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to connect to localhost');
+            }
+            
+            console.log(`✅ Databases fetched: ${result.count || result.databases.length} databases`);
+            console.log('📊 Database list:', result.databases);
+            return result.databases || [];
+        }
+
+        // Get localhost databases from cache
+        function getLocalhostDatabases() {
+            const saved = localStorage.getItem(LOCALHOST_DATABASES_KEY);
+            return saved ? JSON.parse(saved) : [];
+        }
+
+        // Show localhost database info
+        function showLocalhostInfo(dbName) {
+            const info = `🖥️ LOCALHOST DATABASE INFO
+${'='.repeat(50)}
+
+Database Name: ${dbName}
+Host: ${LOCALHOST_CONFIG.host}
+Username: ${LOCALHOST_CONFIG.username}
+Password: (empty)
+Port: ${LOCALHOST_CONFIG.port}
+Server: Laragon MySQL
+
+${'='.repeat(50)}
+
+📋 PHP Connection Code (PDO):
+\`\`\`php
+$host = '${LOCALHOST_CONFIG.host}';
+$dbname = '${dbName}';
+$username = '${LOCALHOST_CONFIG.username}';
+$password = '';
+$port = '${LOCALHOST_CONFIG.port}';
+
+try {
+    $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
+    $pdo = new PDO($dsn, $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    echo "✅ Connected to Laragon database!";
+} catch(PDOException $e) {
+    echo "❌ Connection failed: " . $e->getMessage();
+}
+\`\`\`
+
+💡 This is your local Laragon MySQL database.
+`;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(info).then(() => {
+                showCustomToast(`✅ Localhost database info copied!\n🖥️ ${dbName}`, 'success', 2500);
+            }).catch(() => {
+                alert(info);
+            });
+        }
+
+        // Update localhost toggle button
+        function updateLocalhostToggleButton() {
+            const btn = document.getElementById('connectLocalhostBtn');
+            if (!btn) return;
+
+            const icon = btn.querySelector('.toggle-icon');
+            const text = btn.querySelector('.toggle-text');
+            const databases = getLocalhostDatabases();
+            const dbCount = databases.length;
+
+            if (isLocalhostConnected) {
+                // CONNECTED STATE (Green)
+                btn.classList.remove('disconnected');
+                btn.classList.add('connected');
+                icon.textContent = '🔗';
+                
+                if (dbCount > 0) {
+                    text.textContent = `Localhost (${dbCount} DB${dbCount !== 1 ? 's' : ''})`;
+                } else {
+                    text.textContent = 'Connected to Localhost';
+                }
+            } else {
+                // DISCONNECTED STATE (Red)
+                btn.classList.remove('connected');
+                btn.classList.add('disconnected');
+                icon.textContent = '🔌';
+                text.textContent = 'Connect Localhost Laragon';
+            }
+            
+            // Update global badge
+            updateGlobalConnectionBadge();
+        }
+
+        // Update global connection badge (combines both connection states)
+        function updateGlobalConnectionBadge() {
+            const badge = document.getElementById('connectionStateBadge');
+            const refreshBtn = document.getElementById('refreshAllBtn');
+            
+            if (!badge) return;
+
+            const localhostDbs = getLocalhostDatabases();
+            const hostingerConns = getHostingerConnections();
+            const localhostCount = isLocalhostConnected ? localhostDbs.length : 0;
+            const hostingerCount = isHostingerConnected ? hostingerConns.length : 0;
+            const totalCount = localhostCount + hostingerCount;
+
+            if (!isLocalhostConnected && !isHostingerConnected) {
+                // Both disconnected
+                badge.className = 'connection-state-badge disconnected';
+                badge.textContent = '🔴 All Disconnected';
+                if (refreshBtn) refreshBtn.style.display = 'none';
+            } else if (isLocalhostConnected && isHostingerConnected) {
+                // Both connected
+                badge.className = 'connection-state-badge connected';
+                badge.textContent = `🟢 ${totalCount} Total (🖥️${localhostCount} + 🌐${hostingerCount})`;
+                if (refreshBtn) refreshBtn.style.display = 'inline-flex';
+            } else if (isLocalhostConnected) {
+                // Only localhost connected
+                badge.className = 'connection-state-badge connected';
+                badge.textContent = `🟢 Localhost (${localhostCount} DB${localhostCount !== 1 ? 's' : ''})`;
+                if (refreshBtn) refreshBtn.style.display = 'inline-flex';
+            } else if (isHostingerConnected) {
+                // Only hostinger connected
+                badge.className = 'connection-state-badge connected';
+                badge.textContent = `🟢 Hostinger (${hostingerCount} DB${hostingerCount !== 1 ? 's' : ''})`;
+                if (refreshBtn) refreshBtn.style.display = 'inline-flex';
+            }
+        }
+
+        // Refresh all connections
+        async function refreshAllConnections() {
+            showCustomToast('🔄 Refreshing all connections...', 'info', 2000);
+            
+            // Refresh localhost if connected
+            if (isLocalhostConnected) {
+                try {
+                    const databases = await fetchLocalhostDatabases();
+                    localStorage.setItem(LOCALHOST_DATABASES_KEY, JSON.stringify(databases));
+                    updateLocalhostToggleButton();
+                    console.log('✅ Localhost databases refreshed');
+                } catch (error) {
+                    console.error('❌ Failed to refresh localhost:', error);
+                }
+            }
+            
+            // Reload dashboard
+            setTimeout(() => {
+                loadDashboardConnections();
+                showCustomToast('✅ All connections refreshed!', 'success', 2500);
+            }, 500);
+        }
 
         // ========================================
         // HOSTINGER CONNECTION TOGGLE SYSTEM
@@ -3507,7 +3829,6 @@ PHASE: Hostinger Edition
         // Update connection toggle button appearance
         function updateConnectionToggleButton() {
             const btn = document.getElementById('connectToggleBtn');
-            const badge = document.getElementById('connectionStateBadge');
             
             if (!btn) return;
 
@@ -3524,15 +3845,9 @@ PHASE: Hostinger Edition
                 
                 // Show count if databases exist
                 if (dbCount > 0) {
-                    text.textContent = `Connected (${dbCount} DB${dbCount !== 1 ? 's' : ''})`;
+                    text.textContent = `Hostinger (${dbCount} DB${dbCount !== 1 ? 's' : ''})`;
                 } else {
                     text.textContent = 'Connected to Hostinger';
-                }
-                
-                // Update badge in page title
-                if (badge) {
-                    badge.className = 'connection-state-badge connected';
-                    badge.textContent = dbCount > 0 ? `🟢 ${dbCount} DB${dbCount !== 1 ? 's' : ''}` : '🟢 Connected';
                 }
             } else {
                 // DISCONNECTED STATE (Red)
@@ -3540,17 +3855,14 @@ PHASE: Hostinger Edition
                 btn.classList.add('disconnected');
                 icon.textContent = '🔌';
                 text.textContent = 'Connect Hostinger Shared';
-                
-                // Update badge in page title
-                if (badge) {
-                    badge.className = 'connection-state-badge disconnected';
-                    badge.textContent = '🔴 Disconnected';
-                }
             }
+            
+            // Update global badge (combines both connections)
+            updateGlobalConnectionBadge();
         }
 
         // Show connection/disconnection animation
-        function showConnectionAnimation(type) {
+        function showConnectionAnimation(type, serverName = 'Hostinger Shared') {
             const overlay = document.createElement('div');
             overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);';
             
@@ -3559,7 +3871,7 @@ PHASE: Hostinger Edition
                     <div style="text-align: center; animation: scaleIn 0.5s ease-out;">
                         <div style="font-size: 80px; margin-bottom: 20px; animation: connectedSpin 2s linear infinite;">🔗</div>
                         <div style="font-size: 28px; color: #22c55e; font-weight: bold; margin-bottom: 10px;">Connecting...</div>
-                        <div style="font-size: 16px; color: #86efac;">Establishing connection to Hostinger Shared</div>
+                        <div style="font-size: 16px; color: #86efac;">Establishing connection to ${serverName}</div>
                         <div style="margin-top: 20px;">
                             <div style="width: 200px; height: 6px; background: rgba(34, 197, 94, 0.3); border-radius: 10px; overflow: hidden;">
                                 <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #22c55e, #86efac); animation: loadingBar 0.8s ease-out;"></div>
@@ -3582,7 +3894,7 @@ PHASE: Hostinger Edition
                     <div style="text-align: center; animation: scaleIn 0.5s ease-out;">
                         <div style="font-size: 80px; margin-bottom: 20px; animation: disconnectPulse 1s ease-in-out infinite;">🔌</div>
                         <div style="font-size: 28px; color: #ef4444; font-weight: bold; margin-bottom: 10px;">Disconnecting...</div>
-                        <div style="font-size: 16px; color: #fca5a5;">Closing connection to Hostinger Shared</div>
+                        <div style="font-size: 16px; color: #fca5a5;">Closing connection to ${serverName}</div>
                         <div style="margin-top: 20px;">
                             <div style="width: 200px; height: 6px; background: rgba(239, 68, 68, 0.3); border-radius: 10px; overflow: hidden;">
                                 <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #ef4444, #fca5a5); animation: loadingBar 0.8s ease-out;"></div>
@@ -3647,7 +3959,8 @@ PHASE: Hostinger Edition
 
             // Load data when entering certain sections
             if (sectionId === 'dashboard') {
-                updateConnectionToggleButton(); // Update button state
+                updateConnectionToggleButton(); // Update Hostinger button state
+                updateLocalhostToggleButton(); // Update Localhost button state
                 loadDashboardConnections();
             } else if (sectionId === 'settings') {
                 loadHostingerConnectionsTable();
@@ -5883,15 +6196,20 @@ ${errorDetails || 'Unknown error occurred'}
         function updateSelectedDatabaseBadge() {
             if (!selectedDatabaseId) return;
 
-            // Extract connection ID from selectedDatabaseId (format: conn_123456)
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            const badgeNameEl = document.getElementById('selectedDatabaseName');
+            if (!badgeNameEl) return;
 
-            if (conn) {
-                const badgeNameEl = document.getElementById('selectedDatabaseName');
-                if (badgeNameEl) {
-                    badgeNameEl.textContent = conn.name;
+            // Check if it's localhost or hostinger
+            if (selectedDatabaseId.startsWith('localhost_')) {
+                const dbName = selectedDatabaseId.replace('localhost_', '');
+                badgeNameEl.textContent = `🖥️ ${dbName} (Localhost)`;
+            } else if (selectedDatabaseId.startsWith('conn_')) {
+                const connId = selectedDatabaseId.replace('conn_', '');
+                const connections = getHostingerConnections();
+                const conn = connections.find(c => c.id === connId);
+                
+                if (conn) {
+                    badgeNameEl.textContent = `🌐 ${conn.name}`;
                 }
             }
         }
@@ -5915,12 +6233,6 @@ ${errorDetails || 'Unknown error occurred'}
 
             // Save to localStorage
             localStorage.setItem(SELECTED_DATABASE_KEY, connId);
-
-            // Show deselect button
-            const deselectBtn = document.getElementById('deselectDatabaseBtn');
-            if (deselectBtn) {
-                deselectBtn.classList.add('active');
-            }
 
             // Update selected database badge
             updateSelectedDatabaseBadge();
@@ -5951,6 +6263,60 @@ ${errorDetails || 'Unknown error occurred'}
 
             // Show TABLE OPERATIONS in sidebar
             showTableOperations();
+            
+            // Show toast notification
+            const dbName = getSelectedDatabaseName(connId);
+            const serverType = connId.startsWith('localhost_') ? '🖥️ Localhost' : '🌐 Hostinger';
+            showCustomToast(`✅ Database Selected\n${serverType}: ${dbName}`, 'info', 2000);
+        }
+
+        // Get selected database name from ID
+        function getSelectedDatabaseName(connId) {
+            if (connId.startsWith('localhost_')) {
+                return connId.replace('localhost_', '');
+            } else if (connId.startsWith('conn_')) {
+                const id = connId.replace('conn_', '');
+                const connections = getHostingerConnections();
+                const conn = connections.find(c => c.id === id);
+                return conn ? conn.dbName : 'Unknown';
+            }
+            return 'Unknown';
+        }
+
+        // Get connection object from ID (supports both Localhost and Hostinger)
+        function getConnectionById(connId) {
+            if (!connId) return null;
+            
+            if (connId.startsWith('localhost_')) {
+                // LOCALHOST database
+                const dbName = connId.replace('localhost_', '');
+                return {
+                    id: connId,
+                    name: dbName,
+                    dbName: dbName,
+                    host: LOCALHOST_CONFIG.host,
+                    username: LOCALHOST_CONFIG.username,
+                    password: LOCALHOST_CONFIG.password,
+                    port: LOCALHOST_CONFIG.port,
+                    type: 'localhost',
+                    isLocalhost: true
+                };
+            } else if (connId.startsWith('conn_')) {
+                // HOSTINGER connection
+                const actualId = connId.replace('conn_', '');
+                const connections = getHostingerConnections();
+                const conn = connections.find(c => c.id === actualId);
+                
+                if (conn) {
+                    return {
+                        ...conn,
+                        id: connId,
+                        isLocalhost: false
+                    };
+                }
+            }
+            
+            return null;
         }
 
         // Deselect all databases
@@ -6287,81 +6653,165 @@ ${errorDetails || 'Unknown error occurred'}
         // Load connections in Dashboard with Test Connection
         async function loadDashboardConnections() {
             const listEl = document.getElementById('configuredConnectionsList');
-            const connections = getHostingerConnections();
+            const hostingerConnections = getHostingerConnections();
+            const localhostDatabases = getLocalhostDatabases();
 
-            // CHECK CONNECTION STATE FIRST
-            if (!isHostingerConnected) {
-                // DISCONNECTED - Show security message
+            // Check if BOTH are disconnected
+            if (!isHostingerConnected && !isLocalhostConnected) {
+                // BOTH DISCONNECTED - Show security message
                 listEl.innerHTML = `
                     <div style="text-align: center; padding: 60px 40px; background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.1) 100%); border: 2px dashed #ef4444; border-radius: 15px; backdrop-filter: blur(10px);">
                         <div style="font-size: 72px; margin-bottom: 20px; animation: disconnectPulse 2s ease-in-out infinite;">🔌</div>
-                        <div style="font-size: 24px; color: #fca5a5; font-weight: bold; margin-bottom: 15px;">Disconnected from Hostinger</div>
+                        <div style="font-size: 24px; color: #fca5a5; font-weight: bold; margin-bottom: 15px;">All Connections Disconnected</div>
                         <div style="font-size: 16px; color: rgba(254, 243, 199, 0.8); margin-bottom: 20px; line-height: 1.6;">
                             Your databases are hidden for security.<br>
-                            Click <strong style="color: #fbbf24;">"Connect Hostinger Shared"</strong> button above to access your databases.
+                            Click connection buttons above to access your databases.
                         </div>
                         <div style="font-size: 14px; color: rgba(254, 243, 199, 0.6); background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3); max-width: 500px; margin: 0 auto;">
-                            🔒 <strong>Security Notice:</strong> Connections are locally stored and only visible when connected.
+                            🔒 <strong>Security:</strong> Click <strong style="color: #3b82f6;">🖥️ Localhost</strong> or <strong style="color: #fbbf24;">🌐 Hostinger</strong> to connect
                         </div>
                     </div>
                 `;
-                console.log('🔴 Dashboard: DISCONNECTED - Hiding all databases');
+                console.log('🔴 Dashboard: ALL DISCONNECTED - Hiding all databases');
+                showConnectionStats(0, 0);
                 return;
             }
 
-            // CONNECTED - Show databases
-            console.log('🟢 Dashboard: CONNECTED - Displaying all databases');
+            // Build HTML for connected sources
+            let html = '';
+            let totalConnected = 0;
+            let hostingerCount = 0;
+            let localhostCount = 0;
 
-            if (connections.length === 0) {
+            // === LOCALHOST DATABASES ===
+            if (isLocalhostConnected && localhostDatabases.length > 0) {
+                console.log('🖥️ Dashboard: Displaying LOCALHOST databases');
+                localhostCount = localhostDatabases.length;
+                
+                // Add section header for localhost
+                html += `
+                    <div style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(30, 64, 175, 0.1) 100%); border: 2px solid rgba(59, 130, 246, 0.3); border-radius: 10px; padding: 12px 20px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px;">
+                        <div style="font-size: 28px;">🖥️</div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 16px; color: #60a5fa; font-weight: bold;">Localhost Laragon Databases</div>
+                            <div style="font-size: 12px; color: rgba(147, 197, 253, 0.7);">Local MySQL server • ${localhostCount} database${localhostCount !== 1 ? 's' : ''}</div>
+                        </div>
+                        <div style="background: rgba(59, 130, 246, 0.3); padding: 6px 14px; border-radius: 8px; font-size: 14px; font-weight: bold; color: #93c5fd;">
+                            ${localhostCount}
+                        </div>
+                    </div>
+                `;
+                
+                localhostDatabases.forEach(dbName => {
+                    const connId = `localhost_${dbName}`;
+                    html += `
+                        <div class="database-item" id="${connId}" onclick="selectDatabase('${connId}')" style="border-color: rgba(59, 130, 246, 0.4); background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(30, 64, 175, 0.05) 100%);">
+                            <!-- Localhost Badge -->
+                            <div style="position: absolute; top: 8px; right: 8px; background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); color: white; padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: bold; border: 1px solid rgba(59, 130, 246, 0.6); box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);">
+                                LARAGON
+                            </div>
+                            
+                            <!-- Row 1: Logo/Icon -->
+                            <div class="database-icon-row" style="border-color: rgba(59, 130, 246, 0.15);">
+                                <span class="database-icon" style="filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));">🖥️</span>
+                            </div>
+                            
+                            <!-- Row 2: Text Content -->
+                            <div class="database-text-row">
+                                <div class="database-name" style="color: #60a5fa;">${dbName}</div>
+                                <div class="database-info-item" style="color: rgba(147, 197, 253, 0.8);">📁 Localhost Database</div>
+                                <div class="database-info-item" style="color: rgba(147, 197, 253, 0.7);">🖥️ ${LOCALHOST_CONFIG.host}</div>
+                            </div>
+                            
+                            <!-- Row 3: Status + Button -->
+                            <div class="database-actions-row" style="border-color: rgba(59, 130, 246, 0.15);">
+                                <div id="${connId}_status" class="database-status" style="background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; color: #93c5fd;">
+                                    ✅ Laragon (Local)
+                                </div>
+                                <button class="btn btn-primary database-button" style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%); border-color: #60a5fa;" onclick="event.stopPropagation(); showLocalhostInfo('${dbName}');">
+                                    <span>ℹ️</span> Info
+                                </button>
+                            </div>
+                        </div>`;
+                    totalConnected++;
+                });
+            }
+
+            // === HOSTINGER CONNECTIONS ===
+            if (isHostingerConnected && hostingerConnections.length > 0) {
+                console.log('🌐 Dashboard: Displaying HOSTINGER databases');
+                hostingerCount = hostingerConnections.length;
+                
+                // Add section header for Hostinger (only if localhost is also shown)
+                if (isLocalhostConnected && localhostCount > 0) {
+                    html += `
+                        <div style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.1) 100%); border: 2px solid rgba(251, 191, 36, 0.3); border-radius: 10px; padding: 12px 20px; margin: 15px 0 10px 0; display: flex; align-items: center; gap: 12px;">
+                            <div style="font-size: 28px;">🌐</div>
+                            <div style="flex: 1;">
+                                <div style="font-size: 16px; color: #fbbf24; font-weight: bold;">Hostinger Remote Databases</div>
+                                <div style="font-size: 12px; color: rgba(251, 191, 36, 0.7);">Remote MySQL servers • ${hostingerCount} connection${hostingerCount !== 1 ? 's' : ''}</div>
+                            </div>
+                            <div style="background: rgba(251, 191, 36, 0.3); padding: 6px 14px; border-radius: 8px; font-size: 14px; font-weight: bold; color: #fbbf24;">
+                                ${hostingerCount}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                hostingerConnections.forEach(conn => {
+                    const typeIcon = conn.type === 'vps' ? '🖥️' : '🌐';
+                    const connId = `conn_${conn.id}`;
+                    html += `
+                        <div class="database-item" id="${connId}" onclick="selectDatabase('${connId}')">
+                            <!-- Row 1: Logo/Icon -->
+                            <div class="database-icon-row">
+                                <span class="database-icon">${typeIcon}</span>
+                            </div>
+                            
+                            <!-- Row 2: Text Content -->
+                            <div class="database-text-row">
+                                <div class="database-name">${conn.name}</div>
+                                <div class="database-info-item">📁 ${conn.dbName}</div>
+                                <div class="database-info-item">🖥️ ${conn.host}</div>
+                            </div>
+                            
+                            <!-- Row 3: Status + Button -->
+                            <div class="database-actions-row">
+                                <div id="${connId}_status" class="database-status testing">
+                                    <span class="spinner"></span>
+                                    <span>Testing connection...</span>
+                                </div>
+                                <button class="btn btn-primary database-button" onclick="event.stopPropagation(); testConnectionManual('${conn.id}')">
+                                    <span>🔄</span> Test Again
+                                </button>
+                            </div>
+                        </div>`;
+                    totalConnected++;
+                });
+            }
+
+            // Show results
+            if (totalConnected === 0) {
                 listEl.innerHTML = `
                     <div style="text-align: center; padding: 60px 40px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(22, 163, 74, 0.1) 100%); border: 2px dashed #22c55e; border-radius: 15px; backdrop-filter: blur(10px);">
                         <div style="font-size: 72px; margin-bottom: 20px;">🗄️</div>
-                        <div style="font-size: 20px; color: #86efac; font-weight: bold; margin-bottom: 10px;">No Connections Configured</div>
+                        <div style="font-size: 20px; color: #86efac; font-weight: bold; margin-bottom: 10px;">Connected but No Databases Found</div>
                         <div style="font-size: 15px; color: rgba(254, 243, 199, 0.7);">
-                            Go to <strong style="color: #fbbf24;">Hostinger Connections</strong> in the sidebar to add your first connection.
+                            ${isLocalhostConnected ? '🖥️ Localhost: No databases found<br>' : ''}
+                            ${isHostingerConnected ? '🌐 Hostinger: No connections configured' : ''}
                         </div>
                     </div>
                 `;
-                return;
+            } else {
+                listEl.innerHTML = html;
+
+                // Auto-test Hostinger connections only
+                if (isHostingerConnected) {
+                    hostingerConnections.forEach(conn => {
+                        testConnection(conn.id);
+                    });
+                }
             }
-
-            let html = '';
-            connections.forEach(conn => {
-                const typeIcon = conn.type === 'vps' ? '🖥️' : '🌐';
-                const connId = `conn_${conn.id}`;
-                html += `
-                    <div class="database-item" id="${connId}" onclick="selectDatabase('${connId}')">
-                        <!-- Row 1: Logo/Icon -->
-                        <div class="database-icon-row">
-                            <span class="database-icon">${typeIcon}</span>
-                        </div>
-                        
-                        <!-- Row 2: Text Content -->
-                        <div class="database-text-row">
-                            <div class="database-name">${conn.name}</div>
-                            <div class="database-info-item">📁 ${conn.dbName}</div>
-                            <div class="database-info-item">🖥️ ${conn.host}</div>
-                        </div>
-                        
-                        <!-- Row 3: Status + Button -->
-                        <div class="database-actions-row">
-                            <div id="${connId}_status" class="database-status testing">
-                                <span class="spinner"></span>
-                                <span>Testing connection...</span>
-                            </div>
-                            <button class="btn btn-primary database-button" onclick="event.stopPropagation(); testConnectionManual('${conn.id}')">
-                                <span>🔄</span> Test Again
-                            </button>
-                        </div>
-                    </div>`;
-            });
-
-            listEl.innerHTML = html;
-
-            // Auto-test all connections (only if connected)
-            connections.forEach(conn => {
-                testConnection(conn.id);
-            });
 
             // Restore selected database if exists
             setTimeout(() => {
@@ -6369,41 +6819,56 @@ ${errorDetails || 'Unknown error occurred'}
             }, 50);
             
             // Show connection stats
-            showConnectionStats(connections.length);
+            showConnectionStats(hostingerCount, localhostCount);
         }
 
         // Show connection statistics when connected
-        function showConnectionStats(count) {
+        function showConnectionStats(hostingerCount, localhostCount) {
             const dashboardMessage = document.getElementById('dashboardMessage');
             if (!dashboardMessage) return;
             
-            if (!isHostingerConnected) {
-                // Clear message when disconnected
+            const totalCount = hostingerCount + localhostCount;
+            
+            // Clear if both disconnected or no databases
+            if ((!isHostingerConnected && !isLocalhostConnected) || totalCount === 0) {
                 dashboardMessage.innerHTML = '';
                 return;
             }
             
-            if (count === 0) {
-                // No connections configured
-                dashboardMessage.innerHTML = '';
-                return;
+            // Build connection status messages
+            let statusParts = [];
+            if (isLocalhostConnected && localhostCount > 0) {
+                statusParts.push(`<strong style="color: #3b82f6;">🖥️ Localhost: ${localhostCount}</strong>`);
+            }
+            if (isHostingerConnected && hostingerCount > 0) {
+                statusParts.push(`<strong style="color: #fbbf24;">🌐 Hostinger: ${hostingerCount}</strong>`);
             }
             
-            // Add subtle stats indicator
+            const statusText = statusParts.join(' • ');
+            
+            // Add beautiful stats indicator
             dashboardMessage.innerHTML = `
                 <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.05) 100%); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; animation: fadeIn 0.5s ease-out;">
                     <div style="font-size: 36px;">✅</div>
                     <div style="flex: 1;">
                         <div style="font-size: 15px; color: #86efac; font-weight: bold; margin-bottom: 5px;">
-                            Successfully Connected to Hostinger Shared
+                            Active Database Connections
                         </div>
                         <div style="font-size: 13px; color: rgba(254, 243, 199, 0.7);">
-                            📊 Displaying <strong style="color: #fbbf24;">${count}</strong> configured database connection${count !== 1 ? 's' : ''} • All credentials loaded from localStorage
+                            📊 Displaying <strong style="color: #fef3c7;">${totalCount}</strong> total • ${statusText}
                         </div>
                     </div>
-                    <div style="padding: 10px 16px; background: rgba(34, 197, 94, 0.2); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.4);">
-                        <div style="font-size: 24px; font-weight: bold; color: #22c55e;">${count}</div>
-                        <div style="font-size: 10px; color: rgba(254, 243, 199, 0.6); text-transform: uppercase; letter-spacing: 0.5px;">Active</div>
+                    <div style="display: flex; gap: 10px;">
+                        ${localhostCount > 0 ? `
+                        <div style="padding: 10px 16px; background: rgba(59, 130, 246, 0.2); border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.4);">
+                            <div style="font-size: 20px; font-weight: bold; color: #3b82f6;">${localhostCount}</div>
+                            <div style="font-size: 9px; color: rgba(254, 243, 199, 0.6); text-transform: uppercase; letter-spacing: 0.5px;">Local</div>
+                        </div>` : ''}
+                        ${hostingerCount > 0 ? `
+                        <div style="padding: 10px 16px; background: rgba(251, 191, 36, 0.2); border-radius: 8px; border: 1px solid rgba(251, 191, 36, 0.4);">
+                            <div style="font-size: 20px; font-weight: bold; color: #fbbf24;">${hostingerCount}</div>
+                            <div style="font-size: 9px; color: rgba(254, 243, 199, 0.6); text-transform: uppercase; letter-spacing: 0.5px;">Remote</div>
+                        </div>` : ''}
                     </div>
                 </div>
             `;
@@ -6916,32 +7381,23 @@ ${errorDetails || 'Unknown error occurred'}
                 return;
             }
 
-            // Get all connections
-            const allConnections = getHostingerConnections();
-            console.log('All connections:', allConnections);
-            
-            // Extract the actual ID from selectedDatabaseId (remove 'conn_' prefix if present)
-            const actualId = selectedDatabaseId.replace('conn_', '');
-            console.log('Looking for connection with ID:', actualId);
-            
-            // Find the selected connection
-            const conn = allConnections.find(c => c.id === actualId);
-            console.log('Selected connection:', conn);
+            // Get connection using helper function
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
-                console.error('Connection not found for ID:', actualId);
+                console.error('Connection not found for ID:', selectedDatabaseId);
                 document.getElementById('migrationSourceDbName').textContent = 'Connection not found';
                 document.getElementById('migrationTablesContainer').innerHTML = `
                     <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
                         <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
                         <p style="font-size: 14px;">Connection not found</p>
-                        <p style="font-size: 12px; margin-top: 10px;">ID: ${actualId}</p>
                     </div>
                 `;
                 return;
             }
 
-            document.getElementById('migrationSourceDbName').textContent = `Database: ${conn.name}`;
+            const serverLabel = conn.isLocalhost ? '🖥️ Localhost' : '🌐 Hostinger';
+            document.getElementById('migrationSourceDbName').textContent = `${serverLabel}: ${conn.name}`;
 
             // Show loading state
             document.getElementById('migrationTablesContainer').innerHTML = `
@@ -7161,25 +7617,67 @@ ${errorDetails || 'Unknown error occurred'}
             const currentSelection = select.value;
             console.log('Current destination selection before reload:', currentSelection);
 
-            const allConnections = getHostingerConnections();
-            const sourceId = selectedDatabaseId ? selectedDatabaseId.replace('conn_', '') : null;
-
             // Clear and rebuild dropdown
             select.innerHTML = '<option value="">-- Select Destination --</option>';
 
-            allConnections.forEach(conn => {
-                // Skip source database
-                if (sourceId && conn.id === sourceId) {
-                    return;
+            // Add localhost databases (if connected)
+            if (isLocalhostConnected) {
+                const localhostDbs = getLocalhostDatabases();
+                if (localhostDbs.length > 0) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = '🖥️ LOCALHOST (LARAGON)';
+                    
+                    localhostDbs.forEach(dbName => {
+                        const localhostId = `localhost_${dbName}`;
+                        
+                        // Skip if this is the source
+                        if (selectedDatabaseId === localhostId) {
+                            return;
+                        }
+                        
+                        const option = document.createElement('option');
+                        option.value = localhostId;
+                        option.textContent = `🖥️ ${dbName} (Localhost)`;
+                        option.style.background = 'rgba(0, 0, 0, 0.8)';
+                        option.style.color = '#93c5fd';
+                        optgroup.appendChild(option);
+                    });
+                    
+                    if (optgroup.children.length > 0) {
+                        select.appendChild(optgroup);
+                    }
                 }
+            }
 
-                const option = document.createElement('option');
-                option.value = conn.id;
-                option.textContent = `${conn.name} (${conn.dbName})`;
-                option.style.background = 'rgba(0, 0, 0, 0.8)';
-                option.style.color = '#fef3c7';
-                select.appendChild(option);
-            });
+            // Add Hostinger connections (if connected)
+            if (isHostingerConnected) {
+                const allConnections = getHostingerConnections();
+                
+                if (allConnections.length > 0) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = '🌐 HOSTINGER';
+                    
+                    allConnections.forEach(conn => {
+                        const connId = `conn_${conn.id}`;
+                        
+                        // Skip if this is the source
+                        if (selectedDatabaseId === connId) {
+                            return;
+                        }
+
+                        const option = document.createElement('option');
+                        option.value = connId;
+                        option.textContent = `🌐 ${conn.name} (${conn.dbName})`;
+                        option.style.background = 'rgba(0, 0, 0, 0.8)';
+                        option.style.color = '#fef3c7';
+                        optgroup.appendChild(option);
+                    });
+                    
+                    if (optgroup.children.length > 0) {
+                        select.appendChild(optgroup);
+                    }
+                }
+            }
 
             // Restore previous selection if it still exists
             if (currentSelection && currentSelection !== '') {
@@ -7192,7 +7690,7 @@ ${errorDetails || 'Unknown error occurred'}
                 }
             }
 
-            console.log('Destination dropdown loaded, excluded source:', sourceId);
+            console.log('Destination dropdown loaded with Localhost + Hostinger, excluded source:', selectedDatabaseId);
         }
 
         // Load destination tables
@@ -7223,8 +7721,8 @@ ${errorDetails || 'Unknown error occurred'}
             console.log('Set selectedDestinationId to:', selectedDestinationId);
             selectedDestinationTables.clear(); // Clear selections when loading new destination
 
-            const allConnections = getHostingerConnections();
-            const conn = allConnections.find(c => c.id === destId);
+            // Get connection using helper function
+            const conn = getConnectionById(destId);
 
             if (!conn) {
                 console.error('Destination connection not found:', destId);
@@ -7232,8 +7730,9 @@ ${errorDetails || 'Unknown error occurred'}
             }
 
             // Show destination info
+            const serverLabel = conn.isLocalhost ? '🖥️ Localhost' : '🌐 Hostinger';
             document.getElementById('migrationDestinationInfo').style.display = 'block';
-            document.getElementById('migrationDestDbName').textContent = conn.name;
+            document.getElementById('migrationDestDbName').textContent = `${serverLabel} ${conn.name}`;
             document.getElementById('migrationDestHost').textContent = `Host: ${conn.host} | DB: ${conn.dbName}`;
 
             // Show loading state
@@ -12549,7 +13048,7 @@ ${'='.repeat(80)}
 
                     const [fileHandle] = await window.showOpenFilePicker(options);
                     const file = await fileHandle.getFile();
-                    await processImportFile(file);
+                    await processPromptsImportFile(file);
                 } catch (error) {
                     if (error.name !== 'AbortError') {
                         alert(`❌ Error: ${error.message}`);
@@ -12561,14 +13060,14 @@ ${'='.repeat(80)}
                 input.accept = '.json';
                 input.onchange = async (e) => {
                     const file = e.target.files[0];
-                    if (file) await processImportFile(file);
+                    if (file) await processPromptsImportFile(file);
                 };
                 input.click();
             }
         }
 
-        // Process import file
-        async function processImportFile(file) {
+        // Process import file for AI prompts
+        async function processPromptsImportFile(file) {
             try {
                 const text = await file.text();
                 const data = JSON.parse(text);
