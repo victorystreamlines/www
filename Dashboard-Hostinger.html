@@ -9572,23 +9572,19 @@ You can now use these credentials to build your application!
             document.body.appendChild(loadingDiv);
 
             try {
-                // Get source connection
-                const allConnections = getHostingerConnections();
-                const sourceId = selectedDatabaseId.replace('conn_', '');
-                const sourceConn = allConnections.find(c => c.id === sourceId);
-                const destConn = allConnections.find(c => c.id === selectedDestinationId);
+                // Get source and destination connections (supports both Localhost and Hostinger)
+                const sourceConn = getConnectionById(selectedDatabaseId);
+                const destConn = getConnectionById(selectedDestinationId);
 
                 console.log('🔍 Debug Info:', {
                     selectedDatabaseId,
-                    sourceId,
                     selectedDestinationId,
-                    allConnectionsCount: allConnections.length,
-                    sourceConn: sourceConn ? 'Found' : 'NOT FOUND',
-                    destConn: destConn ? 'Found' : 'NOT FOUND'
+                    sourceConn: sourceConn ? `Found (${sourceConn.isLocalhost ? 'Localhost' : 'Hostinger'})` : 'NOT FOUND',
+                    destConn: destConn ? `Found (${destConn.isLocalhost ? 'Localhost' : 'Hostinger'})` : 'NOT FOUND'
                 });
 
                 if (!sourceConn) {
-                    throw new Error('Source connection not found. Selected ID: ' + sourceId);
+                    throw new Error('Source connection not found. Selected ID: ' + selectedDatabaseId);
                 }
 
                 if (!destConn) {
@@ -14335,10 +14331,9 @@ You can now use this DESTINATION database connection!
             document.body.appendChild(loadingDiv);
 
             try {
-                const allConnections = getHostingerConnections();
-                const sourceId = selectedDatabaseId.replace('conn_', '');
-                const sourceConn = allConnections.find(c => c.id === sourceId);
-                const destConn = allConnections.find(c => c.id === selectedDestinationId);
+                // Get source and destination connections (supports both Localhost and Hostinger)
+                const sourceConn = getConnectionById(selectedDatabaseId);
+                const destConn = getConnectionById(selectedDestinationId);
 
                 if (!sourceConn || !destConn) {
                     throw new Error('Source or Destination connection not found');
