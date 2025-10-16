@@ -4195,9 +4195,8 @@ try {
             if (!displayEl || !promptTextarea) return;
 
             if (selectedDatabaseId) {
-                const connId = selectedDatabaseId.replace('conn_', '');
-                const connections = getHostingerConnections();
-                const conn = connections.find(c => c.id === connId);
+                // Get connection (supports both Localhost and Hostinger)
+                const conn = getConnectionById(selectedDatabaseId);
                 
                 if (conn) {
                     // Update display
@@ -4220,7 +4219,7 @@ try {
 I need you to connect to my MySQL database with the following credentials:
 
 Connection Name: ${conn.name}
-Server Type: ${conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting'}
+Server Type: ${conn.isLocalhost ? 'Localhost (Laragon)' : (conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting')}
 
 Database Host: ${conn.host}
 Database Name: ${conn.dbName}
@@ -4384,9 +4383,8 @@ Please confirm you can connect successfully before proceeding with any operation
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('aiPromptMessage', '❌ Connection not found', 'error');
@@ -4418,7 +4416,7 @@ Please confirm you can connect successfully before proceeding with any operation
 =====================================
 
 Connection Name: ${conn.name}
-Server Type: ${conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting'}
+Server Type: ${conn.isLocalhost ? 'Localhost (Laragon)' : (conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting')}
 Database Name: ${conn.dbName}
 Database Host: ${conn.host}
 
