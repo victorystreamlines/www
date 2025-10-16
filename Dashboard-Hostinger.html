@@ -13592,8 +13592,8 @@ ${'='.repeat(80)}
 
             console.log('🎲 Injecting random data into DESTINATION table:', tableName);
 
-            const connections = getHostingerConnections();
-            const destConn = connections.find(c => c.id === selectedDestinationId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const destConn = getConnectionById(selectedDestinationId);
 
             if (!destConn) {
                 alert('❌ Destination connection not found');
@@ -13674,8 +13674,8 @@ ${'='.repeat(80)}
             console.log('=== DUPLICATE DESTINATION TABLE ===');
             console.log('Original table:', tableName);
 
-            const connections = getHostingerConnections();
-            const destConn = connections.find(c => c.id === selectedDestinationId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const destConn = getConnectionById(selectedDestinationId);
 
             if (!destConn) {
                 alert('❌ Destination connection not found');
