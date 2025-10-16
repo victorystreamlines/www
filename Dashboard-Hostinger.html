@@ -12418,16 +12418,48 @@ ${'='.repeat(60)}
             const select = document.getElementById('promptGenDatabaseSelect');
             if (!select) return;
 
-            const allConnections = getHostingerConnections();
-            
             select.innerHTML = '<option value="">-- Select Database --</option>';
             
-            allConnections.forEach(conn => {
-                const option = document.createElement('option');
-                option.value = conn.id;
-                option.textContent = `${conn.name} (${conn.dbName})`;
-                select.appendChild(option);
-            });
+            // Add localhost databases (if connected)
+            if (isLocalhostConnected) {
+                const localhostDbs = getLocalhostDatabases();
+                if (localhostDbs.length > 0) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = '🖥️ LOCALHOST (LARAGON)';
+                    
+                    localhostDbs.forEach(dbName => {
+                        const option = document.createElement('option');
+                        option.value = `localhost_${dbName}`;
+                        option.textContent = `🖥️ ${dbName} (Localhost)`;
+                        option.style.background = 'rgba(0, 0, 0, 0.8)';
+                        option.style.color = '#93c5fd';
+                        optgroup.appendChild(option);
+                    });
+                    
+                    select.appendChild(optgroup);
+                }
+            }
+            
+            // Add Hostinger connections (if connected)
+            if (isHostingerConnected) {
+                const allConnections = getHostingerConnections();
+                
+                if (allConnections.length > 0) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = '🌐 HOSTINGER';
+                    
+                    allConnections.forEach(conn => {
+                        const option = document.createElement('option');
+                        option.value = conn.id;
+                        option.textContent = `🌐 ${conn.name} (${conn.dbName})`;
+                        option.style.background = 'rgba(0, 0, 0, 0.8)';
+                        option.style.color = '#fef3c7';
+                        optgroup.appendChild(option);
+                    });
+                    
+                    select.appendChild(optgroup);
+                }
+            }
         }
 
         // Load tables for prompt generator
@@ -12450,8 +12482,8 @@ ${'='.repeat(60)}
             selectedPromptGenDatabaseId = dbId;
             selectedPromptGenTables.clear();
 
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === dbId);
+            // Get connection (supports both Localhost and Hostinger)
+            const conn = getConnectionById(dbId);
 
             if (!conn) {
                 console.error('Connection not found:', dbId);
@@ -12628,8 +12660,8 @@ ${'='.repeat(60)}
                 return;
             }
 
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === selectedPromptGenDatabaseId);
+            // Get connection (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedPromptGenDatabaseId);
 
             if (!conn) {
                 alert('❌ Connection not found');
@@ -12660,7 +12692,7 @@ DATABASE CONNECTION INFORMATION:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Connection Name: ${conn.name}
-Server Type: ${conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting'}
+Server Type: ${conn.isLocalhost ? 'Localhost (Laragon)' : (conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting')}
 Host: ${conn.host}
 Port: ${conn.port || '3306'}
 Database Name: ${conn.dbName}
