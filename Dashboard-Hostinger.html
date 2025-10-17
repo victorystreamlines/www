@@ -12510,7 +12510,7 @@ ${'='.repeat(60)}
                     
                     allConnections.forEach(conn => {
                         const option = document.createElement('option');
-                        option.value = conn.id;
+                        option.value = `conn_${conn.id}`;  // ✅ FIX: Add conn_ prefix for getConnectionById()
                         option.textContent = `🌐 ${conn.name} (${conn.dbName})`;
                         option.style.background = 'rgba(0, 0, 0, 0.8)';
                         option.style.color = '#fef3c7';
