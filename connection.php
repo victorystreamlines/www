@@ -22,6 +22,24 @@ $db_password = "P@master5007";
 $db_port = "3306";
 
 // ============================================
+// VPS SSH CREDENTIALS
+// Fill in your Hostinger VPS SSH access details below
+// These credentials will be used to connect to your VPS via terminal
+// ============================================
+
+// Your VPS IP Address (e.g., "123.456.789.123" or "sharpworth.com")
+$ssh_host = "69.62.114.112";
+
+// SSH Username (usually "root" or your custom username from Hostinger)
+$ssh_username = "naif";
+
+// SSH Password (Your VPS root password or user password)
+$ssh_password = "P@master5007";
+
+// SSH Port (default is 22, only change if you've customized it)
+$ssh_port = "22";
+
+// ============================================
 // CONNECTION TEST LOGIC
 // ============================================
 
