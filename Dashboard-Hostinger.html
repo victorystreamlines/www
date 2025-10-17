@@ -1613,7 +1613,7 @@ PHASE: Hostinger Edition
             <li class="nav-item">
                 <a class="nav-link" onclick="showSection('aiPrompt')">
                     <span class="nav-icon">🤖</span>
-                    <span>AI Connection Prompt</span>
+                    <span>AI Prompter</span>
                 </a>
             </li>
             <!-- TABLE OPERATIONS - HIDDEN -->
@@ -2403,134 +2403,200 @@ PHASE: Hostinger Edition
 
                 <!-- Tab 3: Database Migration -->
                 <div id="databaseMigrationTab" class="tab-content">
-                    <div style="background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                        <h3 style="color: #fbbf24; margin-bottom: 15px;">🔄 Database Migration</h3>
-                        
-                        <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 13px;">
-                            <strong style="color: #93c5fd;">💡 Migration:</strong> Copy all tables and data from the selected (source) database to another (destination) database.
+                    <div style="display: flex; gap: 20px; align-items: flex-start;">
+                        <!-- Source Tables Container (Left Side - 48%) -->
+                        <div style="flex: 0 0 48%; background: linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(153, 27, 27, 0.3) 100%); border: 2px solid rgba(251, 191, 36, 0.3); border-radius: 12px; padding: 20px; backdrop-filter: blur(10px);">
+                            <!-- Container Header -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid rgba(251, 191, 36, 0.3);">
+                                <div>
+                                    <h3 style="color: #fbbf24; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 24px;">📦</span>
+                                        <span>Source Tables</span>
+                                    </h3>
+                                    <p style="color: rgba(254, 243, 199, 0.7); margin: 5px 0 0 34px; font-size: 13px;" id="migrationSourceDbName">
+                                        No database selected
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="showDatabaseInfo()" class="btn btn-primary" style="padding: 8px 12px; font-size: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);" title="Show database credentials and selected tables info">
+                                        <span>🗄️</span> DB-Info
+                                    </button>
+                                    <button onclick="refreshMigrationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Refresh tables">
+                                        <span>🔄</span>
+                                    </button>
+                                    <button onclick="selectAllMigrationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Select all">
+                                        <span>✅</span>
+                                    </button>
+                                    <button onclick="deselectAllMigrationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Deselect all">
+                                        <span>❌</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tables Grid - NOW ALSO A DROP ZONE (for reverse drag from Destination) -->
+                            <div id="migrationTablesContainer" 
+                                 class="migration-drop-zone"
+                                 ondrop="handleSourceDrop(event)"
+                                 ondragover="handleSourceDragOver(event)"
+                                 ondragleave="handleSourceDragLeave(event)"
+                                 style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 200px; max-height: 500px; overflow-y: auto; padding: 5px; transition: all 0.3s;">
+                                <!-- Tables will be loaded here dynamically -->
+                                <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                                    <div style="font-size: 48px; margin-bottom: 15px;">📦</div>
+                                    <p style="font-size: 14px;">Select a database to view tables</p>
+                                </div>
+                            </div>
+
+                            <!-- Selected Count -->
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(251, 191, 36, 0.2); color: rgba(254, 243, 199, 0.8); font-size: 13px; display: flex; justify-content: space-between; align-items: center;">
+                                <span id="migrationSelectedCount">0 tables selected</span>
+                                <span id="migrationTotalCount">0 tables total</span>
+                            </div>
                         </div>
 
-                        <!-- Source Database -->
-                        <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid #22c55e; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                            <h4 style="color: #86efac; margin: 0 0 10px 0;">📤 Source Database (Selected)</h4>
-                            <div style="font-size: 16px; color: #fef3c7; font-weight: bold;" id="migrationSourceDb">None selected</div>
-                            <div style="font-size: 13px; color: rgba(254, 243, 199, 0.7); margin-top: 5px;" id="migrationSourceInfo">Please select a database from Dashboard</div>
+                        <!-- Arrow Container (Center - Two-Way System) -->
+                        <div style="flex: 0 0 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
+                            <div style="font-size: 36px; animation: pulse 2s infinite;">➡️</div>
+                            <div style="width: 2px; height: 80px; background: linear-gradient(to bottom, rgba(251, 191, 36, 0.5), rgba(34, 197, 94, 0.5));"></div>
+                            <div style="font-size: 36px; animation: pulse 2s infinite; animation-delay: 1s;">⬅️</div>
                         </div>
 
-                        <!-- Destination Database -->
-                        <div class="form-group">
-                            <label class="form-label">📥 Destination Database</label>
-                            <select id="migrationDestinationDb" class="form-select" onchange="updateMigrationDestinationInfo()">
-                                <option value="">-- Select Destination Database --</option>
-                            </select>
-                            <div class="helper-text" id="migrationDestInfo">Choose where to migrate the data</div>
-                        </div>
+                        <!-- Destination Database Container (Right Side - 48%) -->
+                        <div style="flex: 0 0 48%; background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%); border: 2px solid rgba(34, 197, 94, 0.4); border-radius: 12px; padding: 20px; backdrop-filter: blur(10px);">
+                            <!-- Container Header -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid rgba(34, 197, 94, 0.3);">
+                                <div>
+                                    <h3 style="color: #86efac; margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 24px;">📥</span>
+                                        <span>Destination Database</span>
+                                    </h3>
+                                    <p style="color: rgba(254, 243, 199, 0.7); margin: 5px 0 0 34px; font-size: 13px;">
+                                        Select where to copy tables
+                                    </p>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="showDestinationDatabaseInfo()" class="btn btn-primary" style="padding: 8px 12px; font-size: 12px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);" title="Show database credentials and selected tables info">
+                                        <span>🗄️</span> DB-Info
+                                    </button>
+                                    <button onclick="refreshDestinationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Refresh tables">
+                                        <span>🔄</span>
+                                    </button>
+                                    <button onclick="selectAllDestinationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Select all">
+                                        <span>✅</span>
+                                    </button>
+                                    <button onclick="deselectAllDestinationTables()" class="btn btn-secondary" style="padding: 8px 12px; font-size: 12px;" title="Deselect all">
+                                        <span>❌</span>
+                                    </button>
+                                </div>
+                            </div>
 
-                        <!-- Migration Type -->
-                        <div class="form-group">
-                            <label class="form-label">🔧 Migration Type</label>
-                            
-                            <!-- Option 1: Overwrite -->
-                            <div style="background: rgba(239, 68, 68, 0.1); border: 2px solid #ef4444; border-radius: 10px; padding: 15px; margin-bottom: 15px; cursor: pointer; transition: all 0.3s;" onclick="selectMigrationType('overwrite')" id="migrationType_overwrite">
-                                <div style="display: flex; align-items: center; gap: 15px;">
-                                    <input type="radio" name="migrationType" value="overwrite" id="migrationOverwrite" style="width: 20px; height: 20px; cursor: pointer;">
+                            <!-- Database Selection Dropdown -->
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; color: #fbbf24; font-size: 14px; font-weight: 500; margin-bottom: 10px;">
+                                    🎯 Select Destination Database
+                                </label>
+                                <select id="migrationDestinationSelect" 
+                                        onchange="loadDestinationTables()"
+                                        style="width: 100%; padding: 12px 15px; background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 100%); border: 2px solid rgba(34, 197, 94, 0.4); border-radius: 8px; color: #fef3c7; font-size: 14px; cursor: pointer; outline: none; transition: all 0.3s;">
+                                    <option value="">-- Select Destination --</option>
+                                </select>
+                            </div>
+
+                            <!-- Destination Info Display -->
+                            <div id="migrationDestinationInfo" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 8px; padding: 12px 15px; margin-bottom: 20px; display: none;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span style="font-size: 20px;">🌐</span>
                                     <div style="flex: 1;">
-                                        <h4 style="color: #fca5a5; margin: 0 0 8px 0;">⚠️ Overwrite (Replace All)</h4>
-                                        <p style="margin: 0; font-size: 13px; color: rgba(254, 243, 199, 0.8);">
-                                            <strong>Deletes ALL tables</strong> in destination, then creates fresh copy from source.<br>
-                                            ⚠️ <strong>Warning:</strong> All existing data in destination will be LOST!
-                                        </p>
+                                        <div style="color: #93c5fd; font-size: 13px; font-weight: 500;" id="migrationDestDbName">Database Name</div>
+                                        <div style="color: rgba(254, 243, 199, 0.6); font-size: 11px;" id="migrationDestHost">Host</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Option 2: Append -->
-                            <div style="background: rgba(34, 197, 94, 0.1); border: 2px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 15px; cursor: pointer; transition: all 0.3s;" onclick="selectMigrationType('append')" id="migrationType_append">
-                                <div style="display: flex; align-items: center; gap: 15px;">
-                                    <input type="radio" name="migrationType" value="append" id="migrationAppend" style="width: 20px; height: 20px; cursor: pointer;">
-                                    <div style="flex: 1;">
-                                        <h4 style="color: #86efac; margin: 0 0 8px 0;">✅ Append (Merge Data)</h4>
-                                        <p style="margin: 0; font-size: 13px; color: rgba(254, 243, 199, 0.8);">
-                                            <strong>Adds data</strong> from source to destination without deleting existing tables.<br>
-                                            ✅ <strong>Safe:</strong> Existing data preserved. New tables created if missing.
-                                        </p>
+                            <!-- Destination Tables Container -->
+                            <div id="migrationDestinationTablesContainer" 
+                                 class="migration-drop-zone"
+                                 ondrop="handleDrop(event)"
+                                 ondragover="handleDragOver(event)"
+                                 ondragleave="handleDragLeave(event)"
+                                 style="display: flex; flex-wrap: wrap; gap: 10px; min-height: 200px; max-height: 340px; overflow-y: auto; padding: 5px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.2); transition: all 0.3s;">
+                                <!-- Destination tables will be loaded here -->
+                                <div style="width: 100%; text-align: center; padding: 40px 20px; color: rgba(254, 243, 199, 0.5);">
+                                    <div style="font-size: 48px; margin-bottom: 15px;">🎯</div>
+                                    <p style="font-size: 14px;">Select a destination database</p>
+                                </div>
+                            </div>
+
+                            <!-- Destination Tables Count -->
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(34, 197, 94, 0.2); color: rgba(254, 243, 199, 0.8); font-size: 13px; display: flex; justify-content: space-between; align-items: center;">
+                                <span id="migrationDestinationSelectedCount">0 tables selected</span>
+                                <span id="migrationDestinationCount">0 tables total</span>
+                            </div>
+
+                            <!-- Drag & Drop Instruction - TWO-WAY SYSTEM -->
+                            <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid rgba(34, 197, 94, 0.3); color: rgba(254, 243, 199, 0.7); font-size: 13px;">
+                                <div style="text-align: center; margin-bottom: 15px;">
+                                    <div style="font-size: 32px; margin-bottom: 10px;">⬅️ 🔄 ➡️</div>
+                                    <p style="margin: 5px 0; font-weight: bold; background: linear-gradient(135deg, #fbbf24 0%, #22c55e 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 16px;">TWO-WAY MIGRATION SYSTEM</p>
+                                    <p style="font-size: 12px; margin-top: 5px;">Drag Source ➡️ Destination OR Destination ⬅️ Source</p>
+                                </div>
+                                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 6px; padding: 10px; font-size: 12px;">
+                                    <div style="margin-bottom: 12px; background: rgba(251, 191, 36, 0.1); padding: 8px; border-radius: 6px; border-left: 3px solid #fbbf24;">
+                                        <strong style="color: #fbbf24;">📤 SOURCE → DESTINATION (Left to Right):</strong>
+                                    </div>
+                                    <div style="margin-bottom: 8px; margin-left: 10px;">
+                                        <strong style="color: #fbbf24;">🏗️ Drag yellow badge:</strong> Move (Structure Only)
+                                    </div>
+                                    <div style="margin-bottom: 12px; margin-left: 10px;">
+                                        <strong style="color: #22c55e;">✋ Drag green badge:</strong> Move (Structure + Data)
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 12px; background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 6px; border-left: 3px solid #22c55e;">
+                                        <strong style="color: #86efac;">📥 DESTINATION → SOURCE (Right to Left):</strong>
+                                    </div>
+                                    <div style="margin-bottom: 8px; margin-left: 10px;">
+                                        <strong style="color: #22c55e;">🏗️ Drag green badge:</strong> Move (Structure Only)
+                                    </div>
+                                    <div style="margin-bottom: 12px; margin-left: 10px;">
+                                        <strong style="color: #10b981;">✋ Drag green badge:</strong> Move (Structure + Data)
+                                    </div>
+                                    
+                                    <div style="border-top: 1px dashed rgba(251, 191, 36, 0.3); margin: 12px 0; padding-top: 12px;">
+                                        <div style="font-weight: bold; color: #fbbf24; margin-bottom: 8px;">⚙️ COMMON OPERATIONS (Both Sides):</div>
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <strong style="color: #3b82f6;">🎲 Blue "Dice" button:</strong> Inject 10 random records
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <strong style="color: #a78bfa;">📋 Purple "Copy" button:</strong> Duplicate table in same DB
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <strong style="color: #f59e0b;">🧹 Orange "Empty" button:</strong> Delete all data (keep structure)
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <strong style="color: #ef4444;">🗑️ Red "Delete" button:</strong> Permanently delete table
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <strong style="color: #8b5cf6;">🗄️ Purple "DB-Info" button (header):</strong> View database credentials & connection strings
+                                    </div>
+                                    <div style="margin-bottom: 8px;">
+                                        <strong style="color: #fbbf24;">🖱️ Right-click name:</strong> Rename inline (Enter to save, Esc to cancel)
+                                    </div>
+                                    <div style="margin-bottom: 8px; background: rgba(34, 197, 94, 0.1); padding: 8px; border-radius: 6px; border: 1px solid rgba(34, 197, 94, 0.3);">
+                                        <strong style="color: #86efac;">✨ Multi-Selection:</strong> Click multiple tables → Drag any one → All migrate together!
+                                    </div>
+                                    <div style="font-size: 11px; opacity: 0.8; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(245, 158, 11, 0.2);">
+                                        💡 Both containers support ALL operations • Full bi-directional migration
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Migration Options -->
-                        <div id="migrationOptions" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 8px; padding: 15px; margin-bottom: 20px; display: none;">
-                            <h4 style="color: #fbbf24; margin: 0 0 15px 0;">⚙️ Migration Options</h4>
-                            
-                            <div class="checkbox-group" style="margin-bottom: 10px;">
-                                <input type="checkbox" id="migrationIncludeData" checked>
-                                <label for="migrationIncludeData">Include table data (INSERT statements)</label>
-                            </div>
-                            
-                            <div class="checkbox-group" style="margin-bottom: 10px;">
-                                <input type="checkbox" id="migrationCreateDatabase">
-                                <label for="migrationCreateDatabase">Create destination database if not exists (requires ROOT)</label>
-                            </div>
-
-                            <div class="form-group" style="margin-top: 15px;">
-                                <label class="form-label">Batch Size (records per transaction)</label>
-                                <input type="number" id="migrationBatchSize" class="form-input" value="100" min="1" max="1000">
-                                <div class="helper-text">Lower for slower servers, higher for faster migration</div>
-                            </div>
-                        </div>
-
-                        <!-- Migrate Button -->
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn btn-primary" onclick="startDatabaseMigration()" id="startMigrationBtn" disabled style="background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);">
-                                <span>🚀</span> Start Migration
-                            </button>
-                            <button class="btn btn-danger" onclick="cancelMigration()" id="cancelMigrationBtn" disabled style="display: none;">
-                                <span>⛔</span> Cancel Migration
-                            </button>
-                            <button class="btn btn-secondary" onclick="showMigrationOptions()">
-                                <span>⚙️</span> Advanced Options
-                            </button>
-                        </div>
-
-                        <!-- Migration Progress -->
-                        <div id="migrationProgress" style="display: none; margin-top: 20px; background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: 8px; padding: 20px;">
-                            <h4 style="color: #93c5fd; margin: 0 0 15px 0;">📊 Migration Progress</h4>
-                            <div id="migrationProgressDetails"></div>
-                            <div style="background: rgba(0,0,0,0.3); height: 30px; border-radius: 15px; overflow: hidden; margin-top: 15px;">
-                                <div id="migrationProgressBar" style="height: 100%; background: linear-gradient(90deg, #22c55e 0%, #15803d 100%); width: 0%; transition: width 0.3s;"></div>
-                            </div>
-                            <div id="migrationProgressText" style="text-align: center; margin-top: 10px; color: #fef3c7; font-weight: bold;">0%</div>
-                        </div>
-
-                        <!-- Migration Results -->
-                        <div id="migrationResults" style="display: none; margin-top: 20px;"></div>
-
-                        <!-- Database Repair Tool -->
-                        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; border-radius: 8px; padding: 15px; margin-top: 30px;">
-                            <h4 style="color: #fbbf24; margin: 0 0 15px 0;">🔧 Database Repair & Diagnostics</h4>
-                            <p style="font-size: 13px; color: rgba(254, 243, 199, 0.8); margin-bottom: 15px;">
-                                If migration was interrupted, use these tools to check and repair the destination database.
-                            </p>
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <button class="btn btn-secondary" onclick="testDatabaseConnection()" style="padding: 8px 16px; font-size: 13px;">
-                                    <span>🔌</span> Test Connection
-                                </button>
-                                <button class="btn btn-secondary" onclick="checkDatabaseTables()" style="padding: 8px 16px; font-size: 13px;">
-                                    <span>📋</span> List Tables
-                                </button>
-                                <button class="btn btn-secondary" onclick="repairAllTables()" style="padding: 8px 16px; font-size: 13px;">
-                                    <span>🔧</span> Repair All Tables
-                                </button>
-                            </div>
-                            <div id="diagnosticResults" style="margin-top: 15px;"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- AI Connection Prompt Section -->
+        <!-- AI Prompter Section -->
         <section id="aiPrompt" class="section">
             <div class="card">
                 <h2 class="card-title">
@@ -4195,9 +4261,8 @@ try {
             if (!displayEl || !promptTextarea) return;
 
             if (selectedDatabaseId) {
-                const connId = selectedDatabaseId.replace('conn_', '');
-                const connections = getHostingerConnections();
-                const conn = connections.find(c => c.id === connId);
+                // Get connection (supports both Localhost and Hostinger)
+                const conn = getConnectionById(selectedDatabaseId);
                 
                 if (conn) {
                     // Update display
@@ -4220,7 +4285,7 @@ try {
 I need you to connect to my MySQL database with the following credentials:
 
 Connection Name: ${conn.name}
-Server Type: ${conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting'}
+Server Type: ${conn.isLocalhost ? 'Localhost (Laragon)' : (conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting')}
 
 Database Host: ${conn.host}
 Database Name: ${conn.dbName}
@@ -4384,9 +4449,8 @@ Please confirm you can connect successfully before proceeding with any operation
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('aiPromptMessage', '❌ Connection not found', 'error');
@@ -4418,7 +4482,7 @@ Please confirm you can connect successfully before proceeding with any operation
 =====================================
 
 Connection Name: ${conn.name}
-Server Type: ${conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting'}
+Server Type: ${conn.isLocalhost ? 'Localhost (Laragon)' : (conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting')}
 Database Name: ${conn.dbName}
 Database Host: ${conn.host}
 
@@ -4547,9 +4611,8 @@ OVERVIEW:
             if (!displayEl) return;
 
             if (selectedDatabaseId) {
-                const connId = selectedDatabaseId.replace('conn_', '');
-                const connections = getHostingerConnections();
-                const conn = connections.find(c => c.id === connId);
+                // Get connection info (supports both Localhost and Hostinger)
+                const conn = getConnectionById(selectedDatabaseId);
                 
                 if (conn) {
                     displayEl.textContent = `${conn.name} (${conn.dbName})`;
@@ -4567,9 +4630,8 @@ OVERVIEW:
             if (!displayEl) return;
 
             if (selectedDatabaseId) {
-                const connId = selectedDatabaseId.replace('conn_', '');
-                const connections = getHostingerConnections();
-                const conn = connections.find(c => c.id === connId);
+                // Get connection info (supports both Localhost and Hostinger)
+                const conn = getConnectionById(selectedDatabaseId);
                 
                 if (conn) {
                     displayEl.textContent = `${conn.name} (${conn.dbName})`;
@@ -4584,20 +4646,32 @@ OVERVIEW:
         // Update selected database display in Edit Table section
         function updateEditTableDatabaseDisplay() {
             const displayEl = document.getElementById('editTableDbName');
+            const helperEl = document.getElementById('editTableHelper');
             if (!displayEl) return;
 
             if (selectedDatabaseId) {
-                const connId = selectedDatabaseId.replace('conn_', '');
-                const connections = getHostingerConnections();
-                const conn = connections.find(c => c.id === connId);
+                // Get connection info (supports both Localhost and Hostinger)
+                const conn = getConnectionById(selectedDatabaseId);
                 
                 if (conn) {
                     displayEl.textContent = `${conn.name} (${conn.dbName})`;
+                    if (helperEl) {
+                        helperEl.innerHTML = '✅ Database connected - Loading tables...';
+                        helperEl.style.color = '#86efac';
+                    }
                 } else {
                     displayEl.textContent = 'None - Please select from Dashboard';
+                    if (helperEl) {
+                        helperEl.innerHTML = '💡 Select a database from Dashboard to see available tables';
+                        helperEl.style.color = '';
+                    }
                 }
             } else {
                 displayEl.textContent = 'None - Please select from Dashboard';
+                if (helperEl) {
+                    helperEl.innerHTML = '💡 Select a database from Dashboard to see available tables';
+                    helperEl.style.color = '';
+                }
             }
         }
 
@@ -8896,9 +8970,8 @@ You can now use these credentials to build your application!
 
             console.log('🎲 Injecting random data into:', tableName);
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
 
             if (!conn) {
                 alert('❌ Connection not found');
@@ -8992,9 +9065,8 @@ You can now use these credentials to build your application!
             console.log('=== EMPTY TABLE DATA ===');
             console.log('Table to empty:', tableName);
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const sourceConn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const sourceConn = getConnectionById(selectedDatabaseId);
 
             if (!sourceConn) {
                 alert('❌ Connection not found');
@@ -9109,9 +9181,8 @@ You can now use these credentials to build your application!
             console.log('=== DELETE TABLE ===');
             console.log('Table to delete:', tableName);
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const sourceConn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const sourceConn = getConnectionById(selectedDatabaseId);
 
             if (!sourceConn) {
                 alert('❌ Connection not found');
@@ -9208,9 +9279,8 @@ You can now use these credentials to build your application!
             console.log('=== DUPLICATE TABLE ===');
             console.log('Original table:', tableName);
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const sourceConn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const sourceConn = getConnectionById(selectedDatabaseId);
 
             if (!sourceConn) {
                 alert('❌ Connection not found');
@@ -9568,23 +9638,19 @@ You can now use these credentials to build your application!
             document.body.appendChild(loadingDiv);
 
             try {
-                // Get source connection
-                const allConnections = getHostingerConnections();
-                const sourceId = selectedDatabaseId.replace('conn_', '');
-                const sourceConn = allConnections.find(c => c.id === sourceId);
-                const destConn = allConnections.find(c => c.id === selectedDestinationId);
+                // Get source and destination connections (supports both Localhost and Hostinger)
+                const sourceConn = getConnectionById(selectedDatabaseId);
+                const destConn = getConnectionById(selectedDestinationId);
 
                 console.log('🔍 Debug Info:', {
                     selectedDatabaseId,
-                    sourceId,
                     selectedDestinationId,
-                    allConnectionsCount: allConnections.length,
-                    sourceConn: sourceConn ? 'Found' : 'NOT FOUND',
-                    destConn: destConn ? 'Found' : 'NOT FOUND'
+                    sourceConn: sourceConn ? `Found (${sourceConn.isLocalhost ? 'Localhost' : 'Hostinger'})` : 'NOT FOUND',
+                    destConn: destConn ? `Found (${destConn.isLocalhost ? 'Localhost' : 'Hostinger'})` : 'NOT FOUND'
                 });
 
                 if (!sourceConn) {
-                    throw new Error('Source connection not found. Selected ID: ' + sourceId);
+                    throw new Error('Source connection not found. Selected ID: ' + selectedDatabaseId);
                 }
 
                 if (!destConn) {
@@ -10177,9 +10243,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('createTableMessage', '❌ Selected database connection not found', 'error');
@@ -10236,9 +10301,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('createTableMessage', '❌ Selected database connection not found', 'error');
@@ -10302,10 +10366,8 @@ You can now use these credentials to build your application!
                 return;
             }
             
-            // Get connection info from selected database
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info from selected database (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('listTablesMessage', '❌ Selected database connection not found', 'error');
@@ -10315,7 +10377,7 @@ You can now use these credentials to build your application!
             const listEl = document.getElementById('tableList');
             listEl.innerHTML = '<div class="spinner"></div> Loading tables...';
             
-            // Call API with Hostinger credentials
+            // Call API with database credentials (Localhost or Hostinger)
             const result = await apiRequest('list_tables', {
                 db_host: conn.host,
                 db_name: conn.dbName,
@@ -10359,9 +10421,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('tableDataMessage', '❌ Connection not found', 'error');
@@ -10755,9 +10816,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('tableDataMessage', '❌ Connection not found', 'error');
@@ -10819,9 +10879,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('editTableMessage', '❌ Connection not found', 'error');
@@ -10977,9 +11036,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 alert('❌ Connection not found');
@@ -11015,9 +11073,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 alert('❌ Connection not found');
@@ -11151,9 +11208,8 @@ You can now use these credentials to build your application!
         async function loadTablesForDropdowns() {
             if (!selectedDatabaseId) return;
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) return;
             
@@ -11173,6 +11229,25 @@ You can now use these credentials to build your application!
                 document.getElementById('editTableSelect').innerHTML = '<option value="">-- Select Table --</option>' + options;
                 document.getElementById('deleteTableSelect').innerHTML = '<option value="">-- Select Table --</option>' + options;
                 document.getElementById('renameTableOldSelect').innerHTML = '<option value="">-- Select Table --</option>' + options;
+                
+                // Update helper text to show tables loaded
+                const helperEl = document.getElementById('editTableHelper');
+                if (helperEl) {
+                    if (result.tables.length > 0) {
+                        helperEl.innerHTML = `✅ ${result.tables.length} table(s) loaded - Select one to edit`;
+                        helperEl.style.color = '#86efac';
+                    } else {
+                        helperEl.innerHTML = '⚠️ No tables found in this database';
+                        helperEl.style.color = '#fbbf24';
+                    }
+                }
+            } else {
+                // Update helper text on error
+                const helperEl = document.getElementById('editTableHelper');
+                if (helperEl) {
+                    helperEl.innerHTML = '❌ Failed to load tables - Check connection';
+                    helperEl.style.color = '#fca5a5';
+                }
             }
         }
 
@@ -11185,9 +11260,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('deleteTableMessage', '❌ Connection not found', 'error');
@@ -11238,9 +11312,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('renameTableMessage', '❌ Connection not found', 'error');
@@ -11336,9 +11409,8 @@ You can now use these credentials to build your application!
 
             currentEditTableName = tableName;
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('editTableMessage', '❌ Connection not found', 'error');
@@ -11407,9 +11479,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) return;
 
@@ -11530,9 +11601,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) return;
 
@@ -11779,9 +11849,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('editTableMessage', '❌ Connection not found', 'error');
@@ -11883,9 +11952,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) return;
 
@@ -11917,9 +11985,8 @@ You can now use these credentials to build your application!
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 document.getElementById('tableInfoText').value = 'Connection not found...';
@@ -12084,9 +12151,8 @@ ${'='.repeat(60)}
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('editTableMessage', '❌ Connection not found', 'error');
@@ -12142,9 +12208,8 @@ ${'='.repeat(60)}
                 return;
             }
 
-            const connId = selectedDatabaseId.replace('conn_', '');
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === connId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedDatabaseId);
             
             if (!conn) {
                 showMessage('editTableMessage', '❌ Connection not found', 'error');
@@ -12413,16 +12478,48 @@ ${'='.repeat(60)}
             const select = document.getElementById('promptGenDatabaseSelect');
             if (!select) return;
 
-            const allConnections = getHostingerConnections();
-            
             select.innerHTML = '<option value="">-- Select Database --</option>';
             
-            allConnections.forEach(conn => {
-                const option = document.createElement('option');
-                option.value = conn.id;
-                option.textContent = `${conn.name} (${conn.dbName})`;
-                select.appendChild(option);
-            });
+            // Add localhost databases (if connected)
+            if (isLocalhostConnected) {
+                const localhostDbs = getLocalhostDatabases();
+                if (localhostDbs.length > 0) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = '🖥️ LOCALHOST (LARAGON)';
+                    
+                    localhostDbs.forEach(dbName => {
+                        const option = document.createElement('option');
+                        option.value = `localhost_${dbName}`;
+                        option.textContent = `🖥️ ${dbName} (Localhost)`;
+                        option.style.background = 'rgba(0, 0, 0, 0.8)';
+                        option.style.color = '#93c5fd';
+                        optgroup.appendChild(option);
+                    });
+                    
+                    select.appendChild(optgroup);
+                }
+            }
+            
+            // Add Hostinger connections (if connected)
+            if (isHostingerConnected) {
+                const allConnections = getHostingerConnections();
+                
+                if (allConnections.length > 0) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = '🌐 HOSTINGER';
+                    
+                    allConnections.forEach(conn => {
+                        const option = document.createElement('option');
+                        option.value = `conn_${conn.id}`;  // ✅ FIX: Add conn_ prefix for getConnectionById()
+                        option.textContent = `🌐 ${conn.name} (${conn.dbName})`;
+                        option.style.background = 'rgba(0, 0, 0, 0.8)';
+                        option.style.color = '#fef3c7';
+                        optgroup.appendChild(option);
+                    });
+                    
+                    select.appendChild(optgroup);
+                }
+            }
         }
 
         // Load tables for prompt generator
@@ -12445,8 +12542,8 @@ ${'='.repeat(60)}
             selectedPromptGenDatabaseId = dbId;
             selectedPromptGenTables.clear();
 
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === dbId);
+            // Get connection (supports both Localhost and Hostinger)
+            const conn = getConnectionById(dbId);
 
             if (!conn) {
                 console.error('Connection not found:', dbId);
@@ -12623,8 +12720,8 @@ ${'='.repeat(60)}
                 return;
             }
 
-            const connections = getHostingerConnections();
-            const conn = connections.find(c => c.id === selectedPromptGenDatabaseId);
+            // Get connection (supports both Localhost and Hostinger)
+            const conn = getConnectionById(selectedPromptGenDatabaseId);
 
             if (!conn) {
                 alert('❌ Connection not found');
@@ -12655,7 +12752,7 @@ DATABASE CONNECTION INFORMATION:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Connection Name: ${conn.name}
-Server Type: ${conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting'}
+Server Type: ${conn.isLocalhost ? 'Localhost (Laragon)' : (conn.type === 'vps' ? 'VPS Server' : 'Shared Hosting')}
 Host: ${conn.host}
 Port: ${conn.port || '3306'}
 Database Name: ${conn.dbName}
@@ -13587,8 +13684,8 @@ ${'='.repeat(80)}
 
             console.log('🎲 Injecting random data into DESTINATION table:', tableName);
 
-            const connections = getHostingerConnections();
-            const destConn = connections.find(c => c.id === selectedDestinationId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const destConn = getConnectionById(selectedDestinationId);
 
             if (!destConn) {
                 alert('❌ Destination connection not found');
@@ -13669,8 +13766,8 @@ ${'='.repeat(80)}
             console.log('=== DUPLICATE DESTINATION TABLE ===');
             console.log('Original table:', tableName);
 
-            const connections = getHostingerConnections();
-            const destConn = connections.find(c => c.id === selectedDestinationId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const destConn = getConnectionById(selectedDestinationId);
 
             if (!destConn) {
                 alert('❌ Destination connection not found');
@@ -13773,8 +13870,8 @@ ${'='.repeat(80)}
                 return;
             }
 
-            const connections = getHostingerConnections();
-            const destConn = connections.find(c => c.id === selectedDestinationId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const destConn = getConnectionById(selectedDestinationId);
 
             if (!destConn) {
                 alert('❌ Destination connection not found');
@@ -13839,8 +13936,8 @@ ${'='.repeat(80)}
                 return;
             }
 
-            const connections = getHostingerConnections();
-            const destConn = connections.find(c => c.id === selectedDestinationId);
+            // Get connection info (supports both Localhost and Hostinger)
+            const destConn = getConnectionById(selectedDestinationId);
 
             if (!destConn) {
                 alert('❌ Destination connection not found');
@@ -14300,10 +14397,9 @@ You can now use this DESTINATION database connection!
             document.body.appendChild(loadingDiv);
 
             try {
-                const allConnections = getHostingerConnections();
-                const sourceId = selectedDatabaseId.replace('conn_', '');
-                const sourceConn = allConnections.find(c => c.id === sourceId);
-                const destConn = allConnections.find(c => c.id === selectedDestinationId);
+                // Get source and destination connections (supports both Localhost and Hostinger)
+                const sourceConn = getConnectionById(selectedDatabaseId);
+                const destConn = getConnectionById(selectedDestinationId);
 
                 if (!sourceConn || !destConn) {
                     throw new Error('Source or Destination connection not found');
