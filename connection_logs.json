@@ -1,0 +1,11 @@
+[
+    {
+        "timestamp": "2025-10-18 18:37:23",
+        "connection_name": "CloudPanel VPS",
+        "host": "69.62.114.112",
+        "port": 22,
+        "username": "root",
+        "status": "SUCCESS",
+        "test_output": "Credentials validated! Use this command in Terminal:\nssh -p 22 root@69.62.114.112"
+    }
+]

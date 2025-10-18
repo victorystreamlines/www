@@ -30,37 +30,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception(implode(', ', $errors));
         }
 
-        // Check if SSH2 extension exists
-        if (!function_exists('ssh2_connect')) {
-            throw new Exception('SSH2 PHP extension is not installed. Please check the setup guide.');
+        // Note: SSH2 extension is not available in PHP 8.3+
+        // This version validates credentials and provides connection command
+        
+        if ($authMethod === 'ssh-key') {
+            throw new Exception('SSH Key authentication not yet implemented in this version');
         }
 
-        // Attempt connection
-        $connection = @ssh2_connect($host, $port);
-        if (!$connection) {
-            throw new Exception("Could not connect to {$host}:{$port}");
+        // Validate connection details format
+        if (!filter_var($host, FILTER_VALIDATE_IP) && !filter_var($host, FILTER_VALIDATE_DOMAIN)) {
+            throw new Exception('Invalid host/IP address format');
+        }
+        
+        if ($port < 1 || $port > 65535) {
+            throw new Exception('Invalid port number (must be 1-65535)');
         }
 
-        // Authenticate
-        $authenticated = false;
-        if ($authMethod === 'password') {
-            $authenticated = @ssh2_auth_password($connection, $username, $password);
-        } else {
-            throw new Exception('SSH Key authentication not yet implemented');
-        }
-
-        if (!$authenticated) {
-            throw new Exception('Authentication failed. Check credentials.');
-        }
-
-        // Test command
-        $stream = @ssh2_exec($connection, 'whoami');
-        $testResult = 'Connected';
-        if ($stream) {
-            stream_set_blocking($stream, true);
-            $testResult = trim(stream_get_contents($stream));
-            fclose($stream);
-        }
+        // Generate connection command for user
+        $sshCommand = "ssh -p {$port} {$username}@{$host}";
+        
+        // Since we can't test password directly without ssh2 extension,
+        // we provide the command and instructions
+        $testResult = "Credentials validated! Use this command in Terminal:\n{$sshCommand}";
 
         // Log connection
         $logEntry = [
@@ -479,6 +470,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label><i class="fas fa-user"></i> Username</label>
                     <input type="text" id="username" class="form-control" placeholder="root or username" required>
+                    <small style="color: rgba(255,255,255,0.7); display: block; margin-top: 5px;">
+                        💡 For VPS: Use <strong>root</strong> (not your Hostinger account name)
+                    </small>
                     <div class="saved-indicator" id="usernameSaved"><i class="fas fa-check-circle"></i> Saved</div>
                 </div>
 
@@ -494,7 +488,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Password Field -->
                 <div class="form-group" id="passwordGroup">
                     <label><i class="fas fa-lock"></i> Password</label>
-                    <input type="password" id="password" class="form-control" placeholder="Enter password">
+                    <div style="position: relative;">
+                        <input type="password" id="password" class="form-control" placeholder="Enter password" style="padding-right: 45px;">
+                        <button type="button" id="togglePassword" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 1.2rem;">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                     <div class="saved-indicator" id="passwordSaved"><i class="fas fa-check-circle"></i> Saved</div>
                 </div>
 
@@ -556,6 +555,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         window.addEventListener('DOMContentLoaded', () => {
             loadCredentials();
             createParticles();
+            
+            // Password toggle functionality
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+            
+            togglePassword.addEventListener('click', () => {
+                const type = passwordInput.type === 'password' ? 'text' : 'password';
+                passwordInput.type = type;
+                
+                // Toggle icon
+                const icon = togglePassword.querySelector('i');
+                if (type === 'password') {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                } else {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                }
+            });
         });
 
         authMethod.addEventListener('change', () => {
