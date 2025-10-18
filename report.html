@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 دليل إعداد SSH - خطوة بخطوة</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            line-height: 1.8;
+        }
+
+        .top-nav {
+            max-width: 1200px;
+            margin: 0 auto 20px;
+            text-align: left;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 50px 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .hero h1 {
+            color: #667eea;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .hero p {
+            color: #666;
+            font-size: 1.2rem;
+        }
+
+        .step-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-right: 5px solid #667eea;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+        }
+
+        .step-title {
+            font-size: 1.5rem;
+            color: #2d3748;
+            font-weight: 700;
+        }
+
+        .terminal-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .badge-vps {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: white;
+        }
+
+        .badge-local {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+        }
+
+        .why-box {
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border-right: 4px solid #e17055;
+        }
+
+        .why-box h4 {
+            color: #d63031;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .why-box p {
+            color: #2d3748;
+            line-height: 1.6;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            position: relative;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #444;
+        }
+
+        .copy-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        .copy-btn.copied {
+            background: #2196F3;
+        }
+
+        .response-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .response-success {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb);
+            border-right: 4px solid #28a745;
+        }
+
+        .response-error {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            border-right: 4px solid #dc3545;
+        }
+
+        .response-box h5 {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .response-box pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+
+        .action-box {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-right: 4px solid #2196F3;
+        }
+
+        .action-box h5 {
+            color: #1565c0;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; }
+            .step-card { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-nav">
+        <a href="index.php" class="nav-btn">
+            <i class="fas fa-arrow-right"></i>
+            <span>العودة للصفحة الرئيسية</span>
+        </a>
+    </div>
+
+    <div class="container">
+        <div class="hero">
+            <h1><i class="fas fa-graduation-cap"></i> دليل إعداد SSH والاتصال بـ VPS</h1>
+            <p>خطوات واضحة وسهلة لإعداد الاتصال بخادمك على Hostinger</p>
+        </div>
+
+        <!-- Step 1 -->
+        <div class="step-card">
+            <div class="step-header">
+                <div class="step-number">1</div>
+                <div class="step-title">تسجيل الدخول إلى VPS عبر Terminal</div>
+            </div>
+
+            <span class="terminal-badge badge-local"><i class="fas fa-laptop"></i> LocalHost Terminal (جهازك)</span>
+
+            <div class="why-box">
+                <h4><i class="fas fa-question-circle"></i> لماذا هذه الخطوة؟</h4>
+                <p>أول خطوة للاتصال بالـ VPS هي تسجيل الدخول باستخدام SSH من جهازك. هذا يسمح لك بالتحكم الكامل في الخادم عن بعد.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span><i class="fas fa-terminal"></i> الأمر المطلوب</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'ssh root@YOUR_VPS_IP')">
+                        <i class="fas fa-copy"></i> نسخ
+                    </button>
+                </div>
+                <code>ssh root@YOUR_VPS_IP</code>
+            </div>
+
+            <p><strong>ملاحظة:</strong> استبدل <code>YOUR_VPS_IP</code> بعنوان IP الخاص بخادمك (مثال: 185.123.45.67)</p>
+
+            <div class="response-box response-success">
+                <h5><i class="fas fa-check-circle"></i> استجابة النجاح المتوقعة</h5>
+                <pre>The authenticity of host '185.123.45.67' can't be established.
+ECDSA key fingerprint is SHA256:xxxxxxxxxxxxx.
+Are you sure you want to continue connecting (yes/no)?</pre>
+                <p><strong>اكتب:</strong> <code>yes</code> ثم اضغط Enter</p>
+            </div>
+
+            <div class="response-box response-error">
+                <h5><i class="fas fa-times-circle"></i> خطأ محتمل: Connection Refused</h5>
+                <pre>ssh: connect to host 185.123.45.67 port 22: Connection refused</pre>
+                <div class="action-box">
+                    <h5>ماذا تفعل؟</h5>
+                    <p>• تحقق من عنوان IP صحيح<br>
+                    • تأكد من تشغيل VPS في لوحة Hostinger<br>
+                    • تحقق من Firewall لا يحجب المنفذ 22</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-card">
+            <div class="step-header">
+                <div class="step-number">2</div>
+                <div class="step-title">إدخال كلمة المرور</div>
+            </div>
+
+            <span class="terminal-badge badge-local"><i class="fas fa-laptop"></i> LocalHost Terminal</span>
+
+            <div class="why-box">
+                <h4><i class="fas fa-question-circle"></i> لماذا هذه الخطوة؟</h4>
+                <p>بعد تأكيد الاتصال، سيطلب منك Terminal إدخال كلمة مرور root. هذه كلمة المرور موجودة في لوحة Hostinger.</p>
+            </div>
+
+            <p><strong>ستظهر لك:</strong></p>
+            <div class="code-block">
+                <code>root@185.123.45.67's password: _</code>
+            </div>
+
+            <p><strong>⚠️ ملاحظة هامة:</strong> عند كتابة كلمة المرور لن تظهر أي أحرف على الشاشة (هذا طبيعي للأمان)</p>
+
+            <div class="response-box response-success">
+                <h5><i class="fas fa-check-circle"></i> تسجيل دخول ناجح</h5>
+                <pre>Welcome to Ubuntu 22.04 LTS
+Last login: Sat Oct 18 02:00:00 2025
+root@vps-hostname:~#</pre>
+                <p><strong>✅ رائع!</strong> أنت الآن داخل VPS Terminal</p>
+            </div>
+
+            <div class="response-box response-error">
+                <h5><i class="fas fa-times-circle"></i> خطأ: كلمة مرور خاطئة</h5>
+                <pre>Permission denied, please try again.</pre>
+                <div class="action-box">
+                    <h5>ماذا تفعل؟</h5>
+                    <p>• اذهب إلى لوحة Hostinger<br>
+                    • افتح VPS Management<br>
+                    • اضغط على "Reset Root Password"<br>
+                    • استخدم كلمة المرور الجديدة</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-card">
+            <div class="step-header">
+                <div class="step-number">3</div>
+                <div class="step-title">تثبيت PHP SSH2 Extension على LocalHost</div>
+            </div>
+
+            <span class="terminal-badge badge-local"><i class="fas fa-laptop"></i> LocalHost Terminal (Laragon/XAMPP)</span>
+
+            <div class="why-box">
+                <h4><i class="fas fa-question-circle"></i> لماذا هذه الخطوة؟</h4>
+                <p>PHP يحتاج إلى extension خاص للاتصال بـ SSH. بدون هذا الـ extension، سيظهر خطأ في index.php</p>
+            </div>
+
+            <p><strong>للتحقق إذا كان مثبت:</strong></p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span><i class="fas fa-terminal"></i> الأمر المطلوب</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'php -m | grep ssh2')">
+                        <i class="fas fa-copy"></i> نسخ
+                    </button>
+                </div>
+                <code>php -m | grep ssh2</code>
+            </div>
+
+            <div class="response-box response-success">
+                <h5><i class="fas fa-check-circle"></i> SSH2 مثبت</h5>
+                <pre>ssh2</pre>
+                <p><strong>✅ ممتاز!</strong> الـ extension موجود، انتقل للخطوة التالية</p>
+            </div>
+
+            <div class="response-box response-error">
+                <h5><i class="fas fa-times-circle"></i> SSH2 غير مثبت</h5>
+                <pre>(لا يظهر أي شيء)</pre>
+                <div class="action-box">
+                    <h5>خطوات التثبيت في Laragon:</h5>
+                    <p>1. افتح Laragon<br>
+                    2. Menu → PHP → Extensions<br>
+                    3. ابحث عن ssh2 وفعله<br>
+                    4. أعد تشغيل Apache<br>
+                    <br>
+                    <strong>أو يدوياً:</strong><br>
+                    • افتح php.ini<br>
+                    • أضف: <code>extension=ssh2</code><br>
+                    • أعد تشغيل Apache</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-card">
+            <div class="step-header">
+                <div class="step-number">4</div>
+                <div class="step-title">تحديث وترقية النظام على VPS</div>
+            </div>
+
+            <span class="terminal-badge badge-vps"><i class="fas fa-server"></i> VPS Terminal</span>
+
+            <div class="why-box">
+                <h4><i class="fas fa-question-circle"></i> لماذا هذه الخطوة؟</h4>
+                <p>قبل أي عمل على VPS، يجب تحديث قوائم الحزم والنظام لضمان الأمان وآخر الإصدارات.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span><i class="fas fa-terminal"></i> الأمر المطلوب</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'apt update && apt upgrade -y')">
+                        <i class="fas fa-copy"></i> نسخ
+                    </button>
+                </div>
+                <code>apt update && apt upgrade -y</code>
+            </div>
+
+            <div class="response-box response-success">
+                <h5><i class="fas fa-check-circle"></i> التحديث نجح</h5>
+                <pre>Reading package lists... Done
+Building dependency tree... Done
+All packages are up to date.</pre>
+                <p><strong>✅ رائع!</strong> النظام محدث</p>
+            </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="step-card">
+            <div class="step-header">
+                <div class="step-number">5</div>
+                <div class="step-title">التحقق من SSH Server يعمل</div>
+            </div>
+
+            <span class="terminal-badge badge-vps"><i class="fas fa-server"></i> VPS Terminal</span>
+
+            <div class="why-box">
+                <h4><i class="fas fa-question-circle"></i> لماذا هذه الخطوة؟</h4>
+                <p>للتأكد أن SSH Server (sshd) يعمل بشكل صحيح ويستقبل الاتصالات.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span><i class="fas fa-terminal"></i> الأمر المطلوب</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'systemctl status sshd')">
+                        <i class="fas fa-copy"></i> نسخ
+                    </button>
+                </div>
+                <code>systemctl status sshd</code>
+            </div>
+
+            <div class="response-box response-success">
+                <h5><i class="fas fa-check-circle"></i> SSH يعمل</h5>
+                <pre>● ssh.service - OpenBSD Secure Shell server
+   Loaded: loaded
+   Active: active (running)</pre>
+                <p><strong>✅ ممتاز!</strong> SSH Server يعمل</p>
+            </div>
+
+            <div class="response-box response-error">
+                <h5><i class="fas fa-times-circle"></i> SSH متوقف</h5>
+                <pre>Active: inactive (dead)</pre>
+                <div class="action-box">
+                    <h5>تشغيل SSH:</h5>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span>أمر التشغيل</span>
+                            <button class="copy-btn" onclick="copyCode(this, 'systemctl start sshd')">
+                                <i class="fas fa-copy"></i> نسخ
+                            </button>
+                        </div>
+                        <code>systemctl start sshd</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="step-card">
+            <div class="step-header">
+                <div class="step-number">6</div>
+                <div class="step-title">فحص Firewall والمنافذ</div>
+            </div>
+
+            <span class="terminal-badge badge-vps"><i class="fas fa-server"></i> VPS Terminal</span>
+
+            <div class="why-box">
+                <h4><i class="fas fa-question-circle"></i> لماذا هذه الخطوة؟</h4>
+                <p>Firewall قد يمنع الاتصالات الخارجية. يجب التأكد أن المنفذ 22 (SSH) مفتوح.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span><i class="fas fa-terminal"></i> الأمر المطلوب</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'ufw status')">
+                        <i class="fas fa-copy"></i> نسخ
+                    </button>
+                </div>
+                <code>ufw status</code>
+            </div>
+
+            <div class="response-box response-success">
+                <h5><i class="fas fa-check-circle"></i> Firewall غير مفعل</h5>
+                <pre>Status: inactive</pre>
+                <p><strong>✅ جيد!</strong> لا توجد قيود، انتقل للخطوة التالية</p>
+            </div>
+
+            <div class="response-box response-error">
+                <h5><i class="fas fa-exclamation-triangle"></i> Firewall مفعل</h5>
+                <pre>Status: active</pre>
+                <div class="action-box">
+                    <h5>فتح المنفذ 22:</h5>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span>أمر السماح</span>
+                            <button class="copy-btn" onclick="copyCode(this, 'ufw allow 22/tcp')">
+                                <i class="fas fa-copy"></i> نسخ
+                            </button>
+                        </div>
+                        <code>ufw allow 22/tcp</code>
+                    </div>
+                    <p>ثم أعد تحميل:</p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span>إعادة التحميل</span>
+                            <button class="copy-btn" onclick="copyCode(this, 'ufw reload')">
+                                <i class="fas fa-copy"></i> نسخ
+                            </button>
+                        </div>
+                        <code>ufw reload</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Final Step -->
+        <div class="step-card" style="background: linear-gradient(135deg, #11998e, #38ef7d); color: white;">
+            <div class="step-header" style="border-bottom-color: rgba(255,255,255,0.3);">
+                <div class="step-number" style="background: white; color: #11998e;">✓</div>
+                <div class="step-title" style="color: white;">الآن جرب الاتصال!</div>
+            </div>
+
+            <p style="font-size: 1.2rem; margin: 20px 0;">
+                بعد إتمام جميع الخطوات السابقة، ارجع إلى <strong>index.php</strong> وجرب الاتصال!
+            </p>
+
+            <a href="index.php" style="display: inline-block; background: white; color: #11998e; padding: 15px 30px; border-radius: 12px; text-decoration: none; font-weight: 700; margin-top: 10px;">
+                <i class="fas fa-rocket"></i> اذهب لصفحة الاتصال
+            </a>
+        </div>
+
+    </div>
+
+    <script>
+        function copyCode(btn, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const original = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> تم النسخ!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.innerHTML = original;
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
