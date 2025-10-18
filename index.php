@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -148,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             max-width: 1200px;
             margin: 0 auto 20px;
             display: flex;
-            justify-content: flex-end;
+            justify-content: flex-start;
             gap: 15px;
         }
 
@@ -237,7 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .form-group label i {
-            margin-left: 8px;
+            margin-right: 8px;
             color: rgba(255, 255, 255, 0.8);
         }
 
@@ -379,7 +379,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 25px;
-            border-right: 4px solid rgba(255, 255, 255, 0.5);
+            border-left: 4px solid rgba(255, 255, 255, 0.5);
         }
 
         .info-box p {
@@ -389,7 +389,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .info-box i {
-            margin-left: 8px;
+            margin-right: 8px;
             color: rgba(255, 255, 255, 0.8);
         }
 
@@ -432,7 +432,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="top-nav">
         <a href="report.html" class="nav-btn">
             <i class="fas fa-book"></i>
-            <span>دليل الإعداد والاتصال</span>
+            <span>Setup & Connection Guide</span>
         </a>
     </div>
 
@@ -440,34 +440,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Header -->
         <div class="header">
             <h1><i class="fas fa-server"></i> VPS Connection Manager</h1>
-            <p class="subtitle">اتصل بخادمك على Hostinger بسهولة</p>
+            <p class="subtitle">Connect to your Hostinger server easily</p>
         </div>
 
         <!-- Main Card -->
         <div class="card">
             <div class="info-box">
-                <p><i class="fas fa-info-circle"></i> جميع بياناتك محفوظة محلياً في متصفحك ولن يتم إرسالها لأي مكان آخر</p>
+                <p><i class="fas fa-info-circle"></i> All your data is saved locally in your browser and will not be sent anywhere else</p>
             </div>
 
             <form id="vpsForm">
                 <!-- VPS Host -->
                 <div class="form-group">
-                    <label><i class="fas fa-globe"></i> عنوان الخادم (Host/IP)</label>
-                    <input type="text" id="host" class="form-control" placeholder="مثال: 185.123.45.67 أو vps.example.com" required>
-                    <div class="saved-indicator" id="hostSaved"><i class="fas fa-check-circle"></i> محفوظ</div>
+                    <label><i class="fas fa-globe"></i> Server Address (Host/IP)</label>
+                    <input type="text" id="host" class="form-control" placeholder="Example: 185.123.45.67 or vps.example.com" required>
+                    <div class="saved-indicator" id="hostSaved"><i class="fas fa-check-circle"></i> Saved</div>
                 </div>
 
                 <div class="form-row">
                     <!-- Port -->
                     <div class="form-group">
-                        <label><i class="fas fa-plug"></i> المنفذ (Port)</label>
+                        <label><i class="fas fa-plug"></i> Port</label>
                         <input type="number" id="port" class="form-control" placeholder="22" value="22" required>
-                        <div class="saved-indicator" id="portSaved"><i class="fas fa-check-circle"></i> محفوظ</div>
+                        <div class="saved-indicator" id="portSaved"><i class="fas fa-check-circle"></i> Saved</div>
                     </div>
 
                     <!-- Protocol -->
                     <div class="form-group">
-                        <label><i class="fas fa-network-wired"></i> البروتوكول</label>
+                        <label><i class="fas fa-network-wired"></i> Protocol</label>
                         <select id="protocol" class="form-control" required>
                             <option value="ssh">SSH</option>
                             <option value="sftp">SFTP</option>
@@ -477,45 +477,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <!-- Username -->
                 <div class="form-group">
-                    <label><i class="fas fa-user"></i> اسم المستخدم (Username)</label>
-                    <input type="text" id="username" class="form-control" placeholder="root أو username" required>
-                    <div class="saved-indicator" id="usernameSaved"><i class="fas fa-check-circle"></i> محفوظ</div>
+                    <label><i class="fas fa-user"></i> Username</label>
+                    <input type="text" id="username" class="form-control" placeholder="root or username" required>
+                    <div class="saved-indicator" id="usernameSaved"><i class="fas fa-check-circle"></i> Saved</div>
                 </div>
 
                 <!-- Authentication Method -->
                 <div class="form-group">
-                    <label><i class="fas fa-key"></i> طريقة المصادقة</label>
+                    <label><i class="fas fa-key"></i> Authentication Method</label>
                     <select id="authMethod" class="form-control" required>
-                        <option value="password">كلمة المرور (Password)</option>
-                        <option value="ssh-key">مفتاح SSH (SSH Key)</option>
+                        <option value="password">Password</option>
+                        <option value="ssh-key">SSH Key</option>
                     </select>
                 </div>
 
                 <!-- Password Field -->
                 <div class="form-group" id="passwordGroup">
-                    <label><i class="fas fa-lock"></i> كلمة المرور (Password)</label>
-                    <input type="password" id="password" class="form-control" placeholder="أدخل كلمة المرور">
-                    <div class="saved-indicator" id="passwordSaved"><i class="fas fa-check-circle"></i> محفوظ</div>
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="password" class="form-control" placeholder="Enter password">
+                    <div class="saved-indicator" id="passwordSaved"><i class="fas fa-check-circle"></i> Saved</div>
                 </div>
 
                 <!-- SSH Key Field -->
                 <div class="form-group" id="sshKeyGroup" style="display: none;">
-                    <label><i class="fas fa-file-code"></i> مفتاح SSH الخاص (Private Key)</label>
+                    <label><i class="fas fa-file-code"></i> SSH Private Key</label>
                     <textarea id="sshKey" class="form-control" rows="3" placeholder="-----BEGIN RSA PRIVATE KEY-----"></textarea>
-                    <div class="saved-indicator" id="sshKeySaved"><i class="fas fa-check-circle"></i> محفوظ</div>
+                    <div class="saved-indicator" id="sshKeySaved"><i class="fas fa-check-circle"></i> Saved</div>
                 </div>
 
                 <!-- Connection Name -->
                 <div class="form-group">
-                    <label><i class="fas fa-tag"></i> اسم الاتصال (اختياري)</label>
-                    <input type="text" id="connectionName" class="form-control" placeholder="مثال: Production Server">
-                    <div class="saved-indicator" id="connectionNameSaved"><i class="fas fa-check-circle"></i> محفوظ</div>
+                    <label><i class="fas fa-tag"></i> Connection Name (Optional)</label>
+                    <input type="text" id="connectionName" class="form-control" placeholder="Example: Production Server">
+                    <div class="saved-indicator" id="connectionNameSaved"><i class="fas fa-check-circle"></i> Saved</div>
                 </div>
 
                 <!-- Connect Button -->
                 <button type="submit" class="btn btn-primary" id="connectBtn">
                     <i class="fas fa-plug"></i>
-                    <span>اتصال بالـ VPS</span>
+                    <span>Connect to VPS</span>
                 </button>
             </form>
 
@@ -582,7 +582,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             const originalHTML = connectBtn.innerHTML;
             connectBtn.disabled = true;
-            connectBtn.innerHTML = '<div class="spinner"></div><span>جاري الاتصال...</span>';
+            connectBtn.innerHTML = '<div class="spinner"></div><span>Connecting...</span>';
 
             const formData = new FormData();
             formData.append('host', fields.host.value);
@@ -613,7 +613,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (error) {
                 result.style.display = 'block';
                 result.className = 'error';
-                result.innerHTML = `<i class="fas fa-exclamation-triangle"></i> خطأ في الاتصال: ${error.message}`;
+                result.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Connection error: ${error.message}`;
             } finally {
                 connectBtn.disabled = false;
                 connectBtn.innerHTML = originalHTML;
@@ -649,9 +649,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         passwordGroup.style.display = 'none';
                         sshKeyGroup.style.display = 'block';
                     }
-                    console.log('✅ تم تحميل البيانات المحفوظة');
+                    console.log('✅ Saved credentials loaded successfully');
                 } catch (error) {
-                    console.error('خطأ في تحميل البيانات:', error);
+                    console.error('Error loading credentials:', error);
                 }
             }
         }
