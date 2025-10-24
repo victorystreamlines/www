@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔌 Database API Connection Test</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdecl.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --error-gradient: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            --shadow-hover: 0 12px 48px rgba(31, 38, 135, 0.5);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Animated Background Particles */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: backgroundMove 20s linear infinite;
+            z-index: 0;
+        }
+        
+        @keyframes backgroundMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        .container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: var(--text-primary);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header .icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .api-info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .api-info h3 {
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .api-info .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+        }
+        
+        .api-info .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .api-info .info-label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .api-info .info-value {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .test-section {
+            text-align: center;
+            margin: 30px 0;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .test-button {
+            background: var(--primary-gradient);
+            color: var(--text-primary);
+            border: none;
+            padding: 18px 45px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            font-family: 'Cairo', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .test-button:active {
+            transform: translateY(-1px);
+        }
+        
+        .test-button.loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        
+        .test-button .spinner {
+            display: none;
+            margin-right: 10px;
+            animation: spin 1s linear infinite;
+        }
+        
+        .test-button.loading .spinner {
+            display: inline-block;
+        }
+        
+        .refresh-button {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: var(--text-primary);
+            border: none;
+            padding: 18px 45px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            font-family: 'Cairo', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .refresh-button:hover {
+            transform: translateY(-3px) rotate(180deg);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .refresh-button:active {
+            transform: translateY(-1px) rotate(180deg);
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .result-container {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 12px;
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .result-container.success {
+            background: var(--success-gradient);
+            display: block;
+        }
+        
+        .result-container.error {
+            background: var(--error-gradient);
+            display: block;
+        }
+        
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .result-header i {
+            font-size: 2.5rem;
+        }
+        
+        .result-header h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+        
+        .result-message {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .result-details {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .result-details .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+        
+        .result-details .detail-item:last-child {
+            border-bottom: none;
+        }
+        
+        .result-details .detail-label {
+            font-weight: 600;
+        }
+        
+        .result-details .detail-value {
+            font-family: 'Courier New', monospace;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .footer i {
+            color: #ff6b6b;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            10%, 30% { transform: scale(1.1); }
+            20%, 40% { transform: scale(0.9); }
+        }
+        
+        /* Prompt Builder Section */
+        .prompt-section {
+            margin: 30px 0;
+        }
+        
+        .prompt-section h3 {
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .prompt-textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            resize: vertical;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        
+        .prompt-textarea:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+        
+        .prompt-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .copy-button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: var(--text-primary);
+            border: none;
+            padding: 15px 35px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .copy-button:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .copy-button:active {
+            transform: translateY(-1px);
+        }
+        
+        .copy-button.copied {
+            background: var(--success-gradient);
+        }
+        
+        .paste-button {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: var(--text-primary);
+            border: none;
+            padding: 15px 35px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .paste-button:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .paste-button:active {
+            transform: translateY(-1px);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success-gradient);
+            color: var(--text-primary);
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            display: none;
+            animation: slideInRight 0.5s ease-out;
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            display: block;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* File Picker Section */
+        .file-picker-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .file-picker-section h3 {
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .file-input-label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .file-input-display {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .file-input-display:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .file-input-display i {
+            color: var(--text-primary);
+        }
+        
+        .file-input-hidden {
+            display: none;
+        }
+        
+        .file-path-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            word-break: break-all;
+            display: none;
+        }
+        
+        .file-path-info.show {
+            display: block;
+        }
+        
+        .generate-button {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+            border: none;
+            padding: 15px 35px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', sans-serif;
+            margin: 15px auto 0;
+        }
+        
+        .generate-button:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .generate-button:active {
+            transform: translateY(-1px);
+        }
+        
+        .generate-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Host Provider Dropdown */
+        .host-provider-select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        
+        .host-provider-select:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .host-provider-select option {
+            background: #333;
+            color: #fff;
+        }
+        
+        /* File Description Textarea */
+        .file-description-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            resize: vertical;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        
+        .file-description-textarea:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+        
+        .file-description-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Clear Options Toggle */
+        .clear-options {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: 15px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .clear-toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .clear-toggle-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(24px);
+        }
+        
+        .clear-mode-text {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            min-width: 120px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .header .icon {
+                font-size: 3rem;
+            }
+            
+            .test-button {
+                padding: 15px 35px;
+                font-size: 1.1rem;
+            }
+            
+            .api-info .info-item {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .copy-button, .paste-button {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .clear-options {
+                flex-direction: column;
+                margin-left: 0;
+                margin-top: 10px;
+            }
+            
+            .clear-mode-text {
+                min-width: auto;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">Notification</span>
+    </div>
+    
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="icon">
+                <i class="fas fa-database"></i>
+            </div>
+            <h1>API Connection Test</h1>
+            <p>Verify database connection on Hostinger</p>
+        </div>
+        
+        <!-- API Information -->
+        <div class="api-info">
+            <h3>
+                <i class="fas fa-info-circle"></i>
+                Server Information
+            </h3>
+            <div class="info-item">
+                <span class="info-label">Server Host:</span>
+                <span class="info-value">srv1788.hstgr.io</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Database Name:</span>
+                <span class="info-value">u419999707_victorystreaml</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Port:</span>
+                <span class="info-value">3306</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Charset:</span>
+                <span class="info-value">utf8mb4</span>
+            </div>
+        </div>
+        
+        <!-- Test Section -->
+        <div class="test-section">
+            <button class="test-button" id="testButton">
+                <i class="fas fa-spinner spinner"></i>
+                <i class="fas fa-plug"></i>
+                Test Connection Now
+            </button>
+            <button class="refresh-button" id="refreshButton">
+                <i class="fas fa-redo"></i>
+                Clear
+            </button>
+            <div class="clear-options">
+                <div class="clear-toggle-wrapper">
+                    <span class="clear-toggle-label">Mode:</span>
+                    <div class="toggle-switch" id="clearToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+                <span class="clear-mode-text" id="clearModeText">Connection Only</span>
+            </div>
+        </div>
+        
+        <!-- Prompt Builder Section -->
+        <div class="prompt-section">
+            <h3>
+                <i class="fas fa-edit"></i>
+                AI Prompt Builder
+            </h3>
+            <textarea 
+                class="prompt-textarea" 
+                id="promptTextarea" 
+                placeholder="Write your AI prompt here...&#10;&#10;Examples:&#10;- Add input validation to this form&#10;- Refactor this code to use async/await&#10;- Add error handling and logging&#10;- Optimize database queries&#10;- Create unit tests for this function"></textarea>
+            <div class="button-group">
+                <button class="copy-button" id="copyButton">
+                    <i class="fas fa-copy"></i>
+                    Copy Prompt
+                </button>
+                <button class="paste-button" id="pasteButton">
+                    <i class="fas fa-paste"></i>
+                    Paste from Clipboard
+                </button>
+            </div>
+        </div>
+        
+        <!-- File Picker Section -->
+        <div class="file-picker-section">
+            <h3>
+                <i class="fas fa-file-code"></i>
+                Backend File Selector
+            </h3>
+            
+            <!-- Host Provider Dropdown -->
+            <div class="file-input-wrapper">
+                <label class="file-input-label">
+                    <i class="fas fa-server"></i> Hosting Provider:
+                </label>
+                <select class="host-provider-select" id="hostProvider">
+                    <option value="">Select hosting provider...</option>
+                    <option value="Hostinger">Hostinger</option>
+                    <option value="GoDaddy">GoDaddy</option>
+                    <option value="Bluehost">Bluehost</option>
+                    <option value="SiteGround">SiteGround</option>
+                    <option value="AWS">Amazon Web Services (AWS)</option>
+                    <option value="DigitalOcean">DigitalOcean</option>
+                    <option value="Heroku">Heroku</option>
+                    <option value="Vercel">Vercel</option>
+                    <option value="Netlify">Netlify</option>
+                    <option value="Custom">Custom/Other</option>
+                </select>
+            </div>
+            
+            <!-- File Selection -->
+            <div class="file-input-wrapper">
+                <label class="file-input-label">
+                    <i class="fas fa-folder-open"></i> Select Backend File:
+                </label>
+                <div class="file-input-display" id="fileInputDisplay">
+                    <i class="fas fa-upload"></i>
+                    <span id="fileDisplayText">Click to select a file...</span>
+                </div>
+                <input type="file" id="fileInput" class="file-input-hidden" accept=".php,.js,.py,.html,.css,.json,.txt,.md">
+            </div>
+            
+            <!-- File Description -->
+            <div class="file-input-wrapper">
+                <label class="file-input-label">
+                    <i class="fas fa-info-circle"></i> File Description & Context:
+                </label>
+                <textarea 
+                    class="file-description-textarea" 
+                    id="fileDescription" 
+                    placeholder="Describe where this file is embedded and its purpose...&#10;&#10;Example:&#10;- This file is the main API endpoint on Hostinger&#10;- Located at: /public_html/api/default.php&#10;- Handles database connections for the mobile app&#10;- Uses PDO for MySQL connections"></textarea>
+            </div>
+            
+            <div class="file-path-info" id="filePathInfo">
+                <strong>Last Selected:</strong> <span id="lastFilePath">No file selected yet</span>
+            </div>
+            <button class="generate-button" id="generateButton" disabled>
+                <i class="fas fa-magic"></i>
+                Generate Prompt with File
+            </button>
+        </div>
+        
+        <!-- Result Container -->
+        <div class="result-container" id="resultContainer">
+            <div class="result-header">
+                <i class="fas fa-check-circle" id="resultIcon"></i>
+                <h2 id="resultTitle">Result Title</h2>
+            </div>
+            <div class="result-message" id="resultMessage">
+                Result message here
+            </div>
+            <div class="result-details" id="resultDetails">
+                <!-- Details will be filled dynamically -->
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>
+                Made with <i class="fas fa-heart"></i> using PHP & MySQL
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // API URL pointing to Hostinger domain
+        const API_URL = 'https://chemistit.com/default.php';
+        
+        const testButton = document.getElementById('testButton');
+        const refreshButton = document.getElementById('refreshButton');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultIcon = document.getElementById('resultIcon');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultMessage = document.getElementById('resultMessage');
+        const resultDetails = document.getElementById('resultDetails');
+        
+        // Connection test function
+        async function testConnection() {
+            // Show loading state
+            testButton.classList.add('loading');
+            resultContainer.style.display = 'none';
+            resultContainer.classList.remove('success', 'error');
+            
+            try {
+                // Send request to API
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                // Read data
+                const data = await response.json();
+                
+                // Display result
+                displayResult(data);
+                
+            } catch (error) {
+                // In case of API connection failure
+                displayResult({
+                    success: false,
+                    message: '❌ API connection failed: ' + error.message,
+                    data: {
+                        error_type: 'Network Error',
+                        error_details: error.toString()
+                    }
+                });
+            } finally {
+                // Hide loading state
+                testButton.classList.remove('loading');
+            }
+        }
+        
+        // Display result function
+        function displayResult(data) {
+            // Show result container
+            resultContainer.style.display = 'block';
+            
+            if (data.success) {
+                // Success state
+                resultContainer.classList.add('success');
+                resultContainer.classList.remove('error');
+                resultIcon.className = 'fas fa-check-circle';
+                resultTitle.textContent = 'Connection Successful! 🎉';
+                resultMessage.textContent = data.message;
+                
+                // Display details
+                if (data.data) {
+                    let detailsHTML = '';
+                    
+                    if (data.data.mysql_version) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">MySQL Version:</span>
+                                <span class="detail-value">${data.data.mysql_version}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.table_count !== undefined) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Table Count:</span>
+                                <span class="detail-value">${data.data.table_count} tables</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.database_size_mb !== undefined) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Database Size:</span>
+                                <span class="detail-value">${data.data.database_size_mb} MB</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.timestamp) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Test Time:</span>
+                                <span class="detail-value">${data.timestamp}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.connection_status) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Connection Status:</span>
+                                <span class="detail-value">${data.data.connection_status}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    resultDetails.innerHTML = detailsHTML;
+                    resultDetails.style.display = 'block';
+                }
+                
+            } else {
+                // Failure state
+                resultContainer.classList.add('error');
+                resultContainer.classList.remove('success');
+                resultIcon.className = 'fas fa-times-circle';
+                resultTitle.textContent = 'Connection Failed! ⚠️';
+                resultMessage.textContent = data.message;
+                
+                // Display error details
+                if (data.data) {
+                    let detailsHTML = '';
+                    
+                    if (data.data.error_code) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Error Code:</span>
+                                <span class="detail-value">${data.data.error_code}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.error_type) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Error Type:</span>
+                                <span class="detail-value">${data.data.error_type}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.attempted_host) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Target Host:</span>
+                                <span class="detail-value">${data.data.attempted_host}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.timestamp) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Test Time:</span>
+                                <span class="detail-value">${data.timestamp}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    resultDetails.innerHTML = detailsHTML;
+                    resultDetails.style.display = 'block';
+                }
+            }
+        }
+        
+        // Bind test button
+        testButton.addEventListener('click', testConnection);
+        
+        // Clear toggle state
+        const clearToggle = document.getElementById('clearToggle');
+        const clearModeText = document.getElementById('clearModeText');
+        let clearAllMode = false;
+        
+        // Toggle clear mode
+        clearToggle.addEventListener('click', () => {
+            clearAllMode = !clearAllMode;
+            clearToggle.classList.toggle('active');
+            clearModeText.textContent = clearAllMode ? 'Clear All + Storage' : 'Connection Only';
+        });
+        
+        // Clear/Refresh results function
+        function clearResults() {
+            if (clearAllMode) {
+                // Clear everything including localStorage
+                resultContainer.style.display = 'none';
+                resultContainer.classList.remove('success', 'error');
+                resultDetails.innerHTML = '';
+                promptTextarea.value = '';
+                
+                // Clear all localStorage
+                localStorage.removeItem(STORAGE_KEY_PATH);
+                localStorage.removeItem(STORAGE_KEY_NAME);
+                localStorage.removeItem('hostProvider');
+                localStorage.removeItem('fileDescription');
+                
+                // Reset UI
+                fileDisplayText.textContent = 'Click to select a file...';
+                lastFilePath.textContent = 'No file selected yet';
+                filePathInfo.classList.remove('show');
+                document.getElementById('hostProvider').value = '';
+                document.getElementById('fileDescription').value = '';
+                selectedFileContent = null;
+                selectedFileName = null;
+                generateButton.disabled = true;
+                
+                showNotification('🗑️ All data cleared including localStorage!');
+            } else {
+                // Clear only connection results
+                resultContainer.style.display = 'none';
+                resultContainer.classList.remove('success', 'error');
+                resultDetails.innerHTML = '';
+                showNotification('🔄 Connection results cleared!');
+            }
+        }
+        
+        // Bind refresh button
+        refreshButton.addEventListener('click', clearResults);
+        
+        // Enable testing with Enter key
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !testButton.classList.contains('loading')) {
+                testConnection();
+            }
+        });
+        
+        // Welcome message in Console
+        console.log('%c🔌 Database API Tester', 'color: #667eea; font-size: 20px; font-weight: bold;');
+        console.log('%cClick "Test Connection" button to start', 'color: #764ba2; font-size: 14px;');
+        
+        // Prompt Builder Functions
+        const promptTextarea = document.getElementById('promptTextarea');
+        const copyButton = document.getElementById('copyButton');
+        const pasteButton = document.getElementById('pasteButton');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        
+        // Show notification function
+        function showNotification(message, duration = 3000) {
+            notificationText.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, duration);
+        }
+        
+        // Copy prompt to clipboard
+        copyButton.addEventListener('click', async () => {
+            const promptText = promptTextarea.value.trim();
+            
+            if (!promptText) {
+                showNotification('⚠️ Please write a prompt first!');
+                return;
+            }
+            
+            try {
+                await navigator.clipboard.writeText(promptText);
+                copyButton.classList.add('copied');
+                copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                showNotification('✅ Prompt copied to clipboard!');
+                
+                setTimeout(() => {
+                    copyButton.classList.remove('copied');
+                    copyButton.innerHTML = '<i class="fas fa-copy"></i> Copy Prompt';
+                }, 2000);
+            } catch (error) {
+                showNotification('❌ Failed to copy: ' + error.message);
+            }
+        });
+        
+        // Paste from clipboard
+        pasteButton.addEventListener('click', async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                
+                if (text) {
+                    promptTextarea.value = text;
+                    showNotification('✅ Text pasted from clipboard!');
+                } else {
+                    showNotification('⚠️ Clipboard is empty!');
+                }
+            } catch (error) {
+                showNotification('❌ Failed to paste: ' + error.message);
+            }
+        });
+        
+        // Keyboard shortcuts
+        promptTextarea.addEventListener('keydown', (e) => {
+            // Ctrl+Enter or Cmd+Enter to copy
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                copyButton.click();
+            }
+        });
+        
+        // File Picker Functions
+        const fileInput = document.getElementById('fileInput');
+        const fileInputDisplay = document.getElementById('fileInputDisplay');
+        const fileDisplayText = document.getElementById('fileDisplayText');
+        const filePathInfo = document.getElementById('filePathInfo');
+        const lastFilePath = document.getElementById('lastFilePath');
+        const generateButton = document.getElementById('generateButton');
+        const hostProvider = document.getElementById('hostProvider');
+        const fileDescription = document.getElementById('fileDescription');
+        
+        let selectedFileContent = null;
+        let selectedFileName = null;
+        
+        // LocalStorage keys
+        const STORAGE_KEY_PATH = 'lastSelectedFilePath';
+        const STORAGE_KEY_NAME = 'lastSelectedFileName';
+        
+        // Load saved data from localStorage
+        function loadSavedData() {
+            // Load file path
+            const savedPath = localStorage.getItem(STORAGE_KEY_PATH);
+            const savedName = localStorage.getItem(STORAGE_KEY_NAME);
+            
+            if (savedPath && savedName) {
+                lastFilePath.textContent = savedPath;
+                fileDisplayText.textContent = savedName;
+                filePathInfo.classList.add('show');
+            }
+            
+            // Load host provider
+            const savedHost = localStorage.getItem('hostProvider');
+            if (savedHost) {
+                hostProvider.value = savedHost;
+            }
+            
+            // Load file description
+            const savedDescription = localStorage.getItem('fileDescription');
+            if (savedDescription) {
+                fileDescription.value = savedDescription;
+            }
+            
+            if (savedPath || savedHost || savedDescription) {
+                showNotification('📁 Previous settings loaded from storage');
+            }
+        }
+        
+        // Save host provider to localStorage
+        hostProvider.addEventListener('change', (e) => {
+            localStorage.setItem('hostProvider', e.target.value);
+            showNotification('💾 Hosting provider saved');
+        });
+        
+        // Save file description to localStorage
+        fileDescription.addEventListener('input', (e) => {
+            localStorage.setItem('fileDescription', e.target.value);
+        });
+        
+        // Auto-save file description with debounce
+        let descriptionTimeout;
+        fileDescription.addEventListener('input', (e) => {
+            clearTimeout(descriptionTimeout);
+            descriptionTimeout = setTimeout(() => {
+                localStorage.setItem('fileDescription', e.target.value);
+            }, 500);
+        });
+        
+        // Save file path to localStorage
+        function saveFilePath(path, name) {
+            localStorage.setItem(STORAGE_KEY_PATH, path);
+            localStorage.setItem(STORAGE_KEY_NAME, name);
+        }
+        
+        // Click on display to trigger file input
+        fileInputDisplay.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // Handle file selection
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            
+            if (!file) return;
+            
+            selectedFileName = file.name;
+            const filePath = file.webkitRelativePath || file.name;
+            
+            // Update display
+            fileDisplayText.textContent = selectedFileName;
+            lastFilePath.textContent = filePath;
+            filePathInfo.classList.add('show');
+            
+            // Save to localStorage
+            saveFilePath(filePath, selectedFileName);
+            
+            // Read file content
+            const reader = new FileReader();
+            
+            reader.onload = (event) => {
+                selectedFileContent = event.target.result;
+                generateButton.disabled = false;
+                showNotification('✅ File loaded: ' + selectedFileName);
+            };
+            
+            reader.onerror = () => {
+                showNotification('❌ Failed to read file');
+                generateButton.disabled = true;
+            };
+            
+            reader.readAsText(file);
+        });
+        
+        // Generate prompt with file content
+        generateButton.addEventListener('click', () => {
+            if (!selectedFileContent) {
+                showNotification('⚠️ No file selected!');
+                return;
+            }
+            
+            const currentPrompt = promptTextarea.value.trim();
+            
+            // Detect file extension for proper syntax highlighting
+            const fileExtension = selectedFileName.split('.').pop().toLowerCase();
+            const languageMap = {
+                'php': 'php',
+                'js': 'javascript',
+                'jsx': 'javascript',
+                'ts': 'typescript',
+                'tsx': 'typescript',
+                'py': 'python',
+                'html': 'html',
+                'css': 'css',
+                'json': 'json',
+                'md': 'markdown',
+                'txt': 'text'
+            };
+            const language = languageMap[fileExtension] || 'text';
+            
+            // Get additional context
+            const hostProviderValue = hostProvider.value;
+            const fileDescriptionValue = fileDescription.value.trim();
+            
+            // Build context section
+            let contextSection = `Context: Backend file "${selectedFileName}"`;
+            
+            if (hostProviderValue) {
+                contextSection += `\nHosting Provider: ${hostProviderValue}`;
+            }
+            
+            if (fileDescriptionValue) {
+                contextSection += `\n\nFile Details:\n${fileDescriptionValue}`;
+            }
+            
+            // Build the complete prompt in English
+            let finalPrompt = '';
+            
+            if (currentPrompt) {
+                // If user has written a prompt, put it first, then the code
+                finalPrompt = `${currentPrompt}\n\n---\n\n${contextSection}\n\nHere is the code to reference:\n\n\`\`\`${language}\n${selectedFileContent}\n\`\`\``;
+            } else {
+                // If no prompt, just add the code with a generic request
+                finalPrompt = `I need help with the following backend file.\n\n${contextSection}\n\nCode:\n\n\`\`\`${language}\n${selectedFileContent}\n\`\`\`\n\nPlease analyze this code and provide suggestions for improvement.`;
+            }
+            
+            promptTextarea.value = finalPrompt;
+            
+            showNotification('✨ File content added to prompt!');
+            
+            // Scroll to textarea
+            promptTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        
+        // Load last file path on page load
+        loadLastFilePath();
+    </script>
+</body>
+</html>
