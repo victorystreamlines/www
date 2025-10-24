@@ -334,6 +334,38 @@
             font-family: 'Courier New', monospace;
         }
         
+        .connection-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .info-section {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .info-section h4 {
+            color: var(--text-primary);
+            font-size: 1rem;
+            margin: 0 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(168, 237, 234, 0.5);
+            font-weight: 700;
+        }
+        
+        .info-section .detail-item {
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .info-section .detail-item:last-child {
+            border-bottom: none;
+        }
+        
         .footer {
             text-align: center;
             margin-top: 30px;
@@ -2516,23 +2548,127 @@
                 resultTitle.textContent = 'Connection Successful! 🎉';
                 resultMessage.textContent = data.message;
                 
-                // Display details
+                // Display comprehensive details
                 if (data.data) {
-                    let detailsHTML = '';
+                    let detailsHTML = '<div class="connection-info-grid">';
                     
-                    if (data.data.mysql_version) {
+                    // Connection Information Section
+                    detailsHTML += '<div class="info-section"><h4>🔌 Connection Information</h4>';
+                    
+                    if (data.data.host || data.data.attempted_host) {
                         detailsHTML += `
                             <div class="detail-item">
-                                <span class="detail-label">MySQL Version:</span>
-                                <span class="detail-value">${data.data.mysql_version}</span>
+                                <span class="detail-label">🖥️ Host:</span>
+                                <span class="detail-value">${data.data.host || data.data.attempted_host}</span>
                             </div>
                         `;
                     }
                     
+                    if (data.data.port) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">🔌 Port:</span>
+                                <span class="detail-value">${data.data.port}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.username || data.data.user) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">👤 Username:</span>
+                                <span class="detail-value">${data.data.username || data.data.user}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.password !== undefined) {
+                        const passwordDisplay = data.data.password ? '🔒 ' + data.data.password : '(No password)';
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">🔑 Password:</span>
+                                <span class="detail-value">${passwordDisplay}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.database || data.data.db_name) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">🗄️ Database:</span>
+                                <span class="detail-value">${data.data.database || data.data.db_name}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.connection_status) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">✅ Status:</span>
+                                <span class="detail-value">${data.data.connection_status}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    detailsHTML += '</div>'; // End connection section
+                    
+                    // Server Information Section
+                    detailsHTML += '<div class="info-section"><h4>🖥️ Server Information</h4>';
+                    
+                    if (data.data.mysql_version || data.data.server_version) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">🔢 MySQL Version:</span>
+                                <span class="detail-value">${data.data.mysql_version || data.data.server_version}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.php_version) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">🐘 PHP Version:</span>
+                                <span class="detail-value">${data.data.php_version}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.server_info) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">ℹ️ Server Info:</span>
+                                <span class="detail-value">${data.data.server_info}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.protocol_version) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">📡 Protocol:</span>
+                                <span class="detail-value">Version ${data.data.protocol_version}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.charset || data.data.character_set) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">🔤 Charset:</span>
+                                <span class="detail-value">${data.data.charset || data.data.character_set}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    detailsHTML += '</div>'; // End server section
+                    
+                    // Database Information Section
+                    detailsHTML += '<div class="info-section"><h4>📊 Database Statistics</h4>';
+                    
                     if (data.data.table_count !== undefined) {
                         detailsHTML += `
                             <div class="detail-item">
-                                <span class="detail-label">Table Count:</span>
+                                <span class="detail-label">📋 Tables:</span>
                                 <span class="detail-value">${data.data.table_count} tables</span>
                             </div>
                         `;
@@ -2541,29 +2677,72 @@
                     if (data.data.database_size_mb !== undefined) {
                         detailsHTML += `
                             <div class="detail-item">
-                                <span class="detail-label">Database Size:</span>
+                                <span class="detail-label">💾 Database Size:</span>
                                 <span class="detail-value">${data.data.database_size_mb} MB</span>
                             </div>
                         `;
                     }
                     
+                    if (data.data.total_rows !== undefined) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">📈 Total Rows:</span>
+                                <span class="detail-value">${data.data.total_rows.toLocaleString()}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.tables && Array.isArray(data.data.tables)) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">📑 Table List:</span>
+                                <span class="detail-value">${data.data.tables.join(', ')}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    detailsHTML += '</div>'; // End database section
+                    
+                    // Additional Information Section
+                    detailsHTML += '<div class="info-section"><h4>ℹ️ Additional Info</h4>';
+                    
                     if (data.timestamp) {
                         detailsHTML += `
                             <div class="detail-item">
-                                <span class="detail-label">Test Time:</span>
+                                <span class="detail-label">🕐 Test Time:</span>
                                 <span class="detail-value">${data.timestamp}</span>
                             </div>
                         `;
                     }
                     
-                    if (data.data.connection_status) {
+                    if (data.data.api_version) {
                         detailsHTML += `
                             <div class="detail-item">
-                                <span class="detail-label">Connection Status:</span>
-                                <span class="detail-value">${data.data.connection_status}</span>
+                                <span class="detail-label">🔧 API Version:</span>
+                                <span class="detail-value">${data.data.api_version}</span>
                             </div>
                         `;
                     }
+                    
+                    // Display any additional fields
+                    const displayedKeys = ['host', 'port', 'username', 'user', 'password', 'database', 'db_name', 
+                                          'connection_status', 'mysql_version', 'server_version', 'php_version', 
+                                          'server_info', 'protocol_version', 'charset', 'character_set', 
+                                          'table_count', 'database_size_mb', 'total_rows', 'tables', 'api_version'];
+                    
+                    Object.keys(data.data).forEach(key => {
+                        if (!displayedKeys.includes(key) && data.data[key] !== null && data.data[key] !== undefined) {
+                            detailsHTML += `
+                                <div class="detail-item">
+                                    <span class="detail-label">📌 ${key.replace(/_/g, ' ').toUpperCase()}:</span>
+                                    <span class="detail-value">${data.data[key]}</span>
+                                </div>
+                            `;
+                        }
+                    });
+                    
+                    detailsHTML += '</div>'; // End additional section
+                    detailsHTML += '</div>'; // End grid
                     
                     resultDetails.innerHTML = detailsHTML;
                     resultDetails.style.display = 'block';
