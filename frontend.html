@@ -1184,22 +1184,128 @@
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
         }
 
         ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--cyber-darker);
             border-radius: 10px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
         }
 
         ::-webkit-scrollbar-thumb {
             background: var(--primary-gradient);
             border-radius: 10px;
+            border: 2px solid var(--cyber-darker);
+            box-shadow: 0 0 10px rgba(255, 0, 110, 0.5);
         }
 
         ::-webkit-scrollbar-thumb:hover {
             background: var(--secondary-gradient);
+            box-shadow: 0 0 20px rgba(0, 245, 255, 0.8);
+        }
+
+        /* Checkbox Styling */
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--neon-pink);
+            filter: drop-shadow(0 0 5px rgba(255, 0, 110, 0.5));
+        }
+
+        input[type="checkbox"]:checked {
+            filter: drop-shadow(0 0 10px rgba(255, 0, 110, 0.8));
+        }
+
+        /* Glitch Effect for Hover */
+        @keyframes glitch {
+            0% {
+                text-shadow: 2px 2px 0 var(--neon-pink), -2px -2px 0 var(--neon-blue);
+            }
+            25% {
+                text-shadow: -2px 2px 0 var(--neon-blue), 2px -2px 0 var(--neon-green);
+            }
+            50% {
+                text-shadow: 2px -2px 0 var(--neon-green), -2px 2px 0 var(--neon-pink);
+            }
+            75% {
+                text-shadow: -2px -2px 0 var(--neon-pink), 2px 2px 0 var(--neon-blue);
+            }
+            100% {
+                text-shadow: 2px 2px 0 var(--neon-pink), -2px -2px 0 var(--neon-blue);
+            }
+        }
+
+        /* Neon Border Animation */
+        @keyframes neonBorder {
+            0%, 100% {
+                box-shadow: 0 0 5px var(--neon-pink),
+                            0 0 10px var(--neon-pink),
+                            0 0 20px var(--neon-pink);
+            }
+            25% {
+                box-shadow: 0 0 5px var(--neon-blue),
+                            0 0 10px var(--neon-blue),
+                            0 0 20px var(--neon-blue);
+            }
+            50% {
+                box-shadow: 0 0 5px var(--neon-green),
+                            0 0 10px var(--neon-green),
+                            0 0 20px var(--neon-green);
+            }
+            75% {
+                box-shadow: 0 0 5px var(--neon-purple),
+                            0 0 10px var(--neon-purple),
+                            0 0 20px var(--neon-purple);
+            }
+        }
+
+        /* Pulse Animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+        }
+
+        /* Scan Line Effect */
+        @keyframes scanLine {
+            0% {
+                top: 0%;
+            }
+            100% {
+                top: 100%;
+            }
+        }
+
+        /* Particle Effect */
+        .header::after {
+            content: '★ ✦ ✧ ★ ✦ ✧ ★ ✦ ✧ ★ ✦ ✧';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 2em;
+            opacity: 0.1;
+            animation: float 10s ease-in-out infinite;
+            z-index: 0;
+            color: var(--neon-blue);
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(180deg);
+            }
         }
     </style>
 </head>
@@ -1207,8 +1313,8 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🎯 Customer Management System</h1>
-            <p>Complete CRUD Application with Modern UI</p>
+            <h1>� CYBER CUSTOMER SYSTEM 🎮</h1>
+            <p>⚡ ULTIMATE GAMING CRUD EXPERIENCE ⚡</p>
         </div>
 
         <!-- Stats Cards -->
