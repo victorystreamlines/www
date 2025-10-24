@@ -395,6 +395,10 @@
             border-bottom: none;
         }
         
+        .info-section.full-width {
+            grid-column: 1 / -1;
+        }
+        
         .footer {
             text-align: center;
             margin-top: 30px;
@@ -2652,15 +2656,6 @@
                 formData.append('db_pass', currentConnectionInfo.password);
                 formData.append('db_port', currentConnectionInfo.port);
                 
-                // Log connection attempt for debugging
-                console.log('🔍 Testing connection with:', {
-                    host: currentConnectionInfo.host,
-                    database: currentConnectionInfo.database,
-                    username: currentConnectionInfo.username,
-                    port: currentConnectionInfo.port,
-                    apiUrl: apiUrl
-                });
-                
                 // Send request to API with POST method and database credentials
                 const response = await fetch(apiUrl, {
                     method: 'POST',
@@ -2669,9 +2664,6 @@
                 
                 // Read data
                 const data = await response.json();
-                
-                // Log response for debugging
-                console.log('📥 API Response:', data);
                 
                 // Display result
                 displayResult(data);
@@ -2848,11 +2840,11 @@
                         `;
                     }
                     
-                    if (data.data.database_size_mb !== undefined) {
+                    if (data.data.total_database_size_mb !== undefined) {
                         detailsHTML += `
                             <div class="detail-item">
-                                <span class="detail-label">💾 Database Size:</span>
-                                <span class="detail-value">${data.data.database_size_mb} MB</span>
+                                <span class="detail-label">💾 Total Size:</span>
+                                <span class="detail-value">${data.data.total_database_size_mb} MB</span>
                             </div>
                         `;
                     }
@@ -2866,16 +2858,108 @@
                         `;
                     }
                     
-                    if (data.data.tables && Array.isArray(data.data.tables)) {
+                    if (data.data.collation) {
                         detailsHTML += `
                             <div class="detail-item">
-                                <span class="detail-label">📑 Table List:</span>
-                                <span class="detail-value">${data.data.tables.join(', ')}</span>
+                                <span class="detail-label">🔤 Collation:</span>
+                                <span class="detail-value">${data.data.collation}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.storage_engines) {
+                        const engines = Object.entries(data.data.storage_engines)
+                            .map(([engine, count]) => `${engine} (${count})`)
+                            .join(', ');
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">⚙️ Storage Engines:</span>
+                                <span class="detail-value">${engines}</span>
                             </div>
                         `;
                     }
                     
                     detailsHTML += '</div>'; // End database section
+                    
+                    // Server Status Section
+                    if (data.data.server_uptime || data.data.max_connections || data.data.connection_id) {
+                        detailsHTML += '<div class="info-section"><h4>⚡ Server Status</h4>';
+                        
+                        if (data.data.server_uptime) {
+                            detailsHTML += `
+                                <div class="detail-item">
+                                    <span class="detail-label">⏱️ Server Uptime:</span>
+                                    <span class="detail-value">${data.data.server_uptime}</span>
+                                </div>
+                            `;
+                        }
+                        
+                        if (data.data.max_connections) {
+                            detailsHTML += `
+                                <div class="detail-item">
+                                    <span class="detail-label">🔗 Max Connections:</span>
+                                    <span class="detail-value">${data.data.max_connections}</span>
+                                </div>
+                            `;
+                        }
+                        
+                        if (data.data.connection_id) {
+                            detailsHTML += `
+                                <div class="detail-item">
+                                    <span class="detail-label">🆔 Connection ID:</span>
+                                    <span class="detail-value">${data.data.connection_id}</span>
+                                </div>
+                            `;
+                        }
+                        
+                        if (data.data.system_time_zone) {
+                            detailsHTML += `
+                                <div class="detail-item">
+                                    <span class="detail-label">🌍 Time Zone:</span>
+                                    <span class="detail-value">${data.data.system_time_zone}</span>
+                                </div>
+                            `;
+                        }
+                        
+                        if (data.data.server_type) {
+                            detailsHTML += `
+                                <div class="detail-item">
+                                    <span class="detail-label">🖥️ Server Type:</span>
+                                    <span class="detail-value">${data.data.server_type}</span>
+                                </div>
+                            `;
+                        }
+                        
+                        detailsHTML += '</div>'; // End server status section
+                    }
+                    
+                    // Table Details Section (if available)
+                    if (data.data.table_details && data.data.table_details.length > 0) {
+                        detailsHTML += '<div class="info-section full-width"><h4>📑 Detailed Table Information</h4>';
+                        detailsHTML += '<div style="overflow-x: auto; max-height: 300px; overflow-y: auto;">';
+                        detailsHTML += '<table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">';
+                        detailsHTML += '<thead><tr style="background: rgba(168, 237, 234, 0.2); position: sticky; top: 0;">';
+                        detailsHTML += '<th style="padding: 8px; text-align: left; border-bottom: 2px solid rgba(168, 237, 234, 0.3);">Table Name</th>';
+                        detailsHTML += '<th style="padding: 8px; text-align: right; border-bottom: 2px solid rgba(168, 237, 234, 0.3);">Rows</th>';
+                        detailsHTML += '<th style="padding: 8px; text-align: center; border-bottom: 2px solid rgba(168, 237, 234, 0.3);">Engine</th>';
+                        detailsHTML += '<th style="padding: 8px; text-align: right; border-bottom: 2px solid rgba(168, 237, 234, 0.3);">Size (MB)</th>';
+                        detailsHTML += '<th style="padding: 8px; text-align: center; border-bottom: 2px solid rgba(168, 237, 234, 0.3);">Collation</th>';
+                        detailsHTML += '</tr></thead><tbody>';
+                        
+                        data.data.table_details.forEach((table, index) => {
+                            const bgColor = index % 2 === 0 ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.1)';
+                            detailsHTML += `<tr style="background: ${bgColor};">`;
+                            detailsHTML += `<td style="padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">${table.name}</td>`;
+                            detailsHTML += `<td style="padding: 6px 8px; text-align: right; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">${table.rows.toLocaleString()}</td>`;
+                            detailsHTML += `<td style="padding: 6px 8px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1);"><span style="background: rgba(168, 237, 234, 0.2); padding: 2px 8px; border-radius: 4px;">${table.engine}</span></td>`;
+                            detailsHTML += `<td style="padding: 6px 8px; text-align: right; border-bottom: 1px solid rgba(255, 255, 255, 0.1);">${table.size_mb}</td>`;
+                            detailsHTML += `<td style="padding: 6px 8px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-size: 0.75rem;">${table.collation}</td>`;
+                            detailsHTML += '</tr>';
+                        });
+                        
+                        detailsHTML += '</tbody></table>';
+                        detailsHTML += '</div></div>'; // End table details section
+                    }
                     
                     // Additional Information Section
                     detailsHTML += '<div class="info-section"><h4>ℹ️ Additional Info</h4>';
@@ -4397,12 +4481,6 @@
         // Save localhost credentials to localStorage
         function saveLocalhostCredentials(credentials) {
             localStorage.setItem(LOCALHOST_CREDENTIALS_KEY, JSON.stringify(credentials));
-            console.log('💾 Saved localhost credentials:', {
-                host: credentials.host,
-                username: credentials.username,
-                port: credentials.port,
-                hasPassword: !!credentials.password
-            });
         }
         
         // Load all databases on page load
@@ -4410,25 +4488,14 @@
             const selector = document.getElementById('databaseSelector');
             selector.innerHTML = '<option value="">-- Select a Database --</option>';
             
-            console.log('🔄 Loading all databases from localStorage...');
-            
             let databasesFound = false;
             
             // 1. Load Localhost Databases
             const localhostState = localStorage.getItem(LOCALHOST_CONNECTION_STATE_KEY);
-            console.log('🖥️ Localhost State:', localhostState);
             
             if (localhostState === 'connected') {
                 const localhostDatabases = getLocalhostDatabases();
                 const localhostCreds = getLocalhostCredentials();
-                
-                console.log('🖥️ Localhost Credentials:', {
-                    host: localhostCreds.host,
-                    username: localhostCreds.username,
-                    port: localhostCreds.port,
-                    hasPassword: !!localhostCreds.password
-                });
-                console.log('🖥️ Localhost Databases found:', localhostDatabases);
                 
                 if (localhostDatabases && localhostDatabases.length > 0) {
                     const localhostGroup = document.createElement('optgroup');
@@ -4451,32 +4518,20 @@
                     
                     selector.appendChild(localhostGroup);
                     databasesFound = true;
-                    console.log(`✅ Added ${localhostDatabases.length} localhost database(s)`);
                 }
             }
             
             // 2. Load Hostinger Connections
             const hostingerState = localStorage.getItem(CONNECTION_STATE_KEY);
-            console.log('☁️ Hostinger State:', hostingerState);
             
             if (hostingerState === 'connected') {
                 const hostingerConnections = getHostingerConnections();
-                console.log('☁️ Hostinger Connections found:', hostingerConnections);
                 
                 if (hostingerConnections && hostingerConnections.length > 0) {
                     const hostingerGroup = document.createElement('optgroup');
                     hostingerGroup.label = '☁️ Hostinger Databases';
                     
                     hostingerConnections.forEach((conn, index) => {
-                        console.log(`☁️ Processing connection ${index + 1}:`, {
-                            name: conn.name,
-                            host: conn.host,
-                            dbName: conn.dbName,
-                            username: conn.username,
-                            hasPassword: conn.password ? 'Yes' : 'No',
-                            port: conn.port
-                        });
-                        
                         const option = document.createElement('option');
                         option.value = JSON.stringify({
                             type: 'hostinger',
@@ -4493,7 +4548,6 @@
                     
                     selector.appendChild(hostingerGroup);
                     databasesFound = true;
-                    console.log(`✅ Added ${hostingerConnections.length} Hostinger database(s)`);
                 }
             }
             
@@ -4678,19 +4732,15 @@
             const selector = document.getElementById('databaseSelector');
             const selectedValue = selector.value;
             
-            console.log('🔄 Database selection changed. Raw value:', selectedValue);
-            
             if (!selectedValue) {
                 currentConnectionInfo = null;
                 updateCurrentConnectionInfo(null);
                 localStorage.removeItem(SELECTED_DB_CONNECTION_KEY);
-                console.log('❌ No database selected');
                 return;
             }
             
             try {
                 currentConnectionInfo = JSON.parse(selectedValue);
-                console.log('✅ Parsed connection info:', currentConnectionInfo);
                 
                 // Validate that database name exists
                 if (!currentConnectionInfo.database) {
@@ -4723,15 +4773,6 @@
             document.getElementById('currentDatabase').textContent = info.database || 'Not specified';
             document.getElementById('currentUsername').textContent = info.username || 'Not specified';
             document.getElementById('currentPort').textContent = info.port || '3306';
-            
-            // Log current connection for debugging
-            console.log('✅ Current Connection Updated:', {
-                host: info.host,
-                database: info.database,
-                username: info.username,
-                port: info.port,
-                hasPassword: info.password ? 'Yes' : 'No'
-            });
         }
         
         // Load previously selected database

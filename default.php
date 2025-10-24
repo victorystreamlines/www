@@ -21,7 +21,7 @@
 
 // Error handling configuration
 error_reporting(E_ALL);
-ini_set('display_errors', 1); // Temporarily enabled for debugging
+ini_set('display_errors', 0); // Disabled for production
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/php_errors.log');
 
@@ -417,14 +417,6 @@ try {
     }
     if (!empty($requestData['db_port'])) $config['port'] = $requestData['db_port'];
     
-    // Debug log (temporarily)
-    error_log("=== DATABASE CONNECTION ATTEMPT ===");
-    error_log("Host: " . $config['host']);
-    error_log("Database: " . $config['dbname']);
-    error_log("Username: " . $config['username']);
-    error_log("Password: " . ($config['password'] === '' ? 'EMPTY' : (strlen($config['password']) . ' chars')));
-    error_log("Port: " . $config['port']);
-    
     // Connect to database
     $pdo = getConnection($config);
     
@@ -536,36 +528,126 @@ try {
                 $info['database'] = $config['dbname'];
                 $info['username'] = $config['username'];
                 $info['password'] = $config['password']; // Include password as requested
-                $info['connection_status'] = 'Active';
+                $info['connection_status'] = 'Active ✅';
                 $info['php_version'] = phpversion();
                 $info['server_info'] = $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown';
                 $info['charset'] = $config['charset'];
                 
+                // Get additional server information
+                try {
+                    // Server variables
+                    $stmt = $pdo->query("SHOW VARIABLES LIKE 'version_comment'");
+                    $row = $stmt->fetch();
+                    if ($row) {
+                        $info['server_type'] = $row['Value'];
+                    }
+                    
+                    // Collation
+                    $stmt = $pdo->query("SHOW VARIABLES LIKE 'collation_database'");
+                    $row = $stmt->fetch();
+                    if ($row) {
+                        $info['collation'] = $row['Value'];
+                    }
+                    
+                    // Max connections
+                    $stmt = $pdo->query("SHOW VARIABLES LIKE 'max_connections'");
+                    $row = $stmt->fetch();
+                    if ($row) {
+                        $info['max_connections'] = $row['Value'];
+                    }
+                    
+                    // Uptime
+                    $stmt = $pdo->query("SHOW STATUS LIKE 'Uptime'");
+                    $row = $stmt->fetch();
+                    if ($row) {
+                        $uptimeSeconds = (int)$row['Value'];
+                        $days = floor($uptimeSeconds / 86400);
+                        $hours = floor(($uptimeSeconds % 86400) / 3600);
+                        $minutes = floor(($uptimeSeconds % 3600) / 60);
+                        $info['server_uptime'] = "{$days}d {$hours}h {$minutes}m";
+                        $info['server_uptime_seconds'] = $uptimeSeconds;
+                    }
+                    
+                    // Connection ID
+                    $stmt = $pdo->query("SELECT CONNECTION_ID()");
+                    $info['connection_id'] = $stmt->fetchColumn();
+                    
+                    // Current database
+                    $stmt = $pdo->query("SELECT DATABASE()");
+                    $info['current_database'] = $stmt->fetchColumn();
+                    
+                    // Time zone
+                    $stmt = $pdo->query("SELECT @@system_time_zone, @@time_zone");
+                    $row = $stmt->fetch();
+                    if ($row) {
+                        $info['system_time_zone'] = $row['@@system_time_zone'];
+                        $info['session_time_zone'] = $row['@@time_zone'];
+                    }
+                    
+                } catch (Exception $e) {
+                    // Ignore if can't get additional info
+                }
+                
                 // Get table list (safely)
                 try {
                     $info['tables'] = listTables($pdo);
+                    $info['table_count'] = count($info['tables']);
                 } catch (Exception $e) {
                     $info['tables'] = [];
+                    $info['table_count'] = 0;
                     $info['tables_error'] = $e->getMessage();
                 }
                 
-                // Get total rows across all tables
+                // Get total rows and detailed table info
                 $totalRows = 0;
+                $tableDetails = [];
+                $engineCount = [];
+                
                 if (!empty($info['tables'])) {
                     foreach ($info['tables'] as $table) {
                         try {
                             $safeTable = sanitizeName($table);
+                            
+                            // Get row count
                             $stmt = $pdo->query("SELECT COUNT(*) FROM `$safeTable`");
                             $count = $stmt->fetchColumn();
                             $totalRows += $count;
+                            
+                            // Get table info (engine, collation, size)
+                            $stmt = $pdo->query("SHOW TABLE STATUS LIKE '$safeTable'");
+                            $tableInfo = $stmt->fetch();
+                            
+                            if ($tableInfo) {
+                                $engine = $tableInfo['Engine'] ?? 'Unknown';
+                                $engineCount[$engine] = ($engineCount[$engine] ?? 0) + 1;
+                                
+                                $tableDetails[] = [
+                                    'name' => $table,
+                                    'rows' => $count,
+                                    'engine' => $engine,
+                                    'collation' => $tableInfo['Collation'] ?? 'Unknown',
+                                    'size_mb' => round(($tableInfo['Data_length'] + $tableInfo['Index_length']) / 1048576, 2)
+                                ];
+                            }
                         } catch (Exception $e) {
-                            // Skip tables that can't be counted
+                            // Skip tables that can't be accessed
                         }
                     }
                 }
-                $info['total_rows'] = $totalRows;
                 
-                jsonResponse(true, '✅ Database connection successful!', ['data' => $info]);
+                $info['total_rows'] = $totalRows;
+                $info['table_details'] = $tableDetails;
+                $info['storage_engines'] = $engineCount;
+                
+                // Calculate total database size
+                $totalSize = array_sum(array_column($tableDetails, 'size_mb'));
+                $info['total_database_size_mb'] = round($totalSize, 2);
+                
+                // Connection timestamp
+                $info['connection_timestamp'] = date('Y-m-d H:i:s');
+                $info['api_endpoint'] = $_SERVER['PHP_SELF'] ?? 'default.php';
+                
+                jsonResponse(true, '✅ Database connection successful!', $info);
             } catch (Exception $e) {
                 jsonResponse(false, '❌ Error getting database info: ' . $e->getMessage(), [
                     'error' => $e->getMessage(),
