@@ -108,6 +108,34 @@ PHASE: Hostinger Edition
             margin-right: 10px;
             font-size: 18px;
         }
+        
+        .back-to-index {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-top: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .back-to-index:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .back-to-index i {
+            font-size: 16px;
+        }
 
         /* Main Content Area */
         .main-content {
@@ -1661,6 +1689,12 @@ PHASE: Hostinger Edition
                 </a>
             </li>
         </ul>
+        
+        <!-- Back to Index Button -->
+        <a href="index.html" class="back-to-index">
+            <span>⬅️</span>
+            <span>Back to Index</span>
+        </a>
     </aside>
 
     <!-- Main Content -->
