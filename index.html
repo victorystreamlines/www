@@ -1923,12 +1923,12 @@
                             <label class="horizontal-toggle-option active" id="singlePageOption">
                                 <input type="radio" name="fileStructure" value="single" id="singlePageRadio" checked>
                                 <i class="fas fa-file"></i>
-                                <span>Single Page (One File)</span>
+                                <span>One File</span>
                             </label>
                             <label class="horizontal-toggle-option" id="multipleFilesOption">
                                 <input type="radio" name="fileStructure" value="multiple" id="multipleFilesRadio">
                                 <i class="fas fa-copy"></i>
-                                <span>Multiple Files (HTML+CSS+JS)</span>
+                                <span>HTML+CSS+JS</span>
                             </label>
                         </div>
                     </div>
@@ -3567,9 +3567,9 @@
             
             // Add file structure preference
             if (singlePageRadio.checked) {
-                includedItems.push('📄 Single Page');
+                includedItems.push('📄 One File');
             } else if (multipleFilesRadio.checked) {
-                includedItems.push('📑 Multiple Files');
+                includedItems.push('📑 HTML+CSS+JS');
             }
             
             includedItems.push(`API URL (${selectedApiUrl})`);
@@ -3645,11 +3645,11 @@
             if (singlePageRadio.checked) {
                 singlePageOption.classList.add('active');
                 multipleFilesOption.classList.remove('active');
-                showNotification('📄 Single Page (One File) selected');
+                showNotification('📄 One File mode selected');
             } else if (multipleFilesRadio.checked) {
                 multipleFilesOption.classList.add('active');
                 singlePageOption.classList.remove('active');
-                showNotification('📑 Multiple Files (HTML+CSS+JS) selected');
+                showNotification('📑 HTML+CSS+JS mode selected');
             }
         }
         
