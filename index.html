@@ -1110,72 +1110,15 @@
             border-radius: 10px;
         }
         
-        .toggle-header {
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .file-structure-toggle .horizontal-toggle-option.active {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border-color: rgba(17, 153, 142, 0.5);
+            box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);
         }
         
-        .toggle-options {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .toggle-option {
-            display: flex;
-            align-items: flex-start;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.15);
-            border-radius: 8px;
-            border: 2px solid transparent;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .toggle-option:hover {
-            background: rgba(0, 0, 0, 0.25);
-            border-color: rgba(168, 237, 234, 0.5);
-        }
-        
-        .toggle-option.active {
-            background: rgba(168, 237, 234, 0.2);
-            border-color: rgba(168, 237, 234, 0.8);
-            box-shadow: 0 0 15px rgba(168, 237, 234, 0.3);
-        }
-        
-        .toggle-option input[type="radio"] {
-            width: 20px;
-            height: 20px;
-            margin-right: 12px;
-            cursor: pointer;
-            accent-color: #a8edea;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-        
-        .toggle-option-content {
-            flex: 1;
-        }
-        
-        .toggle-option-title {
-            color: var(--text-primary);
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .toggle-option-desc {
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            line-height: 1.4;
+        .file-structure-toggle .horizontal-toggle-option:hover {
+            background: rgba(17, 153, 142, 0.2);
         }
         
         .generate-button {
@@ -1972,37 +1915,20 @@
                     
                     <!-- File Structure Toggle -->
                     <div class="file-structure-toggle">
-                        <div class="toggle-header">
+                        <div class="restriction-header">
                             <i class="fas fa-file-code"></i>
-                            Frontend File Structure Preference:
+                            Frontend File Structure:
                         </div>
-                        <div class="toggle-options">
-                            <!-- Option 1: Single Page -->
-                            <label class="toggle-option active" id="singlePageOption">
+                        <div class="horizontal-toggle">
+                            <label class="horizontal-toggle-option active" id="singlePageOption">
                                 <input type="radio" name="fileStructure" value="single" id="singlePageRadio" checked>
-                                <div class="toggle-option-content">
-                                    <div class="toggle-option-title">
-                                        <i class="fas fa-file"></i>
-                                        Single Page Application
-                                    </div>
-                                    <div class="toggle-option-desc">
-                                        Everything in ONE HTML file (HTML + CSS + JavaScript embedded)
-                                    </div>
-                                </div>
+                                <i class="fas fa-file"></i>
+                                <span>Single Page (One File)</span>
                             </label>
-                            
-                            <!-- Option 2: Multiple Files -->
-                            <label class="toggle-option" id="multipleFilesOption">
+                            <label class="horizontal-toggle-option" id="multipleFilesOption">
                                 <input type="radio" name="fileStructure" value="multiple" id="multipleFilesRadio">
-                                <div class="toggle-option-content">
-                                    <div class="toggle-option-title">
-                                        <i class="fas fa-copy"></i>
-                                        Multiple Separate Files
-                                    </div>
-                                    <div class="toggle-option-desc">
-                                        Three separate files: index.html + styles.css + script.js
-                                    </div>
-                                </div>
+                                <i class="fas fa-copy"></i>
+                                <span>Multiple Files (HTML+CSS+JS)</span>
                             </label>
                         </div>
                     </div>
@@ -3719,11 +3645,11 @@
             if (singlePageRadio.checked) {
                 singlePageOption.classList.add('active');
                 multipleFilesOption.classList.remove('active');
-                showNotification('📄 Single Page mode selected');
+                showNotification('📄 Single Page (One File) selected');
             } else if (multipleFilesRadio.checked) {
                 multipleFilesOption.classList.add('active');
                 singlePageOption.classList.remove('active');
-                showNotification('📑 Multiple Files mode selected');
+                showNotification('📑 Multiple Files (HTML+CSS+JS) selected');
             }
         }
         
