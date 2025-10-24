@@ -741,6 +741,443 @@
             user-select: none;
         }
         
+        /* CRUD Application Selector */
+        .crud-app-selector {
+            margin: 20px 0 10px 0;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.08);
+            border: 1px solid rgba(102, 126, 234, 0.25);
+            border-radius: 12px;
+            display: none;
+        }
+        
+        .crud-app-selector.active {
+            display: block;
+        }
+        
+        .crud-checkbox-wrapper {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .crud-checkbox-wrapper label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            flex: 1;
+        }
+        
+        .crud-checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+        
+        .quick-add-arrow {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            margin-left: 10px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .quick-add-arrow:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+        
+        .quick-add-arrow:active {
+            transform: translateY(0);
+        }
+        
+        .quick-add-arrow i {
+            font-size: 1.1rem;
+            animation: pulseDown 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulseDown {
+            0%, 100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            50% {
+                transform: translateY(4px);
+                opacity: 0.7;
+            }
+        }
+        
+        .crud-dropdown-wrapper {
+            position: relative;
+            display: none;
+        }
+        
+        .crud-dropdown-wrapper.active {
+            display: block;
+        }
+        
+        .crud-search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+        
+        .crud-search-input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .crud-search-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .crud-select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .crud-select:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .crud-select option {
+            background: #333;
+            color: #fff;
+            padding: 10px;
+        }
+        
+        .crud-info-box {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: rgba(0, 255, 136, 0.9);
+            display: none;
+        }
+        
+        .crud-info-box.active {
+            display: block;
+        }
+        
+        .crud-info-box i {
+            margin-right: 8px;
+        }
+        
+        /* Backend Restriction Toggle */
+        .backend-restriction-toggle {
+            margin: 15px 0 0 0;
+            padding: 15px;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 10px;
+        }
+        
+        .restriction-header {
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .horizontal-toggle {
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 5px;
+            border-radius: 25px;
+            width: fit-content;
+        }
+        
+        .horizontal-toggle-option {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            background: transparent;
+            border: 2px solid transparent;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        
+        .horizontal-toggle-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .horizontal-toggle-option.active {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            color: white;
+            border-color: rgba(255, 107, 107, 0.5);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+            font-weight: 600;
+        }
+        
+        .horizontal-toggle-option input[type="radio"] {
+            display: none;
+        }
+        
+        .horizontal-toggle-option i {
+            margin-right: 6px;
+        }
+        
+        /* Custom Table Builder */
+        .custom-table-builder {
+            margin: 15px 0 0 0;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+        }
+        
+        .custom-table-wrapper {
+            display: none;
+            margin-top: 15px;
+        }
+        
+        .custom-table-wrapper.active {
+            display: block;
+        }
+        
+        .table-name-input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 15px;
+        }
+        
+        .table-name-input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .table-name-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .fields-container {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        
+        .field-row {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1fr 1fr 40px;
+            gap: 8px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            align-items: center;
+        }
+        
+        .field-row input, .field-row select {
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .field-row input:focus, .field-row select:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.8);
+        }
+        
+        .field-row input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .field-row select {
+            cursor: pointer;
+        }
+        
+        .field-row select option {
+            background: #333;
+            color: #fff;
+        }
+        
+        .remove-field-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .remove-field-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+        }
+        
+        .add-field-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+        
+        .add-field-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+        }
+        
+        .custom-table-info {
+            padding: 10px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: rgba(0, 255, 136, 0.9);
+            display: none;
+        }
+        
+        .custom-table-info.active {
+            display: block;
+        }
+        
+        /* File Structure Toggle */
+        .file-structure-toggle {
+            margin: 15px 0 0 0;
+            padding: 15px;
+            background: rgba(168, 237, 234, 0.1);
+            border: 1px solid rgba(168, 237, 234, 0.3);
+            border-radius: 10px;
+        }
+        
+        .toggle-header {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .toggle-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .toggle-option {
+            display: flex;
+            align-items: flex-start;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-option:hover {
+            background: rgba(0, 0, 0, 0.25);
+            border-color: rgba(168, 237, 234, 0.5);
+        }
+        
+        .toggle-option.active {
+            background: rgba(168, 237, 234, 0.2);
+            border-color: rgba(168, 237, 234, 0.8);
+            box-shadow: 0 0 15px rgba(168, 237, 234, 0.3);
+        }
+        
+        .toggle-option input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+            accent-color: #a8edea;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .toggle-option-content {
+            flex: 1;
+        }
+        
+        .toggle-option-title {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .toggle-option-desc {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+        
         .generate-button {
             background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
             color: #333;
@@ -1280,6 +1717,177 @@
                         <i class="fas fa-magic"></i>
                         Generate Prompt with Files
                     </button>
+                    
+                    <!-- CRUD Application Generator -->
+                    <div class="crud-app-selector active">
+                        <div class="crud-checkbox-wrapper">
+                            <label>
+                                <input type="checkbox" id="includeCrudApp">
+                                <span>🚀 Generate Full CRUD Application Template</span>
+                            </label>
+                            <button class="quick-add-arrow" id="quickAddCrudApp" title="Add to prompt now">
+                                <i class="fas fa-angle-double-down"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="crud-dropdown-wrapper" id="crudDropdownWrapper">
+                            <label style="display: block; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 8px; font-weight: 600;">
+                                <i class="fas fa-table"></i> Select Table Type:
+                            </label>
+                            <input 
+                                type="text" 
+                                class="crud-search-input" 
+                                id="crudSearchInput" 
+                                placeholder="🔍 Search for a table type..."
+                            >
+                            <select class="crud-select" id="crudTableSelect" size="6">
+                                <optgroup label="👥 People & Users">
+                                    <option value="users">Users / Members</option>
+                                    <option value="customers">Customers</option>
+                                    <option value="employees">Employees</option>
+                                    <option value="students">Students</option>
+                                    <option value="teachers">Teachers</option>
+                                    <option value="contacts">Contacts</option>
+                                </optgroup>
+                                <optgroup label="🛒 E-Commerce">
+                                    <option value="products">Products</option>
+                                    <option value="orders">Orders</option>
+                                    <option value="categories">Categories</option>
+                                    <option value="inventory">Inventory</option>
+                                    <option value="suppliers">Suppliers</option>
+                                    <option value="invoices">Invoices</option>
+                                </optgroup>
+                                <optgroup label="📝 Content">
+                                    <option value="posts">Blog Posts</option>
+                                    <option value="articles">Articles</option>
+                                    <option value="comments">Comments</option>
+                                    <option value="reviews">Reviews</option>
+                                    <option value="news">News</option>
+                                </optgroup>
+                                <optgroup label="🏢 Business">
+                                    <option value="projects">Projects</option>
+                                    <option value="tasks">Tasks</option>
+                                    <option value="leads">Leads</option>
+                                    <option value="deals">Deals</option>
+                                    <option value="clients">Clients</option>
+                                    <option value="vendors">Vendors</option>
+                                </optgroup>
+                                <optgroup label="📚 Education">
+                                    <option value="courses">Courses</option>
+                                    <option value="lessons">Lessons</option>
+                                    <option value="exams">Exams</option>
+                                    <option value="grades">Grades</option>
+                                    <option value="assignments">Assignments</option>
+                                </optgroup>
+                                <optgroup label="🏥 Healthcare">
+                                    <option value="patients">Patients</option>
+                                    <option value="appointments">Appointments</option>
+                                    <option value="prescriptions">Prescriptions</option>
+                                    <option value="doctors">Doctors</option>
+                                </optgroup>
+                                <optgroup label="🏨 Hospitality">
+                                    <option value="bookings">Bookings / Reservations</option>
+                                    <option value="rooms">Rooms</option>
+                                    <option value="restaurants">Restaurants</option>
+                                    <option value="menus">Menu Items</option>
+                                </optgroup>
+                                <optgroup label="📊 Analytics">
+                                    <option value="reports">Reports</option>
+                                    <option value="logs">Activity Logs</option>
+                                    <option value="statistics">Statistics</option>
+                                </optgroup>
+                                <optgroup label="💼 HR & Payroll">
+                                    <option value="attendance">Attendance</option>
+                                    <option value="payroll">Payroll</option>
+                                    <option value="leaves">Leave Requests</option>
+                                    <option value="departments">Departments</option>
+                                </optgroup>
+                                <optgroup label="🎫 Events">
+                                    <option value="events">Events</option>
+                                    <option value="tickets">Tickets</option>
+                                    <option value="registrations">Registrations</option>
+                                </optgroup>
+                                <optgroup label="🚗 Transportation">
+                                    <option value="vehicles">Vehicles</option>
+                                    <option value="drivers">Drivers</option>
+                                    <option value="trips">Trips</option>
+                                </optgroup>
+                                <optgroup label="🏠 Real Estate">
+                                    <option value="properties">Properties</option>
+                                    <option value="agents">Agents</option>
+                                    <option value="listings">Listings</option>
+                                </optgroup>
+                                <optgroup label="🔧 General">
+                                    <option value="settings">Settings</option>
+                                    <option value="notifications">Notifications</option>
+                                    <option value="messages">Messages</option>
+                                    <option value="files">Files / Documents</option>
+                                    <option value="tags">Tags</option>
+                                </optgroup>
+                            </select>
+                            
+                            <div class="crud-info-box" id="crudInfoBox">
+                                <i class="fas fa-info-circle"></i>
+                                <span id="crudInfoText">Select a table type to generate a complete CRUD application</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Backend Restriction Toggle -->
+                        <div class="backend-restriction-toggle">
+                            <div class="restriction-header">
+                                <i class="fas fa-shield-alt"></i>
+                                Backend Modification Policy:
+                            </div>
+                            <div class="horizontal-toggle">
+                                <label class="horizontal-toggle-option active" id="restrictBackendOption">
+                                    <input type="radio" name="backendRestriction" value="restrict" id="restrictBackendRadio" checked>
+                                    <i class="fas fa-lock"></i>
+                                    <span>Restrict Backend Changes</span>
+                                </label>
+                                <label class="horizontal-toggle-option" id="allowBackendOption">
+                                    <input type="radio" name="backendRestriction" value="allow" id="allowBackendRadio">
+                                    <i class="fas fa-unlock"></i>
+                                    <span>Allow Backend Changes</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Custom Table Builder -->
+                        <div class="custom-table-builder">
+                            <div class="crud-checkbox-wrapper">
+                                <label>
+                                    <input type="checkbox" id="includeCustomTable">
+                                    <span>🛠️ Create Custom Table Manually</span>
+                                </label>
+                                <button class="quick-add-arrow" id="quickAddCustomTable" title="Add to prompt now">
+                                    <i class="fas fa-angle-double-down"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="custom-table-wrapper" id="customTableWrapper">
+                                <input 
+                                    type="text" 
+                                    class="table-name-input" 
+                                    id="customTableName" 
+                                    placeholder="Enter table name (e.g., products, users, orders...)"
+                                >
+                                
+                                <div class="fields-container" id="fieldsContainer">
+                                    <!-- Field rows will be added dynamically -->
+                                </div>
+                                
+                                <button class="add-field-btn" id="addFieldBtn">
+                                    <i class="fas fa-plus"></i>
+                                    Add Field
+                                </button>
+                                
+                                <div class="custom-table-info" id="customTableInfo">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span id="customTableInfoText">Add fields to build your custom table</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -1360,6 +1968,43 @@
                             <input type="checkbox" id="includeApiInstructions" checked>
                             <span>Include Backend API usage instructions for AI</span>
                         </label>
+                    </div>
+                    
+                    <!-- File Structure Toggle -->
+                    <div class="file-structure-toggle">
+                        <div class="toggle-header">
+                            <i class="fas fa-file-code"></i>
+                            Frontend File Structure Preference:
+                        </div>
+                        <div class="toggle-options">
+                            <!-- Option 1: Single Page -->
+                            <label class="toggle-option active" id="singlePageOption">
+                                <input type="radio" name="fileStructure" value="single" id="singlePageRadio" checked>
+                                <div class="toggle-option-content">
+                                    <div class="toggle-option-title">
+                                        <i class="fas fa-file"></i>
+                                        Single Page Application
+                                    </div>
+                                    <div class="toggle-option-desc">
+                                        Everything in ONE HTML file (HTML + CSS + JavaScript embedded)
+                                    </div>
+                                </div>
+                            </label>
+                            
+                            <!-- Option 2: Multiple Files -->
+                            <label class="toggle-option" id="multipleFilesOption">
+                                <input type="radio" name="fileStructure" value="multiple" id="multipleFilesRadio">
+                                <div class="toggle-option-content">
+                                    <div class="toggle-option-title">
+                                        <i class="fas fa-copy"></i>
+                                        Multiple Separate Files
+                                    </div>
+                                    <div class="toggle-option-desc">
+                                        Three separate files: index.html + styles.css + script.js
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2488,7 +3133,21 @@
         
         // Generate prompt with file content (supports both backend and frontend)
         generateButton.addEventListener('click', () => {
-            const currentPrompt = promptTextarea.value.trim();
+            // Extract the original user prompt (before any generated sections)
+            const currentTextareaContent = promptTextarea.value.trim();
+            let originalPrompt = '';
+            
+            // If textarea contains "---", extract only the part before it (user's original prompt)
+            if (currentTextareaContent.includes('\n---\n')) {
+                originalPrompt = currentTextareaContent.split('\n---\n')[0].trim();
+            } else {
+                // No generated content yet, use the entire textarea content
+                originalPrompt = currentTextareaContent;
+            }
+            
+            // Clear textarea before regenerating
+            promptTextarea.value = '';
+            
             const languageMap = {
                 'php': 'php', 'js': 'javascript', 'jsx': 'javascript',
                 'ts': 'typescript', 'tsx': 'typescript', 'py': 'python',
@@ -2601,20 +3260,34 @@
             apiUrlSection += '});\n';
             apiUrlSection += 'const data = await response.json();\n';
             apiUrlSection += '```\n\n';
-            apiUrlSection += '**⚠️ CRITICAL:** All database operations must go through this URL. Do NOT modify the backend file - it\'s already complete and ready to handle all requests.\n\n';
+            
+            if (restrictBackendRadio.checked) {
+                apiUrlSection += '**⚠️ CRITICAL:** All database operations must go through this URL. **🔒 Do NOT modify the backend file** - it is already complete and ready to handle all requests.\n\n';
+            } else {
+                apiUrlSection += '**ℹ️ NOTE:** All database operations should go through this URL. **🔓 Backend modifications are allowed** if you need to add custom functionality.\n\n';
+            }
+            
             apiUrlSection += '---\n\n';
             
             // Check if API instructions should be included
             const includeApiInstructions = document.getElementById('includeApiInstructions').checked;
+            const isBackendRestricted = restrictBackendRadio.checked;
             let apiInstructionsSection = '';
             
             if (includeApiInstructions) {
                 apiInstructionsSection = '## 🚨 IMPORTANT: Backend API Usage Instructions\n\n';
-                apiInstructionsSection += '**The backend file (default.php) is a UNIVERSAL API that handles ALL database operations.**\n\n';
+                apiInstructionsSection += '**The backend file is a UNIVERSAL API that handles ALL database operations.**\n\n';
                 apiInstructionsSection += '### ⚠️ CRITICAL RULES:\n';
-                apiInstructionsSection += '1. **DO NOT modify the backend (default.php)** - it\'s already complete and ready\n';
-                apiInstructionsSection += '2. **ALL changes should be made in the FRONTEND only** (index.html or other frontend files)\n';
-                apiInstructionsSection += '3. The backend accepts dynamic requests via JSON POST\n\n';
+                
+                if (isBackendRestricted) {
+                    apiInstructionsSection += '1. **🔒 DO NOT modify the backend** - it is already complete and ready\n';
+                    apiInstructionsSection += '2. **ALL changes should be made in the FRONTEND only**\n';
+                    apiInstructionsSection += '3. The backend is locked and accepts dynamic requests via JSON POST\n\n';
+                } else {
+                    apiInstructionsSection += '1. **🔓 Backend modifications are ALLOWED** - you can modify or extend it as needed\n';
+                    apiInstructionsSection += '2. **Both FRONTEND and BACKEND changes are permitted**\n';
+                    apiInstructionsSection += '3. The backend accepts dynamic requests via JSON POST and can be customized\n\n';
+                }
                 apiInstructionsSection += '### Backend Actions Available:\n\n';
                 apiInstructionsSection += '**Database Operations:** `create_database`, `drop_database`, `list_databases`, `database_info`\n\n';
                 apiInstructionsSection += '**Table Operations:** `create_table`, `drop_table`, `list_tables`, `describe_table`, `truncate_table`\n\n';
@@ -2639,18 +3312,303 @@
                 apiInstructionsSection += 'const result = await response.json();\n';
                 apiInstructionsSection += '```\n\n';
                 apiInstructionsSection += '### 🎯 Your Task:\n';
-                apiInstructionsSection += '**Implement ALL functionality in the FRONTEND files using vanilla JavaScript, HTML, and CSS.**\n';
-                apiInstructionsSection += 'The backend is already configured to handle any request you send.\n\n';
+                
+                if (isBackendRestricted) {
+                    apiInstructionsSection += '**🔒 IMPORTANT: Implement ALL functionality in the FRONTEND files only.**\n';
+                    apiInstructionsSection += '- Use vanilla JavaScript, HTML, and CSS\n';
+                    apiInstructionsSection += '- The backend is locked and ready to handle requests\n';
+                    apiInstructionsSection += '- Do NOT modify or suggest backend changes\n\n';
+                } else {
+                    apiInstructionsSection += '**🔓 FLEXIBLE DEVELOPMENT: You can modify both FRONTEND and BACKEND.**\n';
+                    apiInstructionsSection += '- Frontend: Use vanilla JavaScript, HTML, and CSS\n';
+                    apiInstructionsSection += '- Backend: You may add/modify functionality as needed\n';
+                    apiInstructionsSection += '- Full stack modifications are permitted\n\n';
+                }
+                
                 apiInstructionsSection += '---\n\n';
             }
             
-            // Build final prompt
-            if (currentPrompt) {
-                finalPrompt = `${currentPrompt}\n\n---\n\n${filesSection}${apiUrlSection}${apiInstructionsSection}Please help me with the task described above.`;
-            } else {
-                finalPrompt = `I need help with the following files:\n\n${filesSection}${apiUrlSection}${apiInstructionsSection}Please analyze these files and provide suggestions for improvement.`;
+            // === CRUD APPLICATION TEMPLATE SECTION ===
+            let crudApplicationSection = '';
+            
+            if (includeCrudAppCheckbox.checked && crudTableSelect.value) {
+                const selectedOption = crudTableSelect.options[crudTableSelect.selectedIndex];
+                const tableName = selectedOption.textContent;
+                const tableValue = selectedOption.value;
+                
+                crudApplicationSection = '\n\n## 🚀 CRUD Application Requirements\n\n';
+                crudApplicationSection += `**Create a complete, production-ready CRUD application for: ${tableName}**\n\n`;
+                crudApplicationSection += '### 📋 Application Specifications:\n\n';
+                crudApplicationSection += '#### 1. **Single-Page Application (SPA)**\n';
+                crudApplicationSection += '- Everything in ONE HTML file (HTML + CSS + JavaScript)\n';
+                crudApplicationSection += '- Modern, responsive, and beautiful UI design\n';
+                crudApplicationSection += '- Mobile-friendly layout\n\n';
+                crudApplicationSection += '#### 2. **CRUD Operations:**\n';
+                crudApplicationSection += `- **CREATE:** Add new ${tableValue} with a form modal\n`;
+                crudApplicationSection += `- **READ:** Display all ${tableValue} in a responsive table/cards view\n`;
+                crudApplicationSection += `- **UPDATE:** Edit existing ${tableValue} (inline or modal)\n`;
+                crudApplicationSection += `- **DELETE:** \n`;
+                crudApplicationSection += `  - Individual delete with confirmation\n`;
+                crudApplicationSection += `  - Bulk delete (select multiple items)\n`;
+                crudApplicationSection += `  - Delete all with confirmation\n\n`;
+                crudApplicationSection += '#### 3. **Search & Filter:**\n';
+                crudApplicationSection += '- **Real-time Ajax Search** (search as you type)\n';
+                crudApplicationSection += '- Search across all relevant fields\n';
+                crudApplicationSection += '- Filter results instantly without page reload\n';
+                crudApplicationSection += '- Clear search button\n\n';
+                crudApplicationSection += '#### 4. **Additional Features:**\n';
+                crudApplicationSection += '- **Pagination:** Show 10-20 items per page\n';
+                crudApplicationSection += '- **Sorting:** Click column headers to sort (ascending/descending)\n';
+                crudApplicationSection += '- **Form Validation:** Client-side validation with error messages\n';
+                crudApplicationSection += '- **Loading States:** Show spinners during API calls\n';
+                crudApplicationSection += '- **Success/Error Notifications:** Toast messages for all actions\n';
+                crudApplicationSection += '- **Confirmation Dialogs:** Before delete operations\n';
+                crudApplicationSection += '- **Empty State:** Beautiful message when no data\n';
+                crudApplicationSection += '- **Responsive Design:** Works on mobile, tablet, and desktop\n\n';
+                crudApplicationSection += '#### 5. **UI/UX Design Requirements:**\n';
+                crudApplicationSection += '- **Modern CSS Framework:** Use TailwindCSS inline or custom modern CSS\n';
+                crudApplicationSection += '- **Color Scheme:** Professional gradient theme (purple/blue recommended)\n';
+                crudApplicationSection += '- **Icons:** Use Font Awesome or similar icon library\n';
+                crudApplicationSection += '- **Animations:** Smooth transitions and hover effects\n';
+                crudApplicationSection += '- **Cards/Table:** Beautiful data presentation\n';
+                crudApplicationSection += '- **Modal/Dialog:** Professional forms with backdrop\n\n';
+                crudApplicationSection += '#### 6. **Technical Requirements:**\n';
+                crudApplicationSection += '- **Vanilla JavaScript:** No frameworks (no React, Vue, Angular)\n';
+                crudApplicationSection += '- **ES6+ Syntax:** Use modern JavaScript features\n';
+                crudApplicationSection += '- **Async/Await:** For all API calls\n';
+                crudApplicationSection += `- **Backend Integration:** Use the API endpoint: \`${getCurrentApiUrl()}\`\n`;
+                crudApplicationSection += `- **Table Name:** \`${tableValue}\`\n`;
+                crudApplicationSection += '- **Error Handling:** Try-catch blocks for all API calls\n';
+                crudApplicationSection += '- **Code Organization:** Well-structured, commented code\n\n';
+                crudApplicationSection += '#### 7. **API Integration Example:**\n';
+                crudApplicationSection += '```javascript\n';
+                crudApplicationSection += '// Fetch all records\n';
+                crudApplicationSection += `const response = await fetch('${getCurrentApiUrl()}', {\n`;
+                crudApplicationSection += '    method: \'POST\',\n';
+                crudApplicationSection += '    headers: { \'Content-Type\': \'application/json\' },\n';
+                crudApplicationSection += '    body: JSON.stringify({\n';
+                crudApplicationSection += '        action: \'select\',\n';
+                crudApplicationSection += `        table: '${tableValue}'\n`;
+                crudApplicationSection += '    })\n';
+                crudApplicationSection += '});\n';
+                crudApplicationSection += 'const data = await response.json();\n';
+                crudApplicationSection += '```\n\n';
+                crudApplicationSection += '### 🎨 Expected Deliverable:\n';
+                crudApplicationSection += `A single, complete HTML file with embedded CSS and JavaScript that provides a fully functional ${tableName} management system with all the features listed above.\n\n`;
+                crudApplicationSection += '**IMPORTANT:** \n';
+                crudApplicationSection += '- The application must be production-ready and visually stunning\n';
+                crudApplicationSection += '- All code must be in ONE file\n';
+                
+                if (isBackendRestricted) {
+                    crudApplicationSection += '- 🔒 **No backend changes allowed** - use the existing API only\n';
+                    crudApplicationSection += '- All modifications must be frontend-only\n';
+                } else {
+                    crudApplicationSection += '- 🔓 **Backend modifications allowed** - you can customize the API if needed\n';
+                    crudApplicationSection += '- Both frontend and backend changes are permitted\n';
+                }
+                
+                crudApplicationSection += '- Follow modern web development best practices\n\n';
+                crudApplicationSection += '---\n\n';
             }
             
+            // === CUSTOM TABLE APPLICATION SECTION ===
+            let customTableSection = '';
+            
+            if (includeCustomTableCheckbox.checked) {
+                const tableName = customTableName.value.trim();
+                const fields = getCustomTableData();
+                
+                if (tableName && fields.length > 0) {
+                    customTableSection = '\n\n## 🛠️ Custom Table CRUD Application\n\n';
+                    customTableSection += `**Create a complete, production-ready CRUD application for custom table: ${tableName}**\n\n`;
+                    
+                    customTableSection += '### 📊 Table Structure:\n\n';
+                    customTableSection += `**Table Name:** \`${tableName}\`\n\n`;
+                    customTableSection += '**Fields:**\n\n';
+                    customTableSection += '| Field Name | Type | Length | Nullable |\n';
+                    customTableSection += '|------------|------|--------|----------|\n';
+                    
+                    fields.forEach(field => {
+                        const length = field.length ? field.length : '-';
+                        customTableSection += `| ${field.name} | ${field.type} | ${length} | ${field.nullable} |\n`;
+                    });
+                    
+                    customTableSection += '\n### 📋 Application Requirements:\n\n';
+                    customTableSection += '#### 1. **Complete CRUD Operations:**\n';
+                    customTableSection += `- **CREATE:** Form to add new ${tableName} records with all fields\n`;
+                    customTableSection += `- **READ:** Display all ${tableName} in a beautiful responsive table\n`;
+                    customTableSection += `- **UPDATE:** Edit existing records (inline or modal)\n`;
+                    customTableSection += `- **DELETE:**\n`;
+                    customTableSection += '  - Individual delete with confirmation\n';
+                    customTableSection += '  - Bulk delete (select multiple)\n';
+                    customTableSection += '  - Delete all with confirmation\n\n';
+                    
+                    customTableSection += '#### 2. **Advanced Features:**\n';
+                    customTableSection += '- **Real-time Ajax Search** across all fields\n';
+                    customTableSection += '- **Pagination** (10-20 records per page)\n';
+                    customTableSection += '- **Sorting** (click column headers)\n';
+                    customTableSection += '- **Form Validation** for all field types\n';
+                    customTableSection += '- **Loading States** with spinners\n';
+                    customTableSection += '- **Toast Notifications** for all actions\n';
+                    customTableSection += '- **Confirmation Dialogs** before delete\n';
+                    customTableSection += '- **Empty State** when no data\n';
+                    customTableSection += '- **Responsive Design** (mobile, tablet, desktop)\n\n';
+                    
+                    customTableSection += '#### 3. **UI/UX Requirements:**\n';
+                    customTableSection += '- **Modern Design:** Professional gradient theme\n';
+                    customTableSection += '- **Icons:** Font Awesome icons throughout\n';
+                    customTableSection += '- **Animations:** Smooth transitions and effects\n';
+                    customTableSection += '- **Form Design:** Beautiful modal or inline forms\n';
+                    customTableSection += '- **Table Design:** Clean, modern data presentation\n';
+                    customTableSection += '- **Color Scheme:** Purple/blue gradients recommended\n\n';
+                    
+                    customTableSection += '#### 4. **Technical Implementation:**\n';
+                    customTableSection += '- **Vanilla JavaScript** (no frameworks)\n';
+                    customTableSection += '- **ES6+ Syntax** with async/await\n';
+                    customTableSection += `- **API Endpoint:** \`${getCurrentApiUrl()}\`\n`;
+                    customTableSection += `- **Table Name:** \`${tableName}\`\n`;
+                    customTableSection += '- **Error Handling:** Try-catch for all API calls\n';
+                    customTableSection += '- **Code Quality:** Well-structured and commented\n\n';
+                    
+                    customTableSection += '#### 5. **Database Integration:**\n\n';
+                    customTableSection += 'The backend will handle:\n';
+                    customTableSection += `- Creating the \`${tableName}\` table with specified structure\n`;
+                    customTableSection += '- All CRUD operations via JSON POST requests\n';
+                    customTableSection += '- Proper data validation and sanitization\n\n';
+                    
+                    customTableSection += '**Example API Request:**\n';
+                    customTableSection += '```javascript\n';
+                    customTableSection += `// Insert new ${tableName}\n`;
+                    customTableSection += `const response = await fetch('${getCurrentApiUrl()}', {\n`;
+                    customTableSection += '    method: \'POST\',\n';
+                    customTableSection += '    headers: { \'Content-Type\': \'application/json\' },\n';
+                    customTableSection += '    body: JSON.stringify({\n';
+                    customTableSection += '        action: \'insert\',\n';
+                    customTableSection += `        table: '${tableName}',\n`;
+                    customTableSection += '        data: {\n';
+                    
+                    // Add sample data for each field
+                    fields.forEach((field, index) => {
+                        const comma = index < fields.length - 1 ? ',' : '';
+                        let sampleValue = 'null';
+                        if (field.type.includes('INT')) sampleValue = '123';
+                        else if (field.type.includes('VARCHAR') || field.type.includes('TEXT')) sampleValue = `'Sample ${field.name}'`;
+                        else if (field.type.includes('DATE')) sampleValue = `'2025-01-01'`;
+                        else if (field.type.includes('BOOLEAN')) sampleValue = 'true';
+                        else if (field.type.includes('DECIMAL') || field.type.includes('FLOAT')) sampleValue = '99.99';
+                        
+                        customTableSection += `            ${field.name}: ${sampleValue}${comma}\n`;
+                    });
+                    
+                    customTableSection += '        }\n';
+                    customTableSection += '    })\n';
+                    customTableSection += '});\n';
+                    customTableSection += '```\n\n';
+                    
+                    customTableSection += '### 🎨 Expected Deliverable:\n';
+                    customTableSection += `A complete, production-ready application for managing ${tableName} with:\n`;
+                    customTableSection += '- Beautiful, modern UI with all features listed above\n';
+                    customTableSection += '- All code in ONE HTML file (or separate files based on preference)\n';
+                    
+                    if (isBackendRestricted) {
+                        customTableSection += '- 🔒 **Frontend-only implementation** - use existing API\n';
+                        customTableSection += '- No backend modifications\n';
+                    } else {
+                        customTableSection += '- 🔓 **Full-stack implementation** - modify backend if needed\n';
+                        customTableSection += '- Backend changes allowed to support custom table\n';
+                    }
+                    
+                    customTableSection += '- Fully functional CRUD operations\n';
+                    customTableSection += '- Professional-grade code quality\n\n';
+                    customTableSection += '---\n\n';
+                }
+            }
+            
+            // === FILE STRUCTURE PREFERENCE SECTION ===
+            let fileStructureSection = '';
+            
+            if (singlePageRadio.checked) {
+                fileStructureSection = '## 📄 Frontend File Structure Requirement\n\n';
+                fileStructureSection += '**CRITICAL: Single Page Application Format**\n\n';
+                fileStructureSection += '### 📋 File Structure:\n';
+                fileStructureSection += '- Create **ONE single HTML file** only\n';
+                fileStructureSection += '- Embed **ALL CSS** inside \\`<style>\\` tags in the \\`<head>\\` section\n';
+                fileStructureSection += '- Embed **ALL JavaScript** inside \\`<script>\\` tags at the end of \\`<body>\\` section\n';
+                fileStructureSection += '- **NO external CSS files** (no external link tag to separate CSS)\n';
+                fileStructureSection += '- **NO external JavaScript files** (no external script tag to separate JS)\n\n';
+                fileStructureSection += '### ✅ Expected Output:\n';
+                fileStructureSection += '```html\n';
+                fileStructureSection += '<!DOCTYPE html>\n';
+                fileStructureSection += '<html>\n';
+                fileStructureSection += '<head>\n';
+                fileStructureSection += '    <style>\n';
+                fileStructureSection += '        /* ALL CSS HERE */\n';
+                fileStructureSection += '    </style>\n';
+                fileStructureSection += '</head>\n';
+                fileStructureSection += '<body>\n';
+                fileStructureSection += '    <!-- ALL HTML HERE -->\n';
+                fileStructureSection += '    \n';
+                fileStructureSection += '    <scri' + 'pt>\n';
+                fileStructureSection += '        // ALL JAVASCRIPT HERE\n';
+                fileStructureSection += '    </scri' + 'pt>\n';
+                fileStructureSection += '</body>\n';
+                fileStructureSection += '</html>\n';
+                fileStructureSection += '```\n\n';
+                fileStructureSection += '**IMPORTANT:** Everything must be self-contained in ONE file. The file should be ready to run by simply opening it in a browser.\n\n';
+                fileStructureSection += '---\n\n';
+            } else if (multipleFilesRadio.checked) {
+                fileStructureSection = '## 📑 Frontend File Structure Requirement\n\n';
+                fileStructureSection += '**CRITICAL: Multiple Separate Files Format**\n\n';
+                fileStructureSection += '### 📋 File Structure:\n';
+                fileStructureSection += 'Create **THREE separate files**:\n\n';
+                fileStructureSection += '#### 1. **index.html**\n';
+                fileStructureSection += '- Contains HTML structure only\n';
+                fileStructureSection += '- Links to external CSS file (styles.css)\n';
+                fileStructureSection += '- Links to external JavaScript file (script.js)\n';
+                fileStructureSection += '- **NO inline styles or scripts**\n\n';
+                fileStructureSection += '#### 2. **styles.css**\n';
+                fileStructureSection += '- Contains ALL CSS styling\n';
+                fileStructureSection += '- Well-organized with comments\n';
+                fileStructureSection += '- No HTML or JavaScript code\n\n';
+                fileStructureSection += '#### 3. **script.js**\n';
+                fileStructureSection += '- Contains ALL JavaScript code\n';
+                fileStructureSection += '- Well-structured functions\n';
+                fileStructureSection += '- Proper comments and documentation\n';
+                fileStructureSection += '- No HTML or CSS code\n\n';
+                fileStructureSection += '### ✅ Expected Output:\n\n';
+                fileStructureSection += '**File 1: index.html**\n';
+                fileStructureSection += '```html\n';
+                fileStructureSection += '<!DOCTYPE html>\n';
+                fileStructureSection += '<html>\n';
+                fileStructureSection += '<head>\n';
+                fileStructureSection += '    <link rel="stylesheet" href="styles.css">\n';
+                fileStructureSection += '</head>\n';
+                fileStructureSection += '<body>\n';
+                fileStructureSection += '    <!-- HTML content here -->\n';
+                fileStructureSection += '    <scri' + 'pt src="script.js"></scri' + 'pt>\n';
+                fileStructureSection += '</body>\n';
+                fileStructureSection += '</html>\n';
+                fileStructureSection += '```\n\n';
+                fileStructureSection += '**File 2: styles.css**\n';
+                fileStructureSection += '```css\n';
+                fileStructureSection += '/* All CSS styles here */\n';
+                fileStructureSection += '```\n\n';
+                fileStructureSection += '**File 3: script.js**\n';
+                fileStructureSection += '```javascript\n';
+                fileStructureSection += '// All JavaScript code here\n';
+                fileStructureSection += '```\n\n';
+                fileStructureSection += '**IMPORTANT:** Provide complete code for all three files. Each file should be clearly labeled and ready to use.\n\n';
+                fileStructureSection += '---\n\n';
+            }
+            
+            // Build final prompt (regenerated from scratch)
+            if (originalPrompt) {
+                finalPrompt = `${originalPrompt}\n\n${crudApplicationSection}${customTableSection}${fileStructureSection}---\n\n${filesSection}${apiUrlSection}${apiInstructionsSection}Please help me with the task described above.`;
+            } else {
+                finalPrompt = `I need help with the following:\n\n${crudApplicationSection}${customTableSection}${fileStructureSection}${filesSection}${apiUrlSection}${apiInstructionsSection}Please analyze and provide the complete application.`;
+            }
+            
+            // Set the regenerated prompt in textarea
             promptTextarea.value = finalPrompt;
             
             // Smart notification based on what was added
@@ -2659,17 +3617,428 @@
             const hasFrontendInfo = frontendFileName || frontendHost || frontendDesc || selectedFrontendFileContent;
             
             const includedItems = [];
+            
+            // Backend restriction status
+            if (restrictBackendRadio.checked) {
+                includedItems.push('🔒 Backend Restricted');
+            } else {
+                includedItems.push('🔓 Backend Editable');
+            }
+            
+            if (includeCrudAppCheckbox.checked && crudTableSelect.value) {
+                const selectedOption = crudTableSelect.options[crudTableSelect.selectedIndex];
+                includedItems.push(`🚀 CRUD App (${selectedOption.textContent})`);
+            }
+            
+            // Custom table
+            if (includeCustomTableCheckbox.checked && customTableName.value.trim()) {
+                const fields = getCustomTableData();
+                includedItems.push(`🛠️ Custom Table (${customTableName.value.trim()} - ${fields.length} fields)`);
+            }
+            
             if (hasBackendInfo) includedItems.push('Backend files');
             if (hasFrontendInfo) includedItems.push('Frontend files');
+            
+            // Add file structure preference
+            if (singlePageRadio.checked) {
+                includedItems.push('📄 Single Page');
+            } else if (multipleFilesRadio.checked) {
+                includedItems.push('📑 Multiple Files');
+            }
+            
             includedItems.push(`API URL (${selectedApiUrl})`);
             if (includeApiInstructions) includedItems.push('API instructions');
             
-            notificationMsg = `✨ Prompt generated with: ${includedItems.join(' + ')}`;
-            showNotification(notificationMsg, 4000);
+            // Show regeneration status
+            if (currentTextareaContent && currentTextareaContent.includes('---')) {
+                notificationMsg = `🔄 Prompt regenerated with: ${includedItems.join(' + ')}`;
+            } else {
+                notificationMsg = `✨ Prompt generated with: ${includedItems.join(' + ')}`;
+            }
+            showNotification(notificationMsg, 5000);
+            
+            // Visual feedback: Flash textarea border
+            promptTextarea.style.borderColor = '#00ff88';
+            promptTextarea.style.boxShadow = '0 0 20px rgba(0, 255, 136, 0.5)';
+            setTimeout(() => {
+                promptTextarea.style.borderColor = '';
+                promptTextarea.style.boxShadow = '';
+            }, 1000);
             
             // Scroll to textarea
             promptTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
+        
+        // ===== BACKEND RESTRICTION TOGGLE =====
+        
+        const restrictBackendRadio = document.getElementById('restrictBackendRadio');
+        const allowBackendRadio = document.getElementById('allowBackendRadio');
+        const restrictBackendOption = document.getElementById('restrictBackendOption');
+        const allowBackendOption = document.getElementById('allowBackendOption');
+        
+        // Handle backend restriction toggle
+        function handleBackendRestrictionToggle() {
+            if (restrictBackendRadio.checked) {
+                restrictBackendOption.classList.add('active');
+                allowBackendOption.classList.remove('active');
+                showNotification('🔒 Backend changes restricted');
+            } else if (allowBackendRadio.checked) {
+                allowBackendOption.classList.add('active');
+                restrictBackendOption.classList.remove('active');
+                showNotification('🔓 Backend changes allowed');
+            }
+        }
+        
+        restrictBackendRadio.addEventListener('change', handleBackendRestrictionToggle);
+        allowBackendRadio.addEventListener('change', handleBackendRestrictionToggle);
+        
+        // Make the whole label clickable
+        restrictBackendOption.addEventListener('click', () => {
+            if (!restrictBackendRadio.checked) {
+                restrictBackendRadio.checked = true;
+                handleBackendRestrictionToggle();
+            }
+        });
+        
+        allowBackendOption.addEventListener('click', () => {
+            if (!allowBackendRadio.checked) {
+                allowBackendRadio.checked = true;
+                handleBackendRestrictionToggle();
+            }
+        });
+        
+        // ===== FILE STRUCTURE TOGGLE =====
+        
+        const singlePageRadio = document.getElementById('singlePageRadio');
+        const multipleFilesRadio = document.getElementById('multipleFilesRadio');
+        const singlePageOption = document.getElementById('singlePageOption');
+        const multipleFilesOption = document.getElementById('multipleFilesOption');
+        
+        // Handle toggle selection
+        function handleFileStructureToggle() {
+            if (singlePageRadio.checked) {
+                singlePageOption.classList.add('active');
+                multipleFilesOption.classList.remove('active');
+                showNotification('📄 Single Page mode selected');
+            } else if (multipleFilesRadio.checked) {
+                multipleFilesOption.classList.add('active');
+                singlePageOption.classList.remove('active');
+                showNotification('📑 Multiple Files mode selected');
+            }
+        }
+        
+        singlePageRadio.addEventListener('change', handleFileStructureToggle);
+        multipleFilesRadio.addEventListener('change', handleFileStructureToggle);
+        
+        // Make the whole label clickable
+        singlePageOption.addEventListener('click', () => {
+            if (!singlePageRadio.checked) {
+                singlePageRadio.checked = true;
+                handleFileStructureToggle();
+            }
+        });
+        
+        multipleFilesOption.addEventListener('click', () => {
+            if (!multipleFilesRadio.checked) {
+                multipleFilesRadio.checked = true;
+                handleFileStructureToggle();
+            }
+        });
+        
+        // ===== QUICK ADD ARROWS =====
+        
+        const quickAddCrudApp = document.getElementById('quickAddCrudApp');
+        const quickAddCustomTable = document.getElementById('quickAddCustomTable');
+        
+        // Quick add CRUD App to prompt
+        quickAddCrudApp.addEventListener('click', () => {
+            if (!includeCrudAppCheckbox.checked || !crudTableSelect.value) {
+                showNotification('⚠️ Please select a table type first!');
+                return;
+            }
+            
+            const selectedOption = crudTableSelect.options[crudTableSelect.selectedIndex];
+            const tableName = selectedOption.textContent;
+            const currentPrompt = promptTextarea.value.trim();
+            
+            let quickPrompt = currentPrompt ? currentPrompt + '\n\n' : '';
+            quickPrompt += `🚀 **QUICK REQUEST:** Create a full CRUD application for ${tableName}\n\n`;
+            quickPrompt += `Please build a complete, production-ready CRUD application for managing ${tableName} with:\n`;
+            quickPrompt += `- Beautiful modern UI with gradients and animations\n`;
+            quickPrompt += `- Full CRUD operations (Create, Read, Update, Delete)\n`;
+            quickPrompt += `- Real-time Ajax search\n`;
+            quickPrompt += `- Pagination and sorting\n`;
+            quickPrompt += `- Bulk delete functionality\n`;
+            quickPrompt += `- Form validation\n`;
+            quickPrompt += `- Toast notifications\n`;
+            quickPrompt += `- Responsive design\n`;
+            quickPrompt += `- All in vanilla JavaScript, HTML, and CSS\n\n`;
+            
+            promptTextarea.value = quickPrompt;
+            promptTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            showNotification(`⬇️ ${tableName} CRUD request added to prompt!`, 3000);
+            
+            // Visual flash
+            promptTextarea.style.borderColor = '#667eea';
+            promptTextarea.style.boxShadow = '0 0 20px rgba(102, 126, 234, 0.5)';
+            setTimeout(() => {
+                promptTextarea.style.borderColor = '';
+                promptTextarea.style.boxShadow = '';
+            }, 1000);
+        });
+        
+        // Quick add Custom Table to prompt
+        quickAddCustomTable.addEventListener('click', () => {
+            const tableName = customTableName.value.trim();
+            const fields = getCustomTableData();
+            
+            if (!includeCustomTableCheckbox.checked || !tableName || fields.length === 0) {
+                showNotification('⚠️ Please configure your custom table first!');
+                return;
+            }
+            
+            const currentPrompt = promptTextarea.value.trim();
+            
+            let quickPrompt = currentPrompt ? currentPrompt + '\n\n' : '';
+            quickPrompt += `🛠️ **QUICK REQUEST:** Create a custom CRUD application for table: ${tableName}\n\n`;
+            quickPrompt += `**Table Structure:**\n`;
+            quickPrompt += `- Table Name: ${tableName}\n`;
+            quickPrompt += `- Fields:\n`;
+            
+            fields.forEach(field => {
+                const length = field.length ? `(${field.length})` : '';
+                quickPrompt += `  • ${field.name}: ${field.type}${length} ${field.nullable}\n`;
+            });
+            
+            quickPrompt += `\nPlease build a complete CRUD application with:\n`;
+            quickPrompt += `- Full CRUD operations for this custom table\n`;
+            quickPrompt += `- Beautiful modern UI\n`;
+            quickPrompt += `- Real-time search and filtering\n`;
+            quickPrompt += `- Form validation based on field types\n`;
+            quickPrompt += `- Pagination and sorting\n`;
+            quickPrompt += `- Bulk operations\n`;
+            quickPrompt += `- All in vanilla JavaScript, HTML, and CSS\n\n`;
+            
+            promptTextarea.value = quickPrompt;
+            promptTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            showNotification(`⬇️ Custom table ${tableName} request added to prompt!`, 3000);
+            
+            // Visual flash
+            promptTextarea.style.borderColor = '#667eea';
+            promptTextarea.style.boxShadow = '0 0 20px rgba(102, 126, 234, 0.5)';
+            setTimeout(() => {
+                promptTextarea.style.borderColor = '';
+                promptTextarea.style.boxShadow = '';
+            }, 1000);
+        });
+        
+        // ===== CUSTOM TABLE BUILDER =====
+        
+        const includeCustomTableCheckbox = document.getElementById('includeCustomTable');
+        const customTableWrapper = document.getElementById('customTableWrapper');
+        const customTableName = document.getElementById('customTableName');
+        const fieldsContainer = document.getElementById('fieldsContainer');
+        const addFieldBtn = document.getElementById('addFieldBtn');
+        const customTableInfo = document.getElementById('customTableInfo');
+        const customTableInfoText = document.getElementById('customTableInfoText');
+        
+        let fieldCounter = 0;
+        let customFields = [];
+        
+        // Field types available
+        const fieldTypes = [
+            'INT', 'VARCHAR', 'TEXT', 'BIGINT', 'DECIMAL', 
+            'FLOAT', 'DOUBLE', 'DATE', 'DATETIME', 'TIMESTAMP',
+            'BOOLEAN', 'ENUM', 'JSON'
+        ];
+        
+        // Add a new field row
+        function addFieldRow() {
+            fieldCounter++;
+            const fieldRow = document.createElement('div');
+            fieldRow.className = 'field-row';
+            fieldRow.dataset.fieldId = fieldCounter;
+            
+            fieldRow.innerHTML = `
+                <input type="text" placeholder="Field name (e.g., name, email, price)" class="field-name" data-field-id="${fieldCounter}">
+                <select class="field-type" data-field-id="${fieldCounter}">
+                    ${fieldTypes.map(type => `<option value="${type}">${type}</option>`).join('')}
+                </select>
+                <input type="text" placeholder="Length" class="field-length" data-field-id="${fieldCounter}">
+                <select class="field-nullable" data-field-id="${fieldCounter}">
+                    <option value="NOT NULL">NOT NULL</option>
+                    <option value="NULL">NULL</option>
+                </select>
+                <button class="remove-field-btn" data-field-id="${fieldCounter}">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            fieldsContainer.appendChild(fieldRow);
+            
+            // Add remove handler
+            const removeBtn = fieldRow.querySelector('.remove-field-btn');
+            removeBtn.addEventListener('click', () => {
+                fieldRow.remove();
+                updateCustomTableInfo();
+            });
+            
+            // Add change handlers
+            const inputs = fieldRow.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', updateCustomTableInfo);
+                input.addEventListener('change', updateCustomTableInfo);
+            });
+            
+            updateCustomTableInfo();
+        }
+        
+        // Update custom table info
+        function updateCustomTableInfo() {
+            const tableName = customTableName.value.trim();
+            const fields = fieldsContainer.querySelectorAll('.field-row');
+            
+            if (tableName && fields.length > 0) {
+                customTableInfo.classList.add('active');
+                customTableInfoText.innerHTML = `<strong>Table:</strong> ${tableName} with ${fields.length} field(s) configured`;
+            } else if (fields.length > 0) {
+                customTableInfo.classList.add('active');
+                customTableInfoText.innerHTML = `${fields.length} field(s) added. Enter table name to proceed.`;
+            } else {
+                customTableInfo.classList.remove('active');
+            }
+        }
+        
+        // Collect field data
+        function getCustomTableData() {
+            const fields = [];
+            const fieldRows = fieldsContainer.querySelectorAll('.field-row');
+            
+            fieldRows.forEach(row => {
+                const fieldName = row.querySelector('.field-name').value.trim();
+                const fieldType = row.querySelector('.field-type').value;
+                const fieldLength = row.querySelector('.field-length').value.trim();
+                const fieldNullable = row.querySelector('.field-nullable').value;
+                
+                if (fieldName) {
+                    fields.push({
+                        name: fieldName,
+                        type: fieldType,
+                        length: fieldLength,
+                        nullable: fieldNullable
+                    });
+                }
+            });
+            
+            return fields;
+        }
+        
+        // Toggle custom table wrapper
+        includeCustomTableCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                customTableWrapper.classList.add('active');
+                if (fieldsContainer.children.length === 0) {
+                    addFieldRow();
+                    addFieldRow();  // Start with 2 fields
+                }
+                showNotification('🛠️ Custom Table Builder activated!');
+            } else {
+                customTableWrapper.classList.remove('active');
+                showNotification('✖️ Custom Table Builder deactivated');
+            }
+        });
+        
+        // Add field button
+        addFieldBtn.addEventListener('click', () => {
+            addFieldRow();
+            showNotification('➕ Field added');
+        });
+        
+        // Table name input handler
+        customTableName.addEventListener('input', updateCustomTableInfo);
+        
+        // ===== CRUD APPLICATION GENERATOR =====
+        
+        const includeCrudAppCheckbox = document.getElementById('includeCrudApp');
+        const crudDropdownWrapper = document.getElementById('crudDropdownWrapper');
+        const crudTableSelect = document.getElementById('crudTableSelect');
+        const crudSearchInput = document.getElementById('crudSearchInput');
+        const crudInfoBox = document.getElementById('crudInfoBox');
+        const crudInfoText = document.getElementById('crudInfoText');
+        
+        // Store all options for search functionality
+        let allTableOptions = [];
+        
+        // Initialize table options
+        function initializeCrudOptions() {
+            const options = crudTableSelect.querySelectorAll('option');
+            allTableOptions = Array.from(options).map(opt => ({
+                value: opt.value,
+                text: opt.textContent,
+                element: opt,
+                group: opt.parentElement.label
+            }));
+        }
+        
+        // Toggle dropdown visibility
+        includeCrudAppCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                crudDropdownWrapper.classList.add('active');
+                showNotification('🚀 CRUD Generator activated! Select a table type.');
+            } else {
+                crudDropdownWrapper.classList.remove('active');
+                crudInfoBox.classList.remove('active');
+                showNotification('✖️ CRUD Generator deactivated');
+            }
+        });
+        
+        // Search functionality
+        crudSearchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            // Hide all optgroups first
+            const optgroups = crudTableSelect.querySelectorAll('optgroup');
+            optgroups.forEach(group => {
+                group.style.display = 'none';
+            });
+            
+            // Filter and show matching options
+            allTableOptions.forEach(option => {
+                const matches = option.text.toLowerCase().includes(searchTerm) || 
+                               option.value.toLowerCase().includes(searchTerm) ||
+                               option.group.toLowerCase().includes(searchTerm);
+                
+                if (matches || searchTerm === '') {
+                    option.element.style.display = 'block';
+                    option.element.parentElement.style.display = 'block';
+                } else {
+                    option.element.style.display = 'none';
+                }
+            });
+            
+            // Hide empty optgroups
+            optgroups.forEach(group => {
+                const visibleOptions = Array.from(group.querySelectorAll('option')).filter(
+                    opt => opt.style.display !== 'none'
+                );
+                if (visibleOptions.length === 0) {
+                    group.style.display = 'none';
+                }
+            });
+        });
+        
+        // Table selection handler
+        crudTableSelect.addEventListener('change', (e) => {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const tableName = selectedOption.textContent;
+            
+            crudInfoBox.classList.add('active');
+            crudInfoText.innerHTML = `<strong>Selected:</strong> ${tableName} - Full CRUD app will be generated!`;
+            showNotification(`✅ ${tableName} table selected for CRUD generation`);
+        });
+        
+        // Initialize
+        initializeCrudOptions();
         
         // Load saved data on page load
         loadSavedData();
