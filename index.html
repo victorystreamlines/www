@@ -1,0 +1,2259 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔌 Database API & Code Assistant Dashboard</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdecl.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --error-gradient: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.8);
+            --shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            --shadow-hover: 0 12px 48px rgba(31, 38, 135, 0.5);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Animated Background Particles */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: backgroundMove 20s linear infinite;
+            z-index: 0;
+        }
+        
+        @keyframes backgroundMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        .container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        /* Dashboard Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .dashboard-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header h1 {
+            color: var(--text-primary);
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .header .icon {
+            font-size: 2rem;
+        }
+        
+        .header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        
+        .api-info {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .api-info h3 {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .api-info .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .api-info .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .api-info .info-label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .api-info .info-value {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+        
+        .test-section {
+            text-align: center;
+            margin: 30px 0;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .test-button {
+            background: var(--primary-gradient);
+            color: var(--text-primary);
+            border: none;
+            padding: 18px 45px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            font-family: 'Cairo', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .test-button:active {
+            transform: translateY(-1px);
+        }
+        
+        .test-button.loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        
+        .test-button .spinner {
+            display: none;
+            margin-right: 10px;
+            animation: spin 1s linear infinite;
+        }
+        
+        .test-button.loading .spinner {
+            display: inline-block;
+        }
+        
+        .refresh-button {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: var(--text-primary);
+            border: none;
+            padding: 18px 45px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            font-family: 'Cairo', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .refresh-button:hover {
+            transform: translateY(-3px) rotate(180deg);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .refresh-button:active {
+            transform: translateY(-1px) rotate(180deg);
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .result-container {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 12px;
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .result-container.success {
+            background: var(--success-gradient);
+            display: block;
+        }
+        
+        .result-container.error {
+            background: var(--error-gradient);
+            display: block;
+        }
+        
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .result-header i {
+            font-size: 2.5rem;
+        }
+        
+        .result-header h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+        
+        .result-message {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .result-details {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .result-details .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+        
+        .result-details .detail-item:last-child {
+            border-bottom: none;
+        }
+        
+        .result-details .detail-label {
+            font-weight: 600;
+        }
+        
+        .result-details .detail-value {
+            font-family: 'Courier New', monospace;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .footer i {
+            color: #ff6b6b;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            10%, 30% { transform: scale(1.1); }
+            20%, 40% { transform: scale(0.9); }
+        }
+        
+        /* Section Headers */
+        .section-title {
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title i {
+            font-size: 1rem;
+        }
+        
+        /* Prompt Builder Section */
+        .prompt-section {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .prompt-textarea {
+            width: 100%;
+            min-height: 150px;
+            max-height: 600px;
+            flex-grow: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            resize: both;
+            overflow: auto;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            position: relative;
+        }
+        
+        /* Enhanced Resize Handle */
+        .prompt-textarea::-webkit-resizer {
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.3) 0%, 
+                rgba(255, 255, 255, 0.5) 100%);
+            border-radius: 0 0 8px 0;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Firefox resize handle */
+        .prompt-textarea {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Custom scrollbar for webkit browsers */
+        .prompt-textarea::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .prompt-textarea::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+        
+        .prompt-textarea::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+        
+        .prompt-textarea::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Textarea wrapper with resize indicator */
+        .textarea-wrapper {
+            position: relative;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        
+        .resize-hint {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 4px;
+        }
+        
+        .resize-hint-text {
+            font-style: italic;
+        }
+        
+        .reset-size-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: rgba(255, 255, 255, 0.8);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        
+        .reset-size-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+            color: rgba(255, 255, 255, 1);
+            transform: translateY(-1px);
+        }
+        
+        .reset-size-button:active {
+            transform: translateY(0);
+        }
+        
+        .reset-size-button i {
+            font-size: 0.65rem;
+        }
+        
+        .textarea-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .clear-textarea-button {
+            background: rgba(255, 100, 100, 0.15);
+            border: 1px solid rgba(255, 100, 100, 0.4);
+            color: rgba(255, 150, 150, 0.9);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        
+        .clear-textarea-button:hover {
+            background: rgba(255, 100, 100, 0.25);
+            border-color: rgba(255, 100, 100, 0.6);
+            color: rgba(255, 150, 150, 1);
+            transform: translateY(-1px);
+        }
+        
+        .clear-textarea-button:active {
+            transform: translateY(0);
+        }
+        
+        .clear-textarea-button i {
+            font-size: 0.65rem;
+        }
+        
+        .resize-indicator {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 24px;
+            height: 24px;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 0.1) 0%, 
+                rgba(255, 255, 255, 0.05) 100%);
+            border-radius: 0 0 6px 0;
+            transform: rotate(45deg);
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+        
+        .textarea-wrapper:hover .resize-indicator {
+            opacity: 1;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .prompt-textarea:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+        
+        .prompt-textarea:focus + .resize-indicator {
+            opacity: 1;
+            color: rgba(255, 255, 255, 1);
+        }
+        
+        .prompt-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .copy-button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: var(--text-primary);
+            border: none;
+            padding: 15px 35px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .copy-button:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .copy-button:active {
+            transform: translateY(-1px);
+        }
+        
+        .copy-button.copied {
+            background: var(--success-gradient);
+        }
+        
+        .paste-button {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: var(--text-primary);
+            border: none;
+            padding: 15px 35px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .paste-button:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .paste-button:active {
+            transform: translateY(-1px);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success-gradient);
+            color: var(--text-primary);
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            display: none;
+            animation: slideInRight 0.5s ease-out;
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            display: block;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* File Picker Section */
+        .file-picker-section {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        
+        .file-input-label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        
+        .file-input-display {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .file-input-display:hover {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .file-input-display i {
+            color: var(--text-primary);
+        }
+        
+        .file-input-hidden {
+            display: none;
+        }
+        
+        .file-path-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: none;
+        }
+        
+        .file-path-info.show {
+            display: block;
+        }
+        
+        .api-instructions-checkbox {
+            margin: 15px 0 10px 0;
+            padding: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+        }
+        
+        .api-instructions-checkbox label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+        
+        .api-instructions-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+        
+        .api-instructions-checkbox span {
+            user-select: none;
+        }
+        
+        .generate-button {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+            border: none;
+            padding: 15px 35px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Inter', sans-serif;
+            margin: 15px auto 0;
+        }
+        
+        .generate-button:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+        
+        .generate-button:active {
+            transform: translateY(-1px);
+        }
+        
+        .generate-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Host Provider Dropdown */
+        .host-provider-select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        
+        .host-provider-select:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .host-provider-select option {
+            background: #333;
+            color: #fff;
+        }
+        
+        /* File Description Textarea */
+        .file-description-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            resize: vertical;
+            transition: all 0.3s ease;
+            margin-bottom: 12px;
+        }
+        
+        .file-description-textarea:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+        
+        .file-description-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        /* Clear Options Toggle */
+        .clear-options {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-left: 15px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .clear-toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .clear-toggle-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(24px);
+        }
+        
+        .clear-mode-text {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            min-width: 120px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1400px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .test-section {
+                flex-direction: column;
+            }
+            
+            .test-button, .refresh-button {
+                width: 100%;
+                padding: 15px;
+            }
+            
+            .api-info .info-item {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .copy-button, .paste-button {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .clear-options {
+                flex-direction: column;
+                margin-left: 0;
+                margin-top: 10px;
+                width: 100%;
+            }
+            
+            .clear-mode-text {
+                min-width: auto;
+                text-align: center;
+            }
+            
+            .resize-hint {
+                font-size: 0.7rem;
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+            
+            .reset-size-button {
+                font-size: 0.65rem;
+                padding: 3px 8px;
+            }
+            
+            .reset-size-button span {
+                display: none;
+            }
+            
+            .reset-size-button i {
+                margin: 0;
+            }
+            
+            .clear-textarea-button {
+                font-size: 0.65rem;
+                padding: 3px 8px;
+            }
+            
+            .clear-textarea-button span {
+                display: none;
+            }
+            
+            .clear-textarea-button i {
+                margin: 0;
+            }
+            
+            .textarea-controls {
+                gap: 6px;
+            }
+            
+            .prompt-textarea {
+                min-height: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">Notification</span>
+    </div>
+    
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <i class="fas fa-database icon"></i>
+                Database API & Prompt Builder Dashboard
+            </h1>
+            <p>Control Panel for Database Testing & AI Code Assistant</p>
+        </div>
+        
+        <!-- Dashboard Grid Layout -->
+        <div class="dashboard-grid">
+            
+            <!-- Left Column: API & Connection Testing -->
+            <div class="dashboard-section">
+                <h3 class="section-title">
+                    <i class="fas fa-server"></i>
+                    Database Connection
+                </h3>
+                
+                <!-- API URL Configuration -->
+                <div class="api-info" style="margin-bottom: 15px;">
+                    <h3>
+                        <i class="fas fa-link"></i>
+                        API URL Configuration
+                    </h3>
+                    
+                    <!-- URL Selector Dropdown -->
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 6px; font-weight: 600;">
+                            <i class="fas fa-server"></i> Select API Server:
+                        </label>
+                        <select id="urlSelector" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.3); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.9rem; cursor: pointer; transition: all 0.3s ease;">
+                            <option value="localhost">🏠 Localhost (http://localhost/default.php)</option>
+                            <option value="hostinger">☁️ Hostinger (https://chemistit.com/default.php)</option>
+                            <option value="custom">✏️ Custom URL (Enter manually)</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Custom URL Input (hidden by default) -->
+                    <div id="customUrlWrapper" style="display: none; margin-bottom: 15px;">
+                        <label style="display: block; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 6px; font-weight: 600;">
+                            <i class="fas fa-edit"></i> Enter Custom URL:
+                        </label>
+                        <input type="text" id="customUrlInput" placeholder="https://your-domain.com/api.php" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.3); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.9rem; font-family: 'Courier New', monospace;">
+                    </div>
+                    
+                    <!-- Current API URL Display -->
+                    <div class="info-item">
+                        <span class="info-label">📡 Active Endpoint:</span>
+                        <span class="info-value" id="currentApiUrl" style="word-break: break-all;">http://localhost/default.php</span>
+                    </div>
+                </div>
+                
+                <!-- API Information -->
+                <div class="api-info">
+                    <h3>
+                        <i class="fas fa-info-circle"></i>
+                        Server Info
+                    </h3>
+                    <div class="info-item">
+                        <span class="info-label">Host:</span>
+                        <span class="info-value">srv1788.hstgr.io</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Database:</span>
+                        <span class="info-value">u419999707_victorystreaml</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Port:</span>
+                        <span class="info-value">3306</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Charset:</span>
+                        <span class="info-value">utf8mb4</span>
+                    </div>
+                </div>
+                
+                <!-- Test Section -->
+                <div class="test-section">
+                    <button class="test-button" id="testButton">
+                        <i class="fas fa-spinner spinner"></i>
+                        <i class="fas fa-plug"></i>
+                        Test Connection
+                    </button>
+                    <button class="refresh-button" id="refreshButton">
+                        <i class="fas fa-redo"></i>
+                        Clear
+                    </button>
+                    <div class="clear-options">
+                        <div class="clear-toggle-wrapper">
+                            <span class="clear-toggle-label">Mode:</span>
+                            <div class="toggle-switch" id="clearToggle">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                        <span class="clear-mode-text" id="clearModeText">Connection Only</span>
+                    </div>
+                </div>
+                
+                <!-- Result Container -->
+                <div class="result-container" id="resultContainer">
+                    <div class="result-header">
+                        <i class="fas fa-check-circle" id="resultIcon"></i>
+                        <h2 id="resultTitle">Result Title</h2>
+                    </div>
+                    <div class="result-message" id="resultMessage">
+                        Result message here
+                    </div>
+                    <div class="result-details" id="resultDetails">
+                        <!-- Details will be filled dynamically -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column: File Picker -->
+            <div class="dashboard-section">
+                <h3 class="section-title">
+                    <i class="fas fa-file-code"></i>
+                    Backend File Selector
+                </h3>
+                
+                <div class="file-picker-section">
+                    <!-- Host Provider Dropdown -->
+            <div class="file-input-wrapper">
+                <label class="file-input-label">
+                    <i class="fas fa-server"></i> Hosting Provider:
+                </label>
+                <select class="host-provider-select" id="hostProvider">
+                    <option value="">Select hosting provider...</option>
+                    <option value="localhost">🖥️ Localhost</option>
+                    <option value="XAMPP">XAMPP (Local)</option>
+                    <option value="WAMP">WAMP (Local)</option>
+                    <option value="Laragon">Laragon (Local)</option>
+                    <option value="MAMP">MAMP (Local)</option>
+                    <option value="Hostinger">Hostinger</option>
+                    <option value="GoDaddy">GoDaddy</option>
+                    <option value="Bluehost">Bluehost</option>
+                    <option value="SiteGround">SiteGround</option>
+                    <option value="AWS">Amazon Web Services (AWS)</option>
+                    <option value="AWS Lambda">AWS Lambda</option>
+                    <option value="Google Cloud">Google Cloud Platform</option>
+                    <option value="Azure">Microsoft Azure</option>
+                    <option value="DigitalOcean">DigitalOcean</option>
+                    <option value="Linode">Linode</option>
+                    <option value="Vultr">Vultr</option>
+                    <option value="Heroku">Heroku</option>
+                    <option value="Railway">Railway</option>
+                    <option value="Render">Render</option>
+                    <option value="Fly.io">Fly.io</option>
+                    <option value="Vercel">Vercel</option>
+                    <option value="Netlify">Netlify</option>
+                    <option value="Cloudflare Pages">Cloudflare Pages</option>
+                    <option value="Firebase">Firebase</option>
+                    <option value="Supabase">Supabase</option>
+                    <option value="Custom">Custom/Other</option>
+                </select>
+            </div>
+            
+            <!-- File Selection -->
+            <div class="file-input-wrapper">
+                <label class="file-input-label">
+                    <i class="fas fa-folder-open"></i> Select Backend File:
+                </label>
+                <div class="file-input-display" id="fileInputDisplay">
+                    <i class="fas fa-upload"></i>
+                    <span id="fileDisplayText">Click to select a file...</span>
+                </div>
+                <input type="file" id="fileInput" class="file-input-hidden" accept=".php,.js,.py,.html,.css,.json,.txt,.md">
+            </div>
+            
+            <!-- File Description -->
+            <div class="file-input-wrapper">
+                <label class="file-input-label">
+                    <i class="fas fa-info-circle"></i> File Description & Context:
+                </label>
+                <textarea 
+                    class="file-description-textarea" 
+                    id="fileDescription" 
+                    placeholder="Describe where this file is embedded and its purpose...&#10;&#10;Example:&#10;- This file is the main API endpoint on Hostinger&#10;- Located at: /public_html/api/default.php&#10;- Handles database connections for the mobile app&#10;- Uses PDO for MySQL connections"></textarea>
+            </div>
+            
+                    <div class="file-path-info" id="filePathInfo">
+                        <strong>Last Selected:</strong> <span id="lastFilePath">No file selected yet</span>
+                    </div>
+                    
+                    <button class="generate-button" id="generateButton" disabled>
+                        <i class="fas fa-magic"></i>
+                        Generate Prompt with Files
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Right Column 2: Frontend File Picker -->
+            <div class="dashboard-section">
+                <h3 class="section-title">
+                    <i class="fas fa-laptop-code"></i>
+                    Frontend File Selector
+                </h3>
+                
+                <div class="file-picker-section">
+                    <!-- Frontend Host Provider Dropdown -->
+                    <div class="file-input-wrapper">
+                        <label class="file-input-label">
+                            <i class="fas fa-server"></i> Hosting Provider:
+                        </label>
+                        <select class="host-provider-select" id="frontendHostProvider">
+                            <option value="">Select hosting provider...</option>
+                            <option value="localhost">🖥️ Localhost</option>
+                            <option value="XAMPP">XAMPP (Local)</option>
+                            <option value="WAMP">WAMP (Local)</option>
+                            <option value="Laragon">Laragon (Local)</option>
+                            <option value="MAMP">MAMP (Local)</option>
+                            <option value="Live Server">Live Server (VS Code)</option>
+                            <option value="Hostinger">Hostinger</option>
+                            <option value="GoDaddy">GoDaddy</option>
+                            <option value="Bluehost">Bluehost</option>
+                            <option value="SiteGround">SiteGround</option>
+                            <option value="Vercel">Vercel</option>
+                            <option value="Netlify">Netlify</option>
+                            <option value="GitHub Pages">GitHub Pages</option>
+                            <option value="GitLab Pages">GitLab Pages</option>
+                            <option value="Cloudflare Pages">Cloudflare Pages</option>
+                            <option value="AWS S3">AWS S3</option>
+                            <option value="AWS Amplify">AWS Amplify</option>
+                            <option value="Azure Static Web Apps">Azure Static Web Apps</option>
+                            <option value="Google Firebase">Google Firebase Hosting</option>
+                            <option value="Surge">Surge.sh</option>
+                            <option value="Render">Render</option>
+                            <option value="Railway">Railway</option>
+                            <option value="Fly.io">Fly.io</option>
+                            <option value="DigitalOcean">DigitalOcean</option>
+                            <option value="Heroku">Heroku</option>
+                            <option value="Custom">Custom/Other</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Frontend File Selection -->
+                    <div class="file-input-wrapper">
+                        <label class="file-input-label">
+                            <i class="fas fa-folder-open"></i> Select Frontend File:
+                        </label>
+                        <div class="file-input-display" id="frontendFileInputDisplay">
+                            <i class="fas fa-upload"></i>
+                            <span id="frontendFileDisplayText">Click to select a file...</span>
+                        </div>
+                        <input type="file" id="frontendFileInput" class="file-input-hidden" accept=".html,.htm,.css,.scss,.js,.jsx,.ts,.tsx,.vue,.json">
+                    </div>
+                    
+                    <!-- Frontend File Description -->
+                    <div class="file-input-wrapper">
+                        <label class="file-input-label">
+                            <i class="fas fa-info-circle"></i> File Description & Context:
+                        </label>
+                        <textarea 
+                            class="file-description-textarea" 
+                            id="frontendFileDescription" 
+                            placeholder="Describe where this file is embedded and its purpose...&#10;&#10;Example:&#10;- This is the main landing page&#10;- Located at: /public_html/index.html&#10;- Uses Bootstrap 5 framework&#10;- Contains contact form and hero section"></textarea>
+                    </div>
+                    
+                    <div class="file-path-info" id="frontendFilePathInfo">
+                        <strong>Last Selected:</strong> <span id="frontendLastFilePath">No file selected yet</span>
+                    </div>
+                    
+                    <!-- Backend API Instructions Checkbox -->
+                    <div class="api-instructions-checkbox">
+                        <label>
+                            <input type="checkbox" id="includeApiInstructions" checked>
+                            <span>Include Backend API usage instructions for AI</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Full Width: AI Prompt Builder -->
+            <div class="dashboard-section full-width">
+                <h3 class="section-title">
+                    <i class="fas fa-edit"></i>
+                    AI Prompt Builder
+                </h3>
+                
+                <div class="prompt-section">
+                    <div class="textarea-wrapper">
+                        <textarea 
+                            class="prompt-textarea" 
+                            id="promptTextarea" 
+                            placeholder="Write your AI prompt here...&#10;&#10;Examples:&#10;- Add input validation to this form&#10;- Refactor this code to use async/await&#10;- Add error handling and logging&#10;- Optimize database queries&#10;- Create unit tests for this function"></textarea>
+                        <div class="resize-indicator" title="Drag corner to resize both width and height">
+                            <i class="fas fa-grip-lines"></i>
+                        </div>
+                    </div>
+                    <div class="resize-hint">
+                        <span class="resize-hint-text">
+                            <i class="fas fa-arrows-alt"></i> Drag the bottom-right corner to resize
+                        </span>
+                        <div class="textarea-controls">
+                            <button class="clear-textarea-button" id="clearTextareaButton" title="Clear textarea content">
+                                <i class="fas fa-eraser"></i>
+                                <span>Clear</span>
+                            </button>
+                            <button class="reset-size-button" id="resetSizeButton" title="Reset to default size">
+                                <i class="fas fa-undo"></i>
+                                <span>Reset Size</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button class="copy-button" id="copyButton">
+                            <i class="fas fa-copy"></i>
+                            Copy Prompt
+                        </button>
+                        <button class="paste-button" id="pasteButton">
+                            <i class="fas fa-paste"></i>
+                            Paste from Clipboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>
+                Made with <i class="fas fa-heart"></i> using PHP & MySQL
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // ========================================
+        // API URL CONFIGURATION - Dynamic Selection
+        // ========================================
+        
+        // Predefined API URLs
+        const API_URLS = {
+            localhost: 'http://localhost/default.php',
+            hostinger: 'https://chemistit.com/default.php',
+            custom: '' // Will be filled from input
+        };
+        
+        // LocalStorage key for API URL
+        const API_URL_STORAGE_KEY = 'selectedApiUrl';
+        const API_URL_TYPE_STORAGE_KEY = 'selectedApiUrlType';
+        const CUSTOM_URL_STORAGE_KEY = 'customApiUrl';
+        
+        // Get current API URL (dynamic)
+        function getCurrentApiUrl() {
+            const urlType = localStorage.getItem(API_URL_TYPE_STORAGE_KEY) || 'localhost';
+            
+            if (urlType === 'custom') {
+                return localStorage.getItem(CUSTOM_URL_STORAGE_KEY) || API_URLS.localhost;
+            }
+            
+            return API_URLS[urlType] || API_URLS.localhost;
+        }
+        
+        // LocalStorage keys - defined at top for global access
+        const STORAGE_KEY_PATH = 'lastSelectedFilePath';
+        const STORAGE_KEY_NAME = 'lastSelectedFileName';
+        const FRONTEND_STORAGE_KEY_PATH = 'frontendLastSelectedFilePath';
+        const FRONTEND_STORAGE_KEY_NAME = 'frontendLastSelectedFileName';
+        
+        // DOM Elements
+        const testButton = document.getElementById('testButton');
+        const refreshButton = document.getElementById('refreshButton');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultIcon = document.getElementById('resultIcon');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultMessage = document.getElementById('resultMessage');
+        const resultDetails = document.getElementById('resultDetails');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        
+        // URL Picker Elements
+        const urlSelector = document.getElementById('urlSelector');
+        const customUrlWrapper = document.getElementById('customUrlWrapper');
+        const customUrlInput = document.getElementById('customUrlInput');
+        const currentApiUrlDisplay = document.getElementById('currentApiUrl');
+        
+        // Initialize URL Picker
+        function initializeUrlPicker() {
+            // Load saved URL type
+            const savedUrlType = localStorage.getItem(API_URL_TYPE_STORAGE_KEY) || 'localhost';
+            const savedCustomUrl = localStorage.getItem(CUSTOM_URL_STORAGE_KEY) || '';
+            
+            // Set selector value
+            urlSelector.value = savedUrlType;
+            
+            // Set custom URL if exists
+            if (savedUrlType === 'custom' && savedCustomUrl) {
+                customUrlInput.value = savedCustomUrl;
+                customUrlWrapper.style.display = 'block';
+            }
+            
+            // Update display
+            updateApiUrlDisplay();
+        }
+        
+        // Update API URL Display
+        function updateApiUrlDisplay() {
+            const currentUrl = getCurrentApiUrl();
+            currentApiUrlDisplay.textContent = currentUrl;
+            currentApiUrlDisplay.style.color = currentUrl.includes('localhost') ? '#ffd700' : '#00ff88';
+        }
+        
+        // Handle URL Selector Change
+        urlSelector.addEventListener('change', (e) => {
+            const selectedType = e.target.value;
+            
+            // Save selection
+            localStorage.setItem(API_URL_TYPE_STORAGE_KEY, selectedType);
+            
+            // Show/hide custom input
+            if (selectedType === 'custom') {
+                customUrlWrapper.style.display = 'block';
+                customUrlInput.focus();
+            } else {
+                customUrlWrapper.style.display = 'none';
+            }
+            
+            // Update display
+            updateApiUrlDisplay();
+            showNotification(`✅ API endpoint changed to: ${selectedType === 'custom' ? 'Custom URL' : selectedType}`);
+        });
+        
+        // Handle Custom URL Input
+        customUrlInput.addEventListener('input', (e) => {
+            const customUrl = e.target.value.trim();
+            
+            // Save custom URL
+            localStorage.setItem(CUSTOM_URL_STORAGE_KEY, customUrl);
+            
+            // Update display
+            updateApiUrlDisplay();
+        });
+        
+        // Validate Custom URL on blur
+        customUrlInput.addEventListener('blur', (e) => {
+            const customUrl = e.target.value.trim();
+            
+            if (customUrl && !customUrl.match(/^https?:\/\/.+/)) {
+                showNotification('⚠️ Warning: URL should start with http:// or https://', 4000);
+                customUrlInput.style.borderColor = 'rgba(255, 100, 100, 0.6)';
+            } else {
+                customUrlInput.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            }
+        });
+        
+        // Show notification function - defined early for use throughout
+        function showNotification(message, duration = 3000) {
+            notificationText.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, duration);
+        }
+        
+        // Connection test function
+        async function testConnection() {
+            // Get current API URL
+            const apiUrl = getCurrentApiUrl();
+            
+            // Validate URL
+            if (!apiUrl || apiUrl.trim() === '') {
+                showNotification('⚠️ Please select or enter a valid API URL!', 4000);
+                return;
+            }
+            
+            // Show loading state
+            testButton.classList.add('loading');
+            resultContainer.style.display = 'none';
+            resultContainer.classList.remove('success', 'error');
+            
+            try {
+                // Send request to API
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                // Read data
+                const data = await response.json();
+                
+                // Display result
+                displayResult(data);
+                
+                // Show success notification
+                if (data.success) {
+                    showNotification(`✅ Connected successfully to: ${apiUrl}`);
+                }
+                
+            } catch (error) {
+                // In case of API connection failure
+                displayResult({
+                    success: false,
+                    message: '❌ API connection failed: ' + error.message,
+                    data: {
+                        error_type: 'Network Error',
+                        error_details: error.toString(),
+                        attempted_url: apiUrl,
+                        possible_causes: [
+                            'API endpoint is not accessible',
+                            'CORS policy blocking the request',
+                            'Server is down or unreachable',
+                            'Invalid URL format',
+                            'Network connectivity issue'
+                        ]
+                    }
+                });
+                
+                showNotification(`❌ Failed to connect to: ${apiUrl}`, 5000);
+            } finally {
+                // Hide loading state
+                testButton.classList.remove('loading');
+            }
+        }
+        
+        // Display result function
+        function displayResult(data) {
+            // Show result container
+            resultContainer.style.display = 'block';
+            
+            if (data.success) {
+                // Success state
+                resultContainer.classList.add('success');
+                resultContainer.classList.remove('error');
+                resultIcon.className = 'fas fa-check-circle';
+                resultTitle.textContent = 'Connection Successful! 🎉';
+                resultMessage.textContent = data.message;
+                
+                // Display details
+                if (data.data) {
+                    let detailsHTML = '';
+                    
+                    if (data.data.mysql_version) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">MySQL Version:</span>
+                                <span class="detail-value">${data.data.mysql_version}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.table_count !== undefined) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Table Count:</span>
+                                <span class="detail-value">${data.data.table_count} tables</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.database_size_mb !== undefined) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Database Size:</span>
+                                <span class="detail-value">${data.data.database_size_mb} MB</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.timestamp) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Test Time:</span>
+                                <span class="detail-value">${data.timestamp}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.connection_status) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Connection Status:</span>
+                                <span class="detail-value">${data.data.connection_status}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    resultDetails.innerHTML = detailsHTML;
+                    resultDetails.style.display = 'block';
+                }
+                
+            } else {
+                // Failure state
+                resultContainer.classList.add('error');
+                resultContainer.classList.remove('success');
+                resultIcon.className = 'fas fa-times-circle';
+                resultTitle.textContent = 'Connection Failed! ⚠️';
+                resultMessage.textContent = data.message;
+                
+                // Display error details
+                if (data.data) {
+                    let detailsHTML = '';
+                    
+                    if (data.data.error_code) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Error Code:</span>
+                                <span class="detail-value">${data.data.error_code}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.error_type) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Error Type:</span>
+                                <span class="detail-value">${data.data.error_type}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.data.attempted_host) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Target Host:</span>
+                                <span class="detail-value">${data.data.attempted_host}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    if (data.timestamp) {
+                        detailsHTML += `
+                            <div class="detail-item">
+                                <span class="detail-label">Test Time:</span>
+                                <span class="detail-value">${data.timestamp}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    resultDetails.innerHTML = detailsHTML;
+                    resultDetails.style.display = 'block';
+                }
+            }
+        }
+        
+        // Bind test button
+        testButton.addEventListener('click', testConnection);
+        
+        // Clear toggle state
+        const clearToggle = document.getElementById('clearToggle');
+        const clearModeText = document.getElementById('clearModeText');
+        let clearAllMode = false;
+        
+        // Toggle clear mode
+        clearToggle.addEventListener('click', () => {
+            clearAllMode = !clearAllMode;
+            clearToggle.classList.toggle('active');
+            clearModeText.textContent = clearAllMode ? 'Clear All + Storage' : 'Connection Only';
+        });
+        
+        // Clear/Refresh results function
+        function clearResults() {
+            if (clearAllMode) {
+                // Clear everything including localStorage
+                resultContainer.style.display = 'none';
+                resultContainer.classList.remove('success', 'error');
+                resultDetails.innerHTML = '';
+                
+                // Clear prompt textarea
+                const promptTextarea = document.getElementById('promptTextarea');
+                if (promptTextarea) promptTextarea.value = '';
+                
+                // Clear all localStorage (Backend)
+                localStorage.removeItem(STORAGE_KEY_PATH);
+                localStorage.removeItem(STORAGE_KEY_NAME);
+                localStorage.removeItem('hostProvider');
+                localStorage.removeItem('fileDescription');
+                
+                // Clear all localStorage (Frontend)
+                localStorage.removeItem(FRONTEND_STORAGE_KEY_PATH);
+                localStorage.removeItem(FRONTEND_STORAGE_KEY_NAME);
+                localStorage.removeItem('frontendHostProvider');
+                localStorage.removeItem('frontendFileDescription');
+                
+                // Clear textarea size
+                localStorage.removeItem('promptTextareaWidth');
+                localStorage.removeItem('promptTextareaHeight');
+                
+                // Reset backend file picker UI
+                const fileDisplayText = document.getElementById('fileDisplayText');
+                const lastFilePath = document.getElementById('lastFilePath');
+                const filePathInfo = document.getElementById('filePathInfo');
+                const hostProvider = document.getElementById('hostProvider');
+                const fileDescription = document.getElementById('fileDescription');
+                const generateButton = document.getElementById('generateButton');
+                
+                if (fileDisplayText) fileDisplayText.textContent = 'Click to select a file...';
+                if (lastFilePath) lastFilePath.textContent = 'No file selected yet';
+                if (filePathInfo) filePathInfo.classList.remove('show');
+                if (hostProvider) hostProvider.value = '';
+                if (fileDescription) fileDescription.value = '';
+                if (generateButton) generateButton.disabled = true;
+                
+                // Reset frontend file picker UI
+                const frontendFileDisplayText = document.getElementById('frontendFileDisplayText');
+                const frontendLastFilePath = document.getElementById('frontendLastFilePath');
+                const frontendFilePathInfo = document.getElementById('frontendFilePathInfo');
+                const frontendHostProvider = document.getElementById('frontendHostProvider');
+                const frontendFileDescription = document.getElementById('frontendFileDescription');
+                
+                if (frontendFileDisplayText) frontendFileDisplayText.textContent = 'Click to select a file...';
+                if (frontendLastFilePath) frontendLastFilePath.textContent = 'No file selected yet';
+                if (frontendFilePathInfo) frontendFilePathInfo.classList.remove('show');
+                if (frontendHostProvider) frontendHostProvider.value = '';
+                if (frontendFileDescription) frontendFileDescription.value = '';
+                
+                // Clear file content variables
+                selectedFileContent = null;
+                selectedFileName = null;
+                selectedFrontendFileContent = null;
+                selectedFrontendFileName = null;
+                
+                // Reset textarea size to default
+                promptTextarea.style.width = DEFAULT_TEXTAREA_WIDTH;
+                promptTextarea.style.height = DEFAULT_TEXTAREA_HEIGHT;
+                
+                // Update generate button state
+                updateGenerateButtonState();
+                
+                showNotification('🗑️ All data cleared including localStorage!');
+            } else {
+                // Clear only connection results
+                resultContainer.style.display = 'none';
+                resultContainer.classList.remove('success', 'error');
+                resultDetails.innerHTML = '';
+                showNotification('🔄 Connection results cleared!');
+            }
+        }
+        
+        // Bind refresh button
+        refreshButton.addEventListener('click', clearResults);
+        
+        // Enable testing with Enter key
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !testButton.classList.contains('loading')) {
+                testConnection();
+            }
+        });
+        
+        // Welcome message in Console
+        console.log('%c🔌 Database API Tester', 'color: #667eea; font-size: 20px; font-weight: bold;');
+        console.log('%cClick "Test Connection" button to start', 'color: #764ba2; font-size: 14px;');
+        
+        // Prompt Builder Functions
+        const promptTextarea = document.getElementById('promptTextarea');
+        const copyButton = document.getElementById('copyButton');
+        const pasteButton = document.getElementById('pasteButton');
+        const resetSizeButton = document.getElementById('resetSizeButton');
+        const clearTextareaButton = document.getElementById('clearTextareaButton');
+        
+        // Default textarea size
+        const DEFAULT_TEXTAREA_WIDTH = '100%';
+        const DEFAULT_TEXTAREA_HEIGHT = '150px';
+        
+        // Load saved textarea size from localStorage
+        function loadTextareaSize() {
+            const savedWidth = localStorage.getItem('promptTextareaWidth');
+            const savedHeight = localStorage.getItem('promptTextareaHeight');
+            
+            if (savedWidth) {
+                promptTextarea.style.width = savedWidth;
+            }
+            if (savedHeight) {
+                promptTextarea.style.height = savedHeight;
+            }
+        }
+        
+        // Save textarea size to localStorage
+        function saveTextareaSize() {
+            const width = promptTextarea.style.width || DEFAULT_TEXTAREA_WIDTH;
+            const height = promptTextarea.style.height || DEFAULT_TEXTAREA_HEIGHT;
+            
+            localStorage.setItem('promptTextareaWidth', width);
+            localStorage.setItem('promptTextareaHeight', height);
+        }
+        
+        // Reset textarea to default size
+        function resetTextareaSize() {
+            promptTextarea.style.width = DEFAULT_TEXTAREA_WIDTH;
+            promptTextarea.style.height = DEFAULT_TEXTAREA_HEIGHT;
+            
+            localStorage.removeItem('promptTextareaWidth');
+            localStorage.removeItem('promptTextareaHeight');
+            
+            showNotification('🔄 Textarea size reset to default!');
+        }
+        
+        // Monitor textarea resize using ResizeObserver
+        if (window.ResizeObserver) {
+            const resizeObserver = new ResizeObserver(() => {
+                saveTextareaSize();
+            });
+            resizeObserver.observe(promptTextarea);
+        }
+        
+        // Fallback: Save on mouseup (for older browsers)
+        promptTextarea.addEventListener('mouseup', () => {
+            setTimeout(saveTextareaSize, 100);
+        });
+        
+        // Reset button click handler
+        resetSizeButton.addEventListener('click', resetTextareaSize);
+        
+        // Clear textarea button click handler
+        clearTextareaButton.addEventListener('click', () => {
+            if (promptTextarea.value.trim() === '') {
+                showNotification('ℹ️ Textarea is already empty!');
+                return;
+            }
+            
+            promptTextarea.value = '';
+            showNotification('🧹 Textarea cleared!');
+            promptTextarea.focus();
+        });
+        
+        // Load saved size on page load
+        loadTextareaSize();
+        
+        // Copy prompt to clipboard
+        copyButton.addEventListener('click', async () => {
+            const promptText = promptTextarea.value.trim();
+            
+            if (!promptText) {
+                showNotification('⚠️ Please write a prompt first!');
+                return;
+            }
+            
+            try {
+                await navigator.clipboard.writeText(promptText);
+                copyButton.classList.add('copied');
+                copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                showNotification('✅ Prompt copied to clipboard!');
+                
+                setTimeout(() => {
+                    copyButton.classList.remove('copied');
+                    copyButton.innerHTML = '<i class="fas fa-copy"></i> Copy Prompt';
+                }, 2000);
+            } catch (error) {
+                showNotification('❌ Failed to copy: ' + error.message);
+            }
+        });
+        
+        // Paste from clipboard
+        pasteButton.addEventListener('click', async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                
+                if (text) {
+                    promptTextarea.value = text;
+                    showNotification('✅ Text pasted from clipboard!');
+                } else {
+                    showNotification('⚠️ Clipboard is empty!');
+                }
+            } catch (error) {
+                showNotification('❌ Failed to paste: ' + error.message);
+            }
+        });
+        
+        // Keyboard shortcuts
+        promptTextarea.addEventListener('keydown', (e) => {
+            // Ctrl+Enter or Cmd+Enter to copy
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                copyButton.click();
+            }
+        });
+        
+        // File Picker Functions
+        const fileInput = document.getElementById('fileInput');
+        const fileInputDisplay = document.getElementById('fileInputDisplay');
+        const fileDisplayText = document.getElementById('fileDisplayText');
+        const filePathInfo = document.getElementById('filePathInfo');
+        const lastFilePath = document.getElementById('lastFilePath');
+        const generateButton = document.getElementById('generateButton');
+        const hostProvider = document.getElementById('hostProvider');
+        const fileDescription = document.getElementById('fileDescription');
+        
+        let selectedFileContent = null;
+        let selectedFileName = null;
+        
+        // Load saved data from localStorage
+        function loadSavedData() {
+            let hasBackendData = false;
+            
+            // Load file path
+            const savedPath = localStorage.getItem(STORAGE_KEY_PATH);
+            const savedName = localStorage.getItem(STORAGE_KEY_NAME);
+            
+            if (savedPath && savedName) {
+                lastFilePath.textContent = savedPath;
+                fileDisplayText.textContent = savedName;
+                filePathInfo.classList.add('show');
+                hasBackendData = true;
+            }
+            
+            // Load host provider
+            const savedHost = localStorage.getItem('hostProvider');
+            if (savedHost) {
+                hostProvider.value = savedHost;
+                hasBackendData = true;
+            }
+            
+            // Load file description
+            const savedDescription = localStorage.getItem('fileDescription');
+            if (savedDescription) {
+                fileDescription.value = savedDescription;
+                hasBackendData = true;
+            }
+            
+            if (hasBackendData) {
+                showNotification('📁 Backend settings loaded from storage');
+            }
+            
+            return hasBackendData;
+        }
+        
+        // Function to check if generate button should be enabled
+        function updateGenerateButtonState() {
+            const hasBackendInfo = hostProvider.value || fileDescription.value.trim() || 
+                                   localStorage.getItem(STORAGE_KEY_NAME) || selectedFileContent;
+            const hasFrontendInfo = frontendHostProvider.value || frontendFileDescription.value.trim() || 
+                                    localStorage.getItem(FRONTEND_STORAGE_KEY_NAME) || selectedFrontendFileContent;
+            
+            generateButton.disabled = !(hasBackendInfo || hasFrontendInfo);
+        }
+        
+        // Save host provider to localStorage
+        hostProvider.addEventListener('change', (e) => {
+            localStorage.setItem('hostProvider', e.target.value);
+            updateGenerateButtonState();
+            showNotification('💾 Hosting provider saved');
+        });
+        
+        // Auto-save file description with debounce
+        let descriptionTimeout;
+        fileDescription.addEventListener('input', (e) => {
+            clearTimeout(descriptionTimeout);
+            descriptionTimeout = setTimeout(() => {
+                localStorage.setItem('fileDescription', e.target.value);
+                updateGenerateButtonState();
+            }, 500);
+        });
+        
+        // Save file path to localStorage
+        function saveFilePath(path, name) {
+            localStorage.setItem(STORAGE_KEY_PATH, path);
+            localStorage.setItem(STORAGE_KEY_NAME, name);
+        }
+        
+        // Click on display to trigger file input
+        fileInputDisplay.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // Handle file selection
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            
+            if (!file) return;
+            
+            selectedFileName = file.name;
+            const filePath = file.webkitRelativePath || file.name;
+            
+            // Update display
+            fileDisplayText.textContent = selectedFileName;
+            lastFilePath.textContent = filePath;
+            filePathInfo.classList.add('show');
+            
+            // Save to localStorage
+            saveFilePath(filePath, selectedFileName);
+            
+            // Read file content
+            const reader = new FileReader();
+            
+            reader.onload = (event) => {
+                selectedFileContent = event.target.result;
+                updateGenerateButtonState();
+                showNotification('✅ Backend file loaded: ' + selectedFileName);
+            };
+            
+            reader.onerror = () => {
+                showNotification('❌ Failed to read file');
+                generateButton.disabled = true;
+            };
+            
+            reader.readAsText(file);
+        });
+        
+        // ===== FRONTEND FILE PICKER FUNCTIONS =====
+        
+        const frontendFileInput = document.getElementById('frontendFileInput');
+        const frontendFileInputDisplay = document.getElementById('frontendFileInputDisplay');
+        const frontendFileDisplayText = document.getElementById('frontendFileDisplayText');
+        const frontendFilePathInfo = document.getElementById('frontendFilePathInfo');
+        const frontendLastFilePath = document.getElementById('frontendLastFilePath');
+        const frontendHostProvider = document.getElementById('frontendHostProvider');
+        const frontendFileDescription = document.getElementById('frontendFileDescription');
+        
+        let selectedFrontendFileContent = null;
+        let selectedFrontendFileName = null;
+        
+        // Load frontend saved data from localStorage
+        function loadFrontendSavedData() {
+            let hasData = false;
+            
+            // Load file path
+            const savedPath = localStorage.getItem(FRONTEND_STORAGE_KEY_PATH);
+            const savedName = localStorage.getItem(FRONTEND_STORAGE_KEY_NAME);
+            
+            if (savedPath && savedName) {
+                frontendLastFilePath.textContent = savedPath;
+                frontendFileDisplayText.textContent = savedName;
+                frontendFilePathInfo.classList.add('show');
+                hasData = true;
+            }
+            
+            // Load host provider
+            const savedHost = localStorage.getItem('frontendHostProvider');
+            if (savedHost) {
+                frontendHostProvider.value = savedHost;
+                hasData = true;
+            }
+            
+            // Load file description
+            const savedDescription = localStorage.getItem('frontendFileDescription');
+            if (savedDescription) {
+                frontendFileDescription.value = savedDescription;
+                hasData = true;
+            }
+            
+            if (hasData) {
+                showNotification('📁 Frontend settings loaded from storage');
+            }
+            
+            return hasData;
+        }
+        
+        // Save frontend host provider
+        frontendHostProvider.addEventListener('change', (e) => {
+            localStorage.setItem('frontendHostProvider', e.target.value);
+            updateGenerateButtonState();
+            showNotification('💾 Frontend hosting provider saved');
+        });
+        
+        // Auto-save frontend file description
+        let frontendDescriptionTimeout;
+        frontendFileDescription.addEventListener('input', (e) => {
+            clearTimeout(frontendDescriptionTimeout);
+            frontendDescriptionTimeout = setTimeout(() => {
+                localStorage.setItem('frontendFileDescription', e.target.value);
+                updateGenerateButtonState();
+            }, 500);
+        });
+        
+        // Save frontend file path to localStorage
+        function saveFrontendFilePath(path, name) {
+            localStorage.setItem(FRONTEND_STORAGE_KEY_PATH, path);
+            localStorage.setItem(FRONTEND_STORAGE_KEY_NAME, name);
+        }
+        
+        // Click on display to trigger frontend file input
+        frontendFileInputDisplay.addEventListener('click', () => {
+            frontendFileInput.click();
+        });
+        
+        // Handle frontend file selection
+        frontendFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            
+            if (!file) return;
+            
+            selectedFrontendFileName = file.name;
+            const filePath = file.webkitRelativePath || file.name;
+            
+            // Update display
+            frontendFileDisplayText.textContent = selectedFrontendFileName;
+            frontendLastFilePath.textContent = filePath;
+            frontendFilePathInfo.classList.add('show');
+            
+            // Save to localStorage
+            saveFrontendFilePath(filePath, selectedFrontendFileName);
+            
+            // Read file content
+            const reader = new FileReader();
+            
+            reader.onload = (event) => {
+                selectedFrontendFileContent = event.target.result;
+                updateGenerateButtonState();
+                showNotification('✅ Frontend file loaded: ' + selectedFrontendFileName);
+            };
+            
+            reader.onerror = () => {
+                showNotification('❌ Failed to read frontend file');
+            };
+            
+            reader.readAsText(file);
+        });
+        
+        // ===== GENERATE PROMPT WITH BOTH FILES =====
+        
+        // Generate prompt with file content (supports both backend and frontend)
+        generateButton.addEventListener('click', () => {
+            const currentPrompt = promptTextarea.value.trim();
+            const languageMap = {
+                'php': 'php', 'js': 'javascript', 'jsx': 'javascript',
+                'ts': 'typescript', 'tsx': 'typescript', 'py': 'python',
+                'html': 'html', 'htm': 'html', 'css': 'css', 'scss': 'scss',
+                'json': 'json', 'md': 'markdown', 'txt': 'text', 'vue': 'vue'
+            };
+            
+            let finalPrompt = '';
+            let filesSection = '';
+            let hasAnyFile = false;
+            
+            // === BACKEND FILE SECTION ===
+            // Check if we have file content OR saved info
+            const backendHost = hostProvider.value;
+            const backendDesc = fileDescription.value.trim();
+            const backendFileName = selectedFileName || localStorage.getItem(STORAGE_KEY_NAME);
+            
+            if (selectedFileContent && selectedFileName) {
+                // Has loaded file
+                const backendExtension = selectedFileName.split('.').pop().toLowerCase();
+                const backendLanguage = languageMap[backendExtension] || 'text';
+                
+                let backendContext = `**Backend File:** "${selectedFileName}"`;
+                if (backendHost) backendContext += `\n- Hosting Provider: ${backendHost}`;
+                if (backendDesc) backendContext += `\n- Details: ${backendDesc}`;
+                
+                filesSection += `### Backend Code\n\n${backendContext}\n\n\`\`\`${backendLanguage}\n${selectedFileContent}\n\`\`\`\n\n`;
+                hasAnyFile = true;
+            } else if (backendFileName || backendHost || backendDesc) {
+                // Has saved info but no loaded file
+                let backendContext = `**Backend File:** "${backendFileName || 'Not selected'}"`;
+                if (backendHost) backendContext += `\n- Hosting Provider: ${backendHost}`;
+                if (backendDesc) backendContext += `\n- Details: ${backendDesc}`;
+                
+                filesSection += `### Backend File Information\n\n${backendContext}\n\n*(File content not loaded - please select the file to include code)*\n\n`;
+                hasAnyFile = true;
+            }
+            
+            // === FRONTEND FILE SECTION ===
+            // Check if we have file content OR saved info
+            const frontendHost = frontendHostProvider.value;
+            const frontendDesc = frontendFileDescription.value.trim();
+            const frontendFileName = selectedFrontendFileName || localStorage.getItem(FRONTEND_STORAGE_KEY_NAME);
+            
+            if (selectedFrontendFileContent && selectedFrontendFileName) {
+                // Has loaded file
+                const frontendExtension = selectedFrontendFileName.split('.').pop().toLowerCase();
+                const frontendLanguage = languageMap[frontendExtension] || 'text';
+                
+                let frontendContext = `**Frontend File:** "${selectedFrontendFileName}"`;
+                if (frontendHost) frontendContext += `\n- Hosting Provider: ${frontendHost}`;
+                if (frontendDesc) frontendContext += `\n- Details: ${frontendDesc}`;
+                
+                filesSection += `### Frontend Code\n\n${frontendContext}\n\n\`\`\`${frontendLanguage}\n${selectedFrontendFileContent}\n\`\`\`\n\n`;
+                hasAnyFile = true;
+            } else if (frontendFileName || frontendHost || frontendDesc) {
+                // Has saved info but no loaded file
+                let frontendContext = `**Frontend File:** "${frontendFileName || 'Not selected'}"`;
+                if (frontendHost) frontendContext += `\n- Hosting Provider: ${frontendHost}`;
+                if (frontendDesc) frontendContext += `\n- Details: ${frontendDesc}`;
+                
+                filesSection += `### Frontend File Information\n\n${frontendContext}\n\n*(File content not loaded - please select the file to include code)*\n\n`;
+                hasAnyFile = true;
+            }
+            
+            // Check if we have any file information
+            if (!hasAnyFile) {
+                showNotification('⚠️ No file information available!');
+                return;
+            }
+            
+            // Check if API instructions should be included
+            const includeApiInstructions = document.getElementById('includeApiInstructions').checked;
+            let apiInstructionsSection = '';
+            
+            if (includeApiInstructions) {
+                apiInstructionsSection = '\n\n---\n\n';
+                apiInstructionsSection += '## 🚨 IMPORTANT: Backend API Usage Instructions\n\n';
+                apiInstructionsSection += '**The backend file (default.php) is a UNIVERSAL API that handles ALL database operations.**\n\n';
+                apiInstructionsSection += '### ⚠️ CRITICAL RULES:\n';
+                apiInstructionsSection += '1. **DO NOT modify the backend (default.php)** - it\'s already complete and ready\n';
+                apiInstructionsSection += '2. **ALL changes should be made in the FRONTEND only** (index.html or other frontend files)\n';
+                apiInstructionsSection += '3. The backend accepts dynamic requests via JSON POST\n\n';
+                apiInstructionsSection += '### Backend Actions Available:\n\n';
+                apiInstructionsSection += '**Database Operations:** `create_database`, `drop_database`, `list_databases`, `database_info`\n\n';
+                apiInstructionsSection += '**Table Operations:** `create_table`, `drop_table`, `list_tables`, `describe_table`, `truncate_table`\n\n';
+                apiInstructionsSection += '**CRUD Operations:**\n';
+                apiInstructionsSection += '- `insert` / `create` - Add new record\n';
+                apiInstructionsSection += '- `select` / `read` - Get records (with conditions, pagination, sorting)\n';
+                apiInstructionsSection += '- `update` - Update records\n';
+                apiInstructionsSection += '- `delete` - Delete records\n\n';
+                apiInstructionsSection += '**Advanced:** `custom_query` - Execute custom SQL\n\n';
+                apiInstructionsSection += '### Frontend Request Example:\n\n';
+                apiInstructionsSection += '```javascript\n';
+                apiInstructionsSection += '// Add user\n';
+                apiInstructionsSection += 'const response = await fetch(\'default.php\', {\n';
+                apiInstructionsSection += '    method: \'POST\',\n';
+                apiInstructionsSection += '    headers: { \'Content-Type\': \'application/json\' },\n';
+                apiInstructionsSection += '    body: JSON.stringify({\n';
+                apiInstructionsSection += '        action: \'insert\',\n';
+                apiInstructionsSection += '        table: \'users\',\n';
+                apiInstructionsSection += '        data: { username: \'john\', email: \'john@example.com\' }\n';
+                apiInstructionsSection += '    })\n';
+                apiInstructionsSection += '});\n';
+                apiInstructionsSection += 'const result = await response.json();\n';
+                apiInstructionsSection += '```\n\n';
+                apiInstructionsSection += '### 🎯 Your Task:\n';
+                apiInstructionsSection += '**Implement ALL functionality in the FRONTEND files using vanilla JavaScript, HTML, and CSS.**\n';
+                apiInstructionsSection += 'The backend is already configured to handle any request you send.\n\n';
+                apiInstructionsSection += '---\n\n';
+            }
+            
+            // Build final prompt
+            if (currentPrompt) {
+                finalPrompt = `${currentPrompt}\n\n---\n\n${filesSection}${apiInstructionsSection}Please help me with the task described above.`;
+            } else {
+                finalPrompt = `I need help with the following files:\n\n${filesSection}${apiInstructionsSection}Please analyze these files and provide suggestions for improvement.`;
+            }
+            
+            promptTextarea.value = finalPrompt;
+            
+            // Smart notification based on what was added
+            let notificationMsg = '✨ ';
+            const hasBackendInfo = backendFileName || backendHost || backendDesc || selectedFileContent;
+            const hasFrontendInfo = frontendFileName || frontendHost || frontendDesc || selectedFrontendFileContent;
+            
+            if (hasBackendInfo && hasFrontendInfo) {
+                notificationMsg += 'Backend & Frontend information added to prompt!';
+            } else if (hasBackendInfo) {
+                notificationMsg += 'Backend information added to prompt!';
+            } else if (hasFrontendInfo) {
+                notificationMsg += 'Frontend information added to prompt!';
+            }
+            showNotification(notificationMsg);
+            
+            // Scroll to textarea
+            promptTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        
+        // Load saved data on page load
+        loadSavedData();
+        loadFrontendSavedData();
+        
+        // Update generate button state based on available data
+        updateGenerateButtonState();
+    </script>
+</body>
+</html>
