@@ -702,16 +702,43 @@
         .file-path-info {
             margin-top: 10px;
             padding: 10px;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
-            color: var(--text-secondary);
             font-size: 0.85rem;
-            word-break: break-all;
+            color: var(--text-secondary);
             display: none;
         }
         
         .file-path-info.show {
             display: block;
+        }
+        
+        .api-instructions-checkbox {
+            margin: 15px 0 10px 0;
+            padding: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+        }
+        
+        .api-instructions-checkbox label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+        
+        .api-instructions-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+        
+        .api-instructions-checkbox span {
+            user-select: none;
         }
         
         .generate-button {
@@ -1124,6 +1151,15 @@
                     <div class="file-path-info" id="filePathInfo">
                         <strong>Last Selected:</strong> <span id="lastFilePath">No file selected yet</span>
                     </div>
+                    
+                    <!-- Backend API Instructions Checkbox -->
+                    <div class="api-instructions-checkbox">
+                        <label>
+                            <input type="checkbox" id="includeApiInstructions" checked>
+                            <span>Include Backend API usage instructions for AI</span>
+                        </label>
+                    </div>
+                    
                     <button class="generate-button" id="generateButton" disabled>
                         <i class="fas fa-magic"></i>
                         Generate Prompt with Files
@@ -1987,11 +2023,52 @@
                 return;
             }
             
+            // Check if API instructions should be included
+            const includeApiInstructions = document.getElementById('includeApiInstructions').checked;
+            let apiInstructionsSection = '';
+            
+            if (includeApiInstructions) {
+                apiInstructionsSection = '\n\n---\n\n';
+                apiInstructionsSection += '## 🚨 IMPORTANT: Backend API Usage Instructions\n\n';
+                apiInstructionsSection += '**The backend file (default.php) is a UNIVERSAL API that handles ALL database operations.**\n\n';
+                apiInstructionsSection += '### ⚠️ CRITICAL RULES:\n';
+                apiInstructionsSection += '1. **DO NOT modify the backend (default.php)** - it\'s already complete and ready\n';
+                apiInstructionsSection += '2. **ALL changes should be made in the FRONTEND only** (index.html or other frontend files)\n';
+                apiInstructionsSection += '3. The backend accepts dynamic requests via JSON POST\n\n';
+                apiInstructionsSection += '### Backend Actions Available:\n\n';
+                apiInstructionsSection += '**Database Operations:** `create_database`, `drop_database`, `list_databases`, `database_info`\n\n';
+                apiInstructionsSection += '**Table Operations:** `create_table`, `drop_table`, `list_tables`, `describe_table`, `truncate_table`\n\n';
+                apiInstructionsSection += '**CRUD Operations:**\n';
+                apiInstructionsSection += '- `insert` / `create` - Add new record\n';
+                apiInstructionsSection += '- `select` / `read` - Get records (with conditions, pagination, sorting)\n';
+                apiInstructionsSection += '- `update` - Update records\n';
+                apiInstructionsSection += '- `delete` - Delete records\n\n';
+                apiInstructionsSection += '**Advanced:** `custom_query` - Execute custom SQL\n\n';
+                apiInstructionsSection += '### Frontend Request Example:\n\n';
+                apiInstructionsSection += '```javascript\n';
+                apiInstructionsSection += '// Add user\n';
+                apiInstructionsSection += 'const response = await fetch(\'default.php\', {\n';
+                apiInstructionsSection += '    method: \'POST\',\n';
+                apiInstructionsSection += '    headers: { \'Content-Type\': \'application/json\' },\n';
+                apiInstructionsSection += '    body: JSON.stringify({\n';
+                apiInstructionsSection += '        action: \'insert\',\n';
+                apiInstructionsSection += '        table: \'users\',\n';
+                apiInstructionsSection += '        data: { username: \'john\', email: \'john@example.com\' }\n';
+                apiInstructionsSection += '    })\n';
+                apiInstructionsSection += '});\n';
+                apiInstructionsSection += 'const result = await response.json();\n';
+                apiInstructionsSection += '```\n\n';
+                apiInstructionsSection += '### 🎯 Your Task:\n';
+                apiInstructionsSection += '**Implement ALL functionality in the FRONTEND files using vanilla JavaScript, HTML, and CSS.**\n';
+                apiInstructionsSection += 'The backend is already configured to handle any request you send.\n\n';
+                apiInstructionsSection += '---\n\n';
+            }
+            
             // Build final prompt
             if (currentPrompt) {
-                finalPrompt = `${currentPrompt}\n\n---\n\n${filesSection}Please help me with the task described above.`;
+                finalPrompt = `${currentPrompt}\n\n---\n\n${filesSection}${apiInstructionsSection}Please help me with the task described above.`;
             } else {
-                finalPrompt = `I need help with the following files:\n\n${filesSection}Please analyze these files and provide suggestions for improvement.`;
+                finalPrompt = `I need help with the following files:\n\n${filesSection}${apiInstructionsSection}Please analyze these files and provide suggestions for improvement.`;
             }
             
             promptTextarea.value = finalPrompt;
