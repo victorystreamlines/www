@@ -2029,9 +2029,19 @@
                                         <span style="color: var(--text-primary); font-weight: 600; font-size: 0.9rem;">📁 Pick File(s) to Send to AI</span>
                                         <input type="file" id="fileToPromptPicker" multiple accept=".txt,.html,.css,.js,.json,.php,.sql,.md,.xml,.csv" style="display: none;" onchange="handleFilesToPrompt(this)">
                                     </label>
-                                    <button onclick="sendFilesToPrompt()" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 6px; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                    <button onclick="clearFileSelection()" style="padding: 8px 12px; background: rgba(255, 100, 100, 0.15); border: 1px solid rgba(255, 100, 100, 0.4); border-radius: 6px; color: rgba(255, 150, 150, 0.9); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; font-size: 0.85rem;" onmouseover="this.style.background='rgba(255, 100, 100, 0.25)'; this.style.borderColor='rgba(255, 100, 100, 0.6)'" onmouseout="this.style.background='rgba(255, 100, 100, 0.15)'; this.style.borderColor='rgba(255, 100, 100, 0.4)'">
+                                        <i class="fas fa-times-circle"></i>
+                                        <span>Clear</span>
+                                    </button>
+                                </div>
+                                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                                    <button onclick="sendFilesToPrompt()" style="flex: 1; padding: 10px 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 6px; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                                         <i class="fas fa-paper-plane"></i>
                                         <span>Send to AI</span>
+                                    </button>
+                                    <button onclick="generateWithFiles()" style="flex: 1; padding: 10px 15px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border: none; border-radius: 6px; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                        <i class="fas fa-magic"></i>
+                                        <span>Generate</span>
                                     </button>
                                 </div>
                                 <div id="selectedFilesDisplay" style="font-size: 0.85rem; color: rgba(168, 237, 234, 0.9); min-height: 20px;">
@@ -3122,12 +3132,7 @@
                 localStorage.removeItem('promptTextareaHeight');
                 
                 // Clear file picker to prompt
-                localStorage.removeItem(FILE_TO_PROMPT_STORAGE_KEY);
-                selectedFilesToPrompt = [];
-                const filePickerInput = document.getElementById('fileToPromptPicker');
-                const filePickerStatus = document.getElementById('filePickerStatus');
-                if (filePickerInput) filePickerInput.value = '';
-                if (filePickerStatus) filePickerStatus.innerHTML = '<i class="fas fa-info-circle"></i> No files selected';
+                clearFileSelection();
                 
                 // Reset backend file picker UI
                 const fileDisplayText = document.getElementById('fileDisplayText');
@@ -3303,6 +3308,20 @@
             showNotification(`📁 ${files.length} file(s) selected!`, 2000);
         }
         
+        // Clear file selection
+        function clearFileSelection() {
+            selectedFilesToPrompt = [];
+            localStorage.removeItem(FILE_TO_PROMPT_STORAGE_KEY);
+            
+            const filePickerInput = document.getElementById('fileToPromptPicker');
+            const filePickerStatus = document.getElementById('filePickerStatus');
+            
+            if (filePickerInput) filePickerInput.value = '';
+            if (filePickerStatus) filePickerStatus.innerHTML = '<i class="fas fa-info-circle"></i> No files selected';
+            
+            showNotification('🗑️ File selection cleared!', 2000);
+        }
+        
         // Send files to AI prompt (only file names)
         function sendFilesToPrompt() {
             if (selectedFilesToPrompt.length === 0) {
@@ -3335,6 +3354,43 @@
             promptTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
             
             showNotification(`✅ ${selectedFilesToPrompt.length} file name(s) sent to AI Prompt!`, 3000);
+        }
+        
+        // Generate with files and custom prompt (prepend)
+        function generateWithFiles() {
+            if (selectedFilesToPrompt.length === 0) {
+                showNotification('⚠️ Please select file(s) first!', 3000);
+                return;
+            }
+            
+            // Get file names only
+            const fileNames = selectedFilesToPrompt.map(f => f.name).join(', ');
+            
+            // Create the generation prompt
+            const generationPrompt = `Please continue building these files according to the previous application, or if you did not work on the application, according to its setup. Read its setup and continue building according to the following request:\n\nFiles: ${fileNames}\n\n---\n\n`;
+            
+            // Get current prompt content
+            const currentPrompt = promptTextarea.value.trim();
+            
+            // Prepend generation prompt (add at the beginning)
+            if (currentPrompt) {
+                promptTextarea.value = generationPrompt + currentPrompt;
+            } else {
+                promptTextarea.value = generationPrompt;
+            }
+            
+            // Visual feedback with green color for generation
+            promptTextarea.style.borderColor = '#38ef7d';
+            promptTextarea.style.boxShadow = '0 0 20px rgba(56, 239, 125, 0.5)';
+            setTimeout(() => {
+                promptTextarea.style.borderColor = '';
+                promptTextarea.style.boxShadow = '';
+            }, 1000);
+            
+            // Scroll to textarea
+            promptTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            showNotification(`✨ Generated prompt with ${selectedFilesToPrompt.length} file(s)!`, 3000);
         }
         
         // Load last selected files info on page load
