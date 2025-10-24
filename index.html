@@ -839,6 +839,34 @@
             }
         }
         
+        /* Saved URLs List Scrollbar */
+        #savedUrlsList::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        #savedUrlsList::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+        
+        #savedUrlsList::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+        
+        #savedUrlsList::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Save URL Button Hover */
+        #saveUrlButton:hover {
+            box-shadow: 0 4px 15px rgba(17, 153, 142, 0.5);
+        }
+        
+        #saveUrlButton:active {
+            transform: scale(0.95);
+        }
+        
         /* File Description Textarea */
         .file-description-textarea {
             width: 100%;
@@ -1083,7 +1111,30 @@
                         <label style="display: block; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 6px; font-weight: 600;">
                             <i class="fas fa-edit"></i> Enter Custom URL:
                         </label>
-                        <input type="text" id="customUrlInput" placeholder="https://your-domain.com/api.php" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.3); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.9rem; font-family: 'Courier New', monospace;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="text" id="customUrlInput" placeholder="https://your-domain.com/api.php" style="flex: 1; padding: 10px; border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.3); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.9rem; font-family: 'Courier New', monospace;">
+                            <button id="saveUrlButton" style="padding: 10px 20px; border-radius: 8px; border: none; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; font-weight: 600; cursor: pointer; transition: all 0.3s ease; white-space: nowrap;">
+                                <i class="fas fa-save"></i> Save
+                            </button>
+                        </div>
+                        <div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.6); margin-top: 5px;">
+                            <i class="fas fa-info-circle"></i> Press Enter or click Save to add this URL to your list
+                        </div>
+                    </div>
+                    
+                    <!-- Manage Saved URLs -->
+                    <div id="managedUrlsSection" style="display: none; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600;">
+                                <i class="fas fa-history"></i> Saved Custom URLs:
+                            </label>
+                            <button id="clearAllUrlsButton" style="padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(255, 100, 100, 0.4); background: rgba(255, 100, 100, 0.1); color: rgba(255, 150, 150, 0.9); font-size: 0.7rem; cursor: pointer; transition: all 0.3s ease;">
+                                <i class="fas fa-trash-alt"></i> Clear All
+                            </button>
+                        </div>
+                        <div id="savedUrlsList" style="max-height: 150px; overflow-y: auto; background: rgba(0, 0, 0, 0.2); border-radius: 8px; padding: 8px;">
+                            <!-- Dynamically populated -->
+                        </div>
                     </div>
                     
                     <!-- Current API URL Display -->
@@ -1370,30 +1421,106 @@
     
     <script>
         // ========================================
-        // API URL CONFIGURATION - Dynamic Selection
+        // API URL CONFIGURATION - Dynamic Selection with History
         // ========================================
         
-        // Predefined API URLs
-        const API_URLS = {
-            localhost: 'http://localhost/default.php',
-            hostinger: 'https://chemistit.com/default.php',
-            custom: '' // Will be filled from input
+        // Predefined API URLs (permanent options)
+        const PREDEFINED_URLS = {
+            localhost: {
+                url: 'http://localhost/default.php',
+                label: '🏠 Localhost',
+                permanent: true
+            },
+            hostinger: {
+                url: 'https://chemistit.com/default.php',
+                label: '☁️ Hostinger',
+                permanent: true
+            }
         };
         
-        // LocalStorage key for API URL
+        // LocalStorage keys for API URL management
         const API_URL_STORAGE_KEY = 'selectedApiUrl';
         const API_URL_TYPE_STORAGE_KEY = 'selectedApiUrlType';
         const CUSTOM_URL_STORAGE_KEY = 'customApiUrl';
+        const SAVED_CUSTOM_URLS_KEY = 'savedCustomUrls'; // NEW: Store all custom URLs
+        
+        // Get all saved custom URLs from localStorage
+        function getSavedCustomUrls() {
+            const saved = localStorage.getItem(SAVED_CUSTOM_URLS_KEY);
+            return saved ? JSON.parse(saved) : [];
+        }
+        
+        // Save a new custom URL to localStorage
+        function saveCustomUrl(url, label = null) {
+            if (!url || url.trim() === '') return;
+            
+            url = url.trim();
+            
+            // Validate URL format
+            if (!url.match(/^https?:\/\/.+/)) {
+                return false;
+            }
+            
+            const savedUrls = getSavedCustomUrls();
+            
+            // Check if URL already exists
+            const exists = savedUrls.some(item => item.url === url);
+            if (exists) {
+                return true; // Already saved
+            }
+            
+            // Generate label if not provided
+            if (!label) {
+                try {
+                    const urlObj = new URL(url);
+                    label = `🌐 ${urlObj.hostname}`;
+                } catch (e) {
+                    label = `🌐 Custom URL ${savedUrls.length + 1}`;
+                }
+            }
+            
+            // Add new URL
+            savedUrls.push({
+                url: url,
+                label: label,
+                addedAt: new Date().toISOString()
+            });
+            
+            // Save to localStorage
+            localStorage.setItem(SAVED_CUSTOM_URLS_KEY, JSON.stringify(savedUrls));
+            
+            return true;
+        }
+        
+        // Delete a custom URL from storage
+        function deleteCustomUrl(url) {
+            const savedUrls = getSavedCustomUrls();
+            const filtered = savedUrls.filter(item => item.url !== url);
+            localStorage.setItem(SAVED_CUSTOM_URLS_KEY, JSON.stringify(filtered));
+            
+            // If the deleted URL was currently selected, switch to localhost
+            if (getCurrentApiUrl() === url) {
+                localStorage.setItem(API_URL_TYPE_STORAGE_KEY, 'localhost');
+                localStorage.removeItem(CUSTOM_URL_STORAGE_KEY);
+            }
+        }
         
         // Get current API URL (dynamic)
         function getCurrentApiUrl() {
             const urlType = localStorage.getItem(API_URL_TYPE_STORAGE_KEY) || 'localhost';
             
             if (urlType === 'custom') {
-                return localStorage.getItem(CUSTOM_URL_STORAGE_KEY) || API_URLS.localhost;
+                return localStorage.getItem(CUSTOM_URL_STORAGE_KEY) || PREDEFINED_URLS.localhost.url;
             }
             
-            return API_URLS[urlType] || API_URLS.localhost;
+            if (urlType.startsWith('saved_')) {
+                // This is a saved custom URL
+                const savedUrls = getSavedCustomUrls();
+                const index = parseInt(urlType.replace('saved_', ''));
+                return savedUrls[index]?.url || PREDEFINED_URLS.localhost.url;
+            }
+            
+            return PREDEFINED_URLS[urlType]?.url || PREDEFINED_URLS.localhost.url;
         }
         
         // LocalStorage keys - defined at top for global access
@@ -1419,8 +1546,52 @@
         const customUrlInput = document.getElementById('customUrlInput');
         const currentApiUrlDisplay = document.getElementById('currentApiUrl');
         
+        // Build URL Selector Dropdown with saved URLs
+        function buildUrlSelector() {
+            // Clear existing options
+            urlSelector.innerHTML = '';
+            
+            // Add predefined URLs
+            Object.keys(PREDEFINED_URLS).forEach(key => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = `${PREDEFINED_URLS[key].label} (${PREDEFINED_URLS[key].url})`;
+                urlSelector.appendChild(option);
+            });
+            
+            // Add saved custom URLs
+            const savedUrls = getSavedCustomUrls();
+            savedUrls.forEach((item, index) => {
+                const option = document.createElement('option');
+                option.value = `saved_${index}`;
+                option.textContent = `${item.label} (${item.url})`;
+                option.dataset.customUrl = item.url;
+                urlSelector.appendChild(option);
+            });
+            
+            // Add separator if there are saved URLs
+            if (savedUrls.length > 0) {
+                const separator = document.createElement('option');
+                separator.disabled = true;
+                separator.textContent = '──────────────────';
+                urlSelector.appendChild(separator);
+            }
+            
+            // Add "New Custom URL" option
+            const customOption = document.createElement('option');
+            customOption.value = 'custom';
+            customOption.textContent = '✏️ + Add New Custom URL';
+            urlSelector.appendChild(customOption);
+        }
+        
         // Initialize URL Picker
         function initializeUrlPicker() {
+            // Build dropdown
+            buildUrlSelector();
+            
+            // Build saved URLs list
+            buildSavedUrlsList();
+            
             // Load saved URL type
             const savedUrlType = localStorage.getItem(API_URL_TYPE_STORAGE_KEY) || 'localhost';
             const savedCustomUrl = localStorage.getItem(CUSTOM_URL_STORAGE_KEY) || '';
@@ -1436,6 +1607,71 @@
             
             // Update display
             updateApiUrlDisplay();
+        }
+        
+        // Build Saved URLs List for Management
+        function buildSavedUrlsList() {
+            const savedUrls = getSavedCustomUrls();
+            const managedUrlsSection = document.getElementById('managedUrlsSection');
+            const savedUrlsList = document.getElementById('savedUrlsList');
+            
+            if (savedUrls.length === 0) {
+                managedUrlsSection.style.display = 'none';
+                return;
+            }
+            
+            managedUrlsSection.style.display = 'block';
+            savedUrlsList.innerHTML = '';
+            
+            savedUrls.forEach((item, index) => {
+                const urlItem = document.createElement('div');
+                urlItem.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 6px; background: rgba(255, 255, 255, 0.05); border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease;';
+                
+                urlItem.innerHTML = `
+                    <div style="flex: 1; overflow: hidden;">
+                        <div style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600; margin-bottom: 2px;">${item.label}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); font-family: 'Courier New', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.url}</div>
+                    </div>
+                    <button class="delete-url-btn" data-index="${index}" data-url="${item.url}" style="padding: 6px 12px; border-radius: 6px; border: none; background: rgba(255, 100, 100, 0.2); color: rgba(255, 150, 150, 1); cursor: pointer; transition: all 0.3s ease; margin-left: 10px;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                
+                // Hover effect
+                urlItem.addEventListener('mouseenter', () => {
+                    urlItem.style.background = 'rgba(255, 255, 255, 0.1)';
+                    urlItem.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                });
+                
+                urlItem.addEventListener('mouseleave', () => {
+                    urlItem.style.background = 'rgba(255, 255, 255, 0.05)';
+                    urlItem.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                });
+                
+                savedUrlsList.appendChild(urlItem);
+            });
+            
+            // Add delete button event listeners
+            document.querySelectorAll('.delete-url-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const url = e.currentTarget.dataset.url;
+                    deleteCustomUrl(url);
+                    buildUrlSelector();
+                    buildSavedUrlsList();
+                    updateApiUrlDisplay();
+                    showNotification(`🗑️ URL deleted: ${url}`, 3000);
+                });
+                
+                btn.addEventListener('mouseenter', (e) => {
+                    e.currentTarget.style.background = 'rgba(255, 100, 100, 0.4)';
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                });
+                
+                btn.addEventListener('mouseleave', (e) => {
+                    e.currentTarget.style.background = 'rgba(255, 100, 100, 0.2)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                });
+            });
         }
         
         // Update API URL Display
@@ -1455,37 +1691,142 @@
             // Show/hide custom input
             if (selectedType === 'custom') {
                 customUrlWrapper.style.display = 'block';
+                customUrlInput.value = ''; // Clear for new entry
                 customUrlInput.focus();
             } else {
                 customUrlWrapper.style.display = 'none';
+                
+                // If it's a saved custom URL, show option to delete
+                if (selectedType.startsWith('saved_')) {
+                    const selectedOption = urlSelector.options[urlSelector.selectedIndex];
+                    const customUrl = selectedOption.dataset.customUrl;
+                    showNotification(`✅ Selected: ${customUrl}`, 3000);
+                }
             }
             
             // Update display
             updateApiUrlDisplay();
-            showNotification(`✅ API endpoint changed to: ${selectedType === 'custom' ? 'Custom URL' : selectedType}`);
         });
         
-        // Handle Custom URL Input
+        // Handle Custom URL Input - Save on blur or Enter
+        customUrlInput.addEventListener('blur', saveCurrentCustomUrl);
+        customUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveCurrentCustomUrl();
+            }
+        });
+        
+        // Save current custom URL to history
+        function saveCurrentCustomUrl() {
+            const customUrl = customUrlInput.value.trim();
+            
+            if (!customUrl) {
+                customUrlInput.style.borderColor = 'rgba(255, 100, 100, 0.6)';
+                showNotification('⚠️ Please enter a valid URL', 3000);
+                return;
+            }
+            
+            // Validate URL format
+            if (!customUrl.match(/^https?:\/\/.+/)) {
+                customUrlInput.style.borderColor = 'rgba(255, 100, 100, 0.6)';
+                showNotification('⚠️ URL must start with http:// or https://', 4000);
+                return;
+            }
+            
+            // Reset border color
+            customUrlInput.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            
+            // Save to localStorage
+            localStorage.setItem(CUSTOM_URL_STORAGE_KEY, customUrl);
+            
+            // Add to saved URLs list
+            const saved = saveCustomUrl(customUrl);
+            
+            if (saved) {
+                // Rebuild dropdown to include new URL
+                buildUrlSelector();
+                
+                // Rebuild saved URLs list
+                buildSavedUrlsList();
+                
+                // Find and select the newly added URL
+                const savedUrls = getSavedCustomUrls();
+                const newIndex = savedUrls.findIndex(item => item.url === customUrl);
+                if (newIndex !== -1) {
+                    urlSelector.value = `saved_${newIndex}`;
+                    localStorage.setItem(API_URL_TYPE_STORAGE_KEY, `saved_${newIndex}`);
+                }
+                
+                // Hide custom input
+                customUrlWrapper.style.display = 'none';
+                
+                // Update display
+                updateApiUrlDisplay();
+                
+                showNotification(`✅ URL saved successfully: ${customUrl}`, 4000);
+            }
+        }
+        
+        // Save URL Button
+        const saveUrlButton = document.getElementById('saveUrlButton');
+        if (saveUrlButton) {
+            saveUrlButton.addEventListener('click', saveCurrentCustomUrl);
+            
+            // Hover effects
+            saveUrlButton.addEventListener('mouseenter', () => {
+                saveUrlButton.style.transform = 'translateY(-2px)';
+                saveUrlButton.style.boxShadow = '0 4px 12px rgba(17, 153, 142, 0.4)';
+            });
+            
+            saveUrlButton.addEventListener('mouseleave', () => {
+                saveUrlButton.style.transform = 'translateY(0)';
+                saveUrlButton.style.boxShadow = 'none';
+            });
+        }
+        
+        // Clear All URLs Button
+        const clearAllUrlsButton = document.getElementById('clearAllUrlsButton');
+        if (clearAllUrlsButton) {
+            clearAllUrlsButton.addEventListener('click', () => {
+                if (confirm('Are you sure you want to delete ALL saved custom URLs?')) {
+                    localStorage.removeItem(SAVED_CUSTOM_URLS_KEY);
+                    
+                    // Reset to localhost
+                    localStorage.setItem(API_URL_TYPE_STORAGE_KEY, 'localhost');
+                    
+                    // Rebuild UI
+                    buildUrlSelector();
+                    buildSavedUrlsList();
+                    urlSelector.value = 'localhost';
+                    updateApiUrlDisplay();
+                    
+                    showNotification('🗑️ All custom URLs have been cleared', 3000);
+                }
+            });
+            
+            clearAllUrlsButton.addEventListener('mouseenter', () => {
+                clearAllUrlsButton.style.background = 'rgba(255, 100, 100, 0.25)';
+                clearAllUrlsButton.style.borderColor = 'rgba(255, 100, 100, 0.6)';
+                clearAllUrlsButton.style.transform = 'translateY(-1px)';
+            });
+            
+            clearAllUrlsButton.addEventListener('mouseleave', () => {
+                clearAllUrlsButton.style.background = 'rgba(255, 100, 100, 0.1)';
+                clearAllUrlsButton.style.borderColor = 'rgba(255, 100, 100, 0.4)';
+                clearAllUrlsButton.style.transform = 'translateY(0)';
+            });
+        }
+        
+        // Handle Custom URL Input - Real-time update
         customUrlInput.addEventListener('input', (e) => {
             const customUrl = e.target.value.trim();
             
-            // Save custom URL
+            // Save custom URL temporarily
             localStorage.setItem(CUSTOM_URL_STORAGE_KEY, customUrl);
             
             // Update display
             updateApiUrlDisplay();
-        });
-        
-        // Validate Custom URL on blur
-        customUrlInput.addEventListener('blur', (e) => {
-            const customUrl = e.target.value.trim();
-            
-            if (customUrl && !customUrl.match(/^https?:\/\/.+/)) {
-                showNotification('⚠️ Warning: URL should start with http:// or https://', 4000);
-                customUrlInput.style.borderColor = 'rgba(255, 100, 100, 0.6)';
-            } else {
-                customUrlInput.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-            }
         });
         
         // Show notification function - defined early for use throughout
@@ -2219,13 +2560,56 @@
                 return;
             }
             
+            // === API URL CONFIGURATION SECTION ===
+            // Get the selected API URL for frontend configuration
+            const selectedApiUrl = getCurrentApiUrl();
+            const apiUrlType = localStorage.getItem(API_URL_TYPE_STORAGE_KEY) || 'localhost';
+            
+            // Debug: Log the API URL
+            console.log('🔌 Active API Endpoint:', selectedApiUrl);
+            console.log('📡 API URL Type:', apiUrlType);
+            
+            let apiUrlSection = '\n\n---\n\n';
+            apiUrlSection += '## 🔌 API URL Configuration for Frontend\n\n';
+            apiUrlSection += '**IMPORTANT: The following API endpoint URL should be used in your FRONTEND code to connect to the backend.**\n\n';
+            apiUrlSection += `**Active API Endpoint:** \`${selectedApiUrl}\`\n\n`;
+            
+            // Add context based on URL type
+            if (apiUrlType === 'localhost') {
+                apiUrlSection += '- **Environment:** Local Development (Localhost)\n';
+                apiUrlSection += '- **Note:** This URL is for local testing. Update it for production deployment.\n';
+            } else if (apiUrlType === 'hostinger') {
+                apiUrlSection += '- **Environment:** Production (Hostinger Hosting)\n';
+                apiUrlSection += '- **Note:** This is the live production URL.\n';
+            } else if (apiUrlType === 'custom' || apiUrlType.startsWith('saved_')) {
+                apiUrlSection += '- **Environment:** Custom Configuration\n';
+                apiUrlSection += '- **Note:** Using custom API endpoint URL.\n';
+            }
+            
+            apiUrlSection += '\n### 📡 How to Use This URL in Frontend:\n\n';
+            apiUrlSection += '**The backend is already deployed and configured at the above URL.**\n';
+            apiUrlSection += 'Use this exact URL in your frontend fetch() requests:\n\n';
+            apiUrlSection += '```javascript\n';
+            apiUrlSection += '// Example: Fetching data from backend\n';
+            apiUrlSection += `const response = await fetch('${selectedApiUrl}', {\n`;
+            apiUrlSection += '    method: \'POST\',\n';
+            apiUrlSection += '    headers: { \'Content-Type\': \'application/json\' },\n';
+            apiUrlSection += '    body: JSON.stringify({\n';
+            apiUrlSection += '        action: \'select\',\n';
+            apiUrlSection += '        table: \'your_table_name\'\n';
+            apiUrlSection += '    })\n';
+            apiUrlSection += '});\n';
+            apiUrlSection += 'const data = await response.json();\n';
+            apiUrlSection += '```\n\n';
+            apiUrlSection += '**⚠️ CRITICAL:** All database operations must go through this URL. Do NOT modify the backend file - it\'s already complete and ready to handle all requests.\n\n';
+            apiUrlSection += '---\n\n';
+            
             // Check if API instructions should be included
             const includeApiInstructions = document.getElementById('includeApiInstructions').checked;
             let apiInstructionsSection = '';
             
             if (includeApiInstructions) {
-                apiInstructionsSection = '\n\n---\n\n';
-                apiInstructionsSection += '## 🚨 IMPORTANT: Backend API Usage Instructions\n\n';
+                apiInstructionsSection = '## 🚨 IMPORTANT: Backend API Usage Instructions\n\n';
                 apiInstructionsSection += '**The backend file (default.php) is a UNIVERSAL API that handles ALL database operations.**\n\n';
                 apiInstructionsSection += '### ⚠️ CRITICAL RULES:\n';
                 apiInstructionsSection += '1. **DO NOT modify the backend (default.php)** - it\'s already complete and ready\n';
@@ -2240,10 +2624,10 @@
                 apiInstructionsSection += '- `update` - Update records\n';
                 apiInstructionsSection += '- `delete` - Delete records\n\n';
                 apiInstructionsSection += '**Advanced:** `custom_query` - Execute custom SQL\n\n';
-                apiInstructionsSection += '### Frontend Request Example:\n\n';
+                apiInstructionsSection += '### Complete Request Example:\n\n';
                 apiInstructionsSection += '```javascript\n';
                 apiInstructionsSection += '// Add user\n';
-                apiInstructionsSection += 'const response = await fetch(\'default.php\', {\n';
+                apiInstructionsSection += `const response = await fetch('${selectedApiUrl}', {\n`;
                 apiInstructionsSection += '    method: \'POST\',\n';
                 apiInstructionsSection += '    headers: { \'Content-Type\': \'application/json\' },\n';
                 apiInstructionsSection += '    body: JSON.stringify({\n';
@@ -2262,26 +2646,26 @@
             
             // Build final prompt
             if (currentPrompt) {
-                finalPrompt = `${currentPrompt}\n\n---\n\n${filesSection}${apiInstructionsSection}Please help me with the task described above.`;
+                finalPrompt = `${currentPrompt}\n\n---\n\n${filesSection}${apiUrlSection}${apiInstructionsSection}Please help me with the task described above.`;
             } else {
-                finalPrompt = `I need help with the following files:\n\n${filesSection}${apiInstructionsSection}Please analyze these files and provide suggestions for improvement.`;
+                finalPrompt = `I need help with the following files:\n\n${filesSection}${apiUrlSection}${apiInstructionsSection}Please analyze these files and provide suggestions for improvement.`;
             }
             
             promptTextarea.value = finalPrompt;
             
             // Smart notification based on what was added
-            let notificationMsg = '✨ ';
+            let notificationMsg = '✨ Prompt generated! Included:\n';
             const hasBackendInfo = backendFileName || backendHost || backendDesc || selectedFileContent;
             const hasFrontendInfo = frontendFileName || frontendHost || frontendDesc || selectedFrontendFileContent;
             
-            if (hasBackendInfo && hasFrontendInfo) {
-                notificationMsg += 'Backend & Frontend information added to prompt!';
-            } else if (hasBackendInfo) {
-                notificationMsg += 'Backend information added to prompt!';
-            } else if (hasFrontendInfo) {
-                notificationMsg += 'Frontend information added to prompt!';
-            }
-            showNotification(notificationMsg);
+            const includedItems = [];
+            if (hasBackendInfo) includedItems.push('Backend files');
+            if (hasFrontendInfo) includedItems.push('Frontend files');
+            includedItems.push(`API URL (${selectedApiUrl})`);
+            if (includeApiInstructions) includedItems.push('API instructions');
+            
+            notificationMsg = `✨ Prompt generated with: ${includedItems.join(' + ')}`;
+            showNotification(notificationMsg, 4000);
             
             // Scroll to textarea
             promptTextarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
