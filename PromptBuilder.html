@@ -478,6 +478,41 @@
             font-size: 0.65rem;
         }
         
+        .textarea-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .clear-textarea-button {
+            background: rgba(255, 100, 100, 0.15);
+            border: 1px solid rgba(255, 100, 100, 0.4);
+            color: rgba(255, 150, 150, 0.9);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        
+        .clear-textarea-button:hover {
+            background: rgba(255, 100, 100, 0.25);
+            border-color: rgba(255, 100, 100, 0.6);
+            color: rgba(255, 150, 150, 1);
+            transform: translateY(-1px);
+        }
+        
+        .clear-textarea-button:active {
+            transform: translateY(0);
+        }
+        
+        .clear-textarea-button i {
+            font-size: 0.65rem;
+        }
+        
         .resize-indicator {
             position: absolute;
             bottom: 2px;
@@ -908,6 +943,23 @@
                 margin: 0;
             }
             
+            .clear-textarea-button {
+                font-size: 0.65rem;
+                padding: 3px 8px;
+            }
+            
+            .clear-textarea-button span {
+                display: none;
+            }
+            
+            .clear-textarea-button i {
+                margin: 0;
+            }
+            
+            .textarea-controls {
+                gap: 6px;
+            }
+            
             .prompt-textarea {
                 min-height: 120px;
             }
@@ -1173,10 +1225,16 @@
                         <span class="resize-hint-text">
                             <i class="fas fa-arrows-alt"></i> Drag the bottom-right corner to resize
                         </span>
-                        <button class="reset-size-button" id="resetSizeButton" title="Reset to default size">
-                            <i class="fas fa-undo"></i>
-                            <span>Reset Size</span>
-                        </button>
+                        <div class="textarea-controls">
+                            <button class="clear-textarea-button" id="clearTextareaButton" title="Clear textarea content">
+                                <i class="fas fa-eraser"></i>
+                                <span>Clear</span>
+                            </button>
+                            <button class="reset-size-button" id="resetSizeButton" title="Reset to default size">
+                                <i class="fas fa-undo"></i>
+                                <span>Reset Size</span>
+                            </button>
+                        </div>
                     </div>
                     <div class="button-group">
                         <button class="copy-button" id="copyButton">
@@ -1503,6 +1561,7 @@
         const copyButton = document.getElementById('copyButton');
         const pasteButton = document.getElementById('pasteButton');
         const resetSizeButton = document.getElementById('resetSizeButton');
+        const clearTextareaButton = document.getElementById('clearTextareaButton');
         
         // Default textarea size
         const DEFAULT_TEXTAREA_WIDTH = '100%';
@@ -1556,6 +1615,18 @@
         
         // Reset button click handler
         resetSizeButton.addEventListener('click', resetTextareaSize);
+        
+        // Clear textarea button click handler
+        clearTextareaButton.addEventListener('click', () => {
+            if (promptTextarea.value.trim() === '') {
+                showNotification('ℹ️ Textarea is already empty!');
+                return;
+            }
+            
+            promptTextarea.value = '';
+            showNotification('🧹 Textarea cleared!');
+            promptTextarea.focus();
+        });
         
         // Load saved size on page load
         loadTextareaSize();
