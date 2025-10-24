@@ -1258,11 +1258,6 @@
             showNotification('💾 Hosting provider saved');
         });
         
-        // Save file description to localStorage
-        fileDescription.addEventListener('input', (e) => {
-            localStorage.setItem('fileDescription', e.target.value);
-        });
-        
         // Auto-save file description with debounce
         let descriptionTimeout;
         fileDescription.addEventListener('input', (e) => {
