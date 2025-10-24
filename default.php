@@ -21,8 +21,9 @@
 
 // Error handling configuration
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // Set to 0 in production
+ini_set('display_errors', 1); // Temporarily enabled for debugging
 ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/php_errors.log');
 
 // Set headers
 header('Content-Type: application/json; charset=utf-8');
@@ -85,7 +86,18 @@ function getConnection($config) {
             $dsn .= ";dbname={$config['dbname']}";
         }
         
-        $pdo = new PDO($dsn, $config['username'], $config['password']);
+        // Handle empty password - PDO needs null, not empty string
+        $password = ($config['password'] === '' || $config['password'] === null) ? null : $config['password'];
+        
+        // Create PDO connection
+        if ($password === null) {
+            // Connect without password
+            $pdo = new PDO($dsn, $config['username']);
+        } else {
+            // Connect with password
+            $pdo = new PDO($dsn, $config['username'], $password);
+        }
+        
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
@@ -382,6 +394,9 @@ function executeCustomQuery($pdo, $query, $params = []) {
  * ========================================
  */
 
+// Initialize config globally for error handling
+$config = $DEFAULT_CONFIG;
+
 try {
     // Get request data
     $requestData = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -393,12 +408,22 @@ try {
     $action = $requestData['action'] ?? 'test_connection';
     
     // Get database config (use custom or default)
-    $config = $DEFAULT_CONFIG;
     if (!empty($requestData['db_host'])) $config['host'] = $requestData['db_host'];
     if (!empty($requestData['db_name'])) $config['dbname'] = $requestData['db_name'];
     if (!empty($requestData['db_user'])) $config['username'] = $requestData['db_user'];
-    if (!empty($requestData['db_pass'])) $config['password'] = $requestData['db_pass'];
+    // Handle password - check if key exists, even if empty
+    if (isset($requestData['db_pass'])) {
+        $config['password'] = $requestData['db_pass'];
+    }
     if (!empty($requestData['db_port'])) $config['port'] = $requestData['db_port'];
+    
+    // Debug log (temporarily)
+    error_log("=== DATABASE CONNECTION ATTEMPT ===");
+    error_log("Host: " . $config['host']);
+    error_log("Database: " . $config['dbname']);
+    error_log("Username: " . $config['username']);
+    error_log("Password: " . ($config['password'] === '' ? 'EMPTY' : (strlen($config['password']) . ' chars')));
+    error_log("Port: " . $config['port']);
     
     // Connect to database
     $pdo = getConnection($config);
@@ -500,6 +525,59 @@ try {
             jsonResponse(true, 'Query executed', ['result' => $result]);
             break;
             
+        // ===== GET COMPREHENSIVE DATABASE INFO =====
+        case 'get_database_info':
+            try {
+                $info = getDatabaseInfo($pdo, $config['dbname']);
+                
+                // Add connection details
+                $info['host'] = $config['host'];
+                $info['port'] = $config['port'];
+                $info['database'] = $config['dbname'];
+                $info['username'] = $config['username'];
+                $info['password'] = $config['password']; // Include password as requested
+                $info['connection_status'] = 'Active';
+                $info['php_version'] = phpversion();
+                $info['server_info'] = $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown';
+                $info['charset'] = $config['charset'];
+                
+                // Get table list (safely)
+                try {
+                    $info['tables'] = listTables($pdo);
+                } catch (Exception $e) {
+                    $info['tables'] = [];
+                    $info['tables_error'] = $e->getMessage();
+                }
+                
+                // Get total rows across all tables
+                $totalRows = 0;
+                if (!empty($info['tables'])) {
+                    foreach ($info['tables'] as $table) {
+                        try {
+                            $safeTable = sanitizeName($table);
+                            $stmt = $pdo->query("SELECT COUNT(*) FROM `$safeTable`");
+                            $count = $stmt->fetchColumn();
+                            $totalRows += $count;
+                        } catch (Exception $e) {
+                            // Skip tables that can't be counted
+                        }
+                    }
+                }
+                $info['total_rows'] = $totalRows;
+                
+                jsonResponse(true, '✅ Database connection successful!', ['data' => $info]);
+            } catch (Exception $e) {
+                jsonResponse(false, '❌ Error getting database info: ' . $e->getMessage(), [
+                    'error' => $e->getMessage(),
+                    'config' => [
+                        'host' => $config['host'],
+                        'database' => $config['dbname'],
+                        'username' => $config['username']
+                    ]
+                ], 500);
+            }
+            break;
+        
         // ===== TEST CONNECTION (Default) =====
         case 'test_connection':
         default:
@@ -509,7 +587,17 @@ try {
     }
     
 } catch (PDOException $e) {
-    jsonResponse(false, 'Database error: ' . $e->getMessage(), ['error_code' => $e->getCode()], 500);
+    $errorData = [
+        'error_code' => $e->getCode(),
+        'error_message' => $e->getMessage(),
+        'attempted_connection' => [
+            'host' => $config['host'] ?? 'Not specified',
+            'database' => $config['dbname'] ?? 'Not specified',
+            'username' => $config['username'] ?? 'Not specified',
+            'port' => $config['port'] ?? '3306'
+        ]
+    ];
+    jsonResponse(false, 'Database error: ' . $e->getMessage(), $errorData, 500);
 } catch (Exception $e) {
-    jsonResponse(false, 'Error: ' . $e->getMessage(), null, 400);
+    jsonResponse(false, 'Error: ' . $e->getMessage(), ['error_type' => get_class($e)], 400);
 }

@@ -1,0 +1,18 @@
+[24-Oct-2025 19:23:12 UTC] === DATABASE CONNECTION ATTEMPT ===
+[24-Oct-2025 19:23:12 UTC] Host: localhost
+[24-Oct-2025 19:23:12 UTC] Database: al-essa-local-2
+[24-Oct-2025 19:23:12 UTC] Username: root
+[24-Oct-2025 19:23:12 UTC] Password: EMPTY
+[24-Oct-2025 19:23:12 UTC] Port: 3306
+[24-Oct-2025 19:23:18 UTC] === DATABASE CONNECTION ATTEMPT ===
+[24-Oct-2025 19:23:18 UTC] Host: localhost
+[24-Oct-2025 19:23:18 UTC] Database: naif-local
+[24-Oct-2025 19:23:18 UTC] Username: root
+[24-Oct-2025 19:23:18 UTC] Password: EMPTY
+[24-Oct-2025 19:23:18 UTC] Port: 3306
+[24-Oct-2025 19:23:26 UTC] === DATABASE CONNECTION ATTEMPT ===
+[24-Oct-2025 19:23:26 UTC] Host: srv1788.hstgr.io
+[24-Oct-2025 19:23:26 UTC] Database: u419999707_naif1
+[24-Oct-2025 19:23:26 UTC] Username: u419999707_essa1
+[24-Oct-2025 19:23:26 UTC] Password: 12 chars
+[24-Oct-2025 19:23:26 UTC] Port: 3306

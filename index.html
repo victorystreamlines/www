@@ -1618,27 +1618,141 @@
                     </div>
                 </div>
                 
+                <!-- Database Selector from Dashboard -->
+                <div class="api-info" style="margin-bottom: 15px;">
+                    <h3>
+                        <i class="fas fa-database"></i>
+                        Database Selection
+                    </h3>
+                    
+                    <div style="margin-bottom: 12px;">
+                        <label style="display: block; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 6px; font-weight: 600;">
+                            <i class="fas fa-server"></i> Select Database:
+                        </label>
+                        <select id="databaseSelector" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid rgba(255, 255, 255, 0.3); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.9rem; cursor: pointer; transition: all 0.3s ease;">
+                            <option value="">Loading databases...</option>
+                        </select>
+                    </div>
+                    
+                    <div style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.6); margin-bottom: 10px;">
+                        <i class="fas fa-info-circle"></i> Databases from Dashboard connections (Localhost + Hostinger)
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <button id="manualDbButton" onclick="toggleManualDatabaseInput()" style="padding: 10px; border-radius: 8px; border: 2px solid rgba(168, 237, 234, 0.3); background: rgba(168, 237, 234, 0.1); color: var(--text-primary); font-size: 0.85rem; cursor: pointer; transition: all 0.3s ease; font-weight: 600;">
+                            <i class="fas fa-plus-circle"></i> Add Custom DB
+                        </button>
+                        <button onclick="toggleLocalhostCredentials()" style="padding: 10px; border-radius: 8px; border: 2px solid rgba(251, 191, 36, 0.3); background: rgba(251, 191, 36, 0.1); color: var(--text-primary); font-size: 0.85rem; cursor: pointer; transition: all 0.3s ease; font-weight: 600;">
+                            <i class="fas fa-cog"></i> Localhost Settings
+                        </button>
+                    </div>
+                    
+                    <div id="manualDatabaseForm" style="display: none; margin-top: 15px; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; border: 1px solid rgba(168, 237, 234, 0.3);">
+                        <h4 style="color: var(--text-primary); margin-bottom: 12px; font-size: 0.9rem;">
+                            <i class="fas fa-edit"></i> Manual Database Entry
+                        </h4>
+                        
+                        <div style="display: grid; gap: 10px;">
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">Host:</label>
+                                <input type="text" id="manualHost" placeholder="e.g., localhost, srv1788.hstgr.io" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.85rem;">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">Database Name:</label>
+                                <input type="text" id="manualDatabase" placeholder="e.g., my_database" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.85rem;">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">Username:</label>
+                                <input type="text" id="manualUsername" placeholder="e.g., root" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.85rem;">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">Password:</label>
+                                <input type="password" id="manualPassword" placeholder="Optional" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.85rem;">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">Port:</label>
+                                <input type="text" id="manualPort" placeholder="3306" value="3306" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.85rem;">
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; margin-top: 12px;">
+                            <button onclick="saveManualDatabase()" style="flex: 1; padding: 10px; border-radius: 6px; border: none; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                <i class="fas fa-save"></i> Save & Use
+                            </button>
+                            <button onclick="toggleManualDatabaseInput()" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(0, 0, 0, 0.3); color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Localhost Credentials Form -->
+                    <div id="localhostCredentialsForm" style="display: none; margin-top: 15px; padding: 15px; background: rgba(0, 0, 0, 0.3); border-radius: 8px; border: 1px solid rgba(251, 191, 36, 0.3);">
+                        <h4 style="color: var(--text-primary); margin-bottom: 12px; font-size: 0.9rem;">
+                            <i class="fas fa-cog"></i> Localhost MySQL Credentials
+                        </h4>
+                        
+                        <div style="background: rgba(251, 191, 36, 0.1); padding: 10px; border-radius: 5px; margin-bottom: 12px; font-size: 0.75rem; color: rgba(255, 255, 255, 0.8);">
+                            <i class="fas fa-info-circle"></i> These credentials will be used for all localhost databases. Default: root with no password.
+                        </div>
+                        
+                        <div style="display: grid; gap: 10px;">
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">Host:</label>
+                                <input type="text" id="localhostHost" value="localhost" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.85rem;">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">Username:</label>
+                                <input type="text" id="localhostUsername" value="root" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.85rem;">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">Password:</label>
+                                <input type="password" id="localhostPassword" placeholder="Leave empty if no password" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.85rem;">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">Port:</label>
+                                <input type="text" id="localhostPort" value="3306" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); font-size: 0.85rem;">
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; margin-top: 12px;">
+                            <button onclick="saveLocalhostCredentialsFromForm()" style="flex: 1; padding: 10px; border-radius: 6px; border: none; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: #000; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                <i class="fas fa-save"></i> Save Credentials
+                            </button>
+                            <button onclick="toggleLocalhostCredentials()" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.3); background: rgba(0, 0, 0, 0.3); color: var(--text-primary); font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- API Information -->
                 <div class="api-info">
                     <h3>
                         <i class="fas fa-info-circle"></i>
-                        Server Info
+                        Current Connection Info
                     </h3>
                     <div class="info-item">
                         <span class="info-label">Host:</span>
-                        <span class="info-value">srv1788.hstgr.io</span>
+                        <span class="info-value" id="currentHost">-</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Database:</span>
-                        <span class="info-value">u419999707_victorystreaml</span>
+                        <span class="info-value" id="currentDatabase">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Username:</span>
+                        <span class="info-value" id="currentUsername">-</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">Port:</span>
-                        <span class="info-value">3306</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Charset:</span>
-                        <span class="info-value">utf8mb4</span>
+                        <span class="info-value" id="currentPort">-</span>
                     </div>
                 </div>
                 
@@ -2517,29 +2631,56 @@
                 return;
             }
             
+            // Check if database is selected
+            if (!currentConnectionInfo) {
+                showNotification('⚠️ Please select a database first!', 4000);
+                return;
+            }
+            
             // Show loading state
             testButton.classList.add('loading');
             resultContainer.style.display = 'none';
             resultContainer.classList.remove('success', 'error');
             
             try {
-                // Send request to API
+                // Prepare form data with database connection info
+                const formData = new FormData();
+                formData.append('action', 'get_database_info');
+                formData.append('db_host', currentConnectionInfo.host);
+                formData.append('db_name', currentConnectionInfo.database);
+                formData.append('db_user', currentConnectionInfo.username);
+                formData.append('db_pass', currentConnectionInfo.password);
+                formData.append('db_port', currentConnectionInfo.port);
+                
+                // Log connection attempt for debugging
+                console.log('🔍 Testing connection with:', {
+                    host: currentConnectionInfo.host,
+                    database: currentConnectionInfo.database,
+                    username: currentConnectionInfo.username,
+                    port: currentConnectionInfo.port,
+                    apiUrl: apiUrl
+                });
+                
+                // Send request to API with POST method and database credentials
                 const response = await fetch(apiUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
+                    method: 'POST',
+                    body: formData
                 });
                 
                 // Read data
                 const data = await response.json();
+                
+                // Log response for debugging
+                console.log('📥 API Response:', data);
                 
                 // Display result
                 displayResult(data);
                 
                 // Show success notification
                 if (data.success) {
-                    showNotification(`✅ Connected successfully to: ${apiUrl}`);
+                    showNotification(`✅ Connected successfully to: ${currentConnectionInfo.database}`);
+                } else {
+                    showNotification(`❌ ${data.message}`, 5000);
                 }
                 
             } catch (error) {
@@ -4218,6 +4359,410 @@
         
         // Update generate button state based on available data
         updateGenerateButtonState();
+        
+        // ===== DATABASE SELECTOR FROM DASHBOARD =====
+        
+        // LocalStorage keys from dashboard.html
+        const HOSTINGER_CONNECTIONS_KEY = 'hostinger_connections';
+        const LOCALHOST_DATABASES_KEY = 'localhost_databases';
+        const LOCALHOST_CONNECTION_STATE_KEY = 'localhost_connection_state';
+        const CONNECTION_STATE_KEY = 'hostinger_connection_state';
+        const MANUAL_DATABASES_KEY = 'manual_databases'; // For manually added databases
+        const SELECTED_DB_CONNECTION_KEY = 'selected_db_connection'; // Currently selected database
+        const LOCALHOST_CREDENTIALS_KEY = 'localhost_credentials'; // Localhost credentials
+        
+        let currentConnectionInfo = null;
+        
+        // Default localhost credentials (can be changed by user)
+        const DEFAULT_LOCALHOST_CREDENTIALS = {
+            host: 'localhost',
+            username: 'root',
+            password: '',
+            port: '3306'
+        };
+        
+        // Get localhost credentials from localStorage or use default
+        function getLocalhostCredentials() {
+            const saved = localStorage.getItem(LOCALHOST_CREDENTIALS_KEY);
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch (e) {
+                    return DEFAULT_LOCALHOST_CREDENTIALS;
+                }
+            }
+            return DEFAULT_LOCALHOST_CREDENTIALS;
+        }
+        
+        // Save localhost credentials to localStorage
+        function saveLocalhostCredentials(credentials) {
+            localStorage.setItem(LOCALHOST_CREDENTIALS_KEY, JSON.stringify(credentials));
+            console.log('💾 Saved localhost credentials:', {
+                host: credentials.host,
+                username: credentials.username,
+                port: credentials.port,
+                hasPassword: !!credentials.password
+            });
+        }
+        
+        // Load all databases on page load
+        function loadAllDatabases() {
+            const selector = document.getElementById('databaseSelector');
+            selector.innerHTML = '<option value="">-- Select a Database --</option>';
+            
+            console.log('🔄 Loading all databases from localStorage...');
+            
+            let databasesFound = false;
+            
+            // 1. Load Localhost Databases
+            const localhostState = localStorage.getItem(LOCALHOST_CONNECTION_STATE_KEY);
+            console.log('🖥️ Localhost State:', localhostState);
+            
+            if (localhostState === 'connected') {
+                const localhostDatabases = getLocalhostDatabases();
+                const localhostCreds = getLocalhostCredentials();
+                
+                console.log('🖥️ Localhost Credentials:', {
+                    host: localhostCreds.host,
+                    username: localhostCreds.username,
+                    port: localhostCreds.port,
+                    hasPassword: !!localhostCreds.password
+                });
+                console.log('🖥️ Localhost Databases found:', localhostDatabases);
+                
+                if (localhostDatabases && localhostDatabases.length > 0) {
+                    const localhostGroup = document.createElement('optgroup');
+                    localhostGroup.label = '🖥️ Localhost Databases';
+                    
+                    localhostDatabases.forEach(dbName => {
+                        const option = document.createElement('option');
+                        option.value = JSON.stringify({
+                            type: 'localhost',
+                            host: localhostCreds.host,
+                            database: dbName,
+                            username: localhostCreds.username,
+                            password: localhostCreds.password,
+                            port: localhostCreds.port
+                        });
+                        // Show database name clearly with username
+                        option.textContent = `🖥️ ${dbName} - User: ${localhostCreds.username} (${localhostCreds.host}:${localhostCreds.port})`;
+                        localhostGroup.appendChild(option);
+                    });
+                    
+                    selector.appendChild(localhostGroup);
+                    databasesFound = true;
+                    console.log(`✅ Added ${localhostDatabases.length} localhost database(s)`);
+                }
+            }
+            
+            // 2. Load Hostinger Connections
+            const hostingerState = localStorage.getItem(CONNECTION_STATE_KEY);
+            console.log('☁️ Hostinger State:', hostingerState);
+            
+            if (hostingerState === 'connected') {
+                const hostingerConnections = getHostingerConnections();
+                console.log('☁️ Hostinger Connections found:', hostingerConnections);
+                
+                if (hostingerConnections && hostingerConnections.length > 0) {
+                    const hostingerGroup = document.createElement('optgroup');
+                    hostingerGroup.label = '☁️ Hostinger Databases';
+                    
+                    hostingerConnections.forEach((conn, index) => {
+                        console.log(`☁️ Processing connection ${index + 1}:`, {
+                            name: conn.name,
+                            host: conn.host,
+                            dbName: conn.dbName,
+                            username: conn.username,
+                            hasPassword: conn.password ? 'Yes' : 'No',
+                            port: conn.port
+                        });
+                        
+                        const option = document.createElement('option');
+                        option.value = JSON.stringify({
+                            type: 'hostinger',
+                            host: conn.host,
+                            database: conn.dbName,  // Fix: use dbName from dashboard.html
+                            username: conn.username,
+                            password: conn.password,
+                            port: conn.port || '3306'
+                        });
+                        // Show connection name and database name clearly
+                        option.textContent = `☁️ ${conn.name || conn.dbName} - ${conn.dbName} (${conn.host}:${conn.port || '3306'})`;
+                        hostingerGroup.appendChild(option);
+                    });
+                    
+                    selector.appendChild(hostingerGroup);
+                    databasesFound = true;
+                    console.log(`✅ Added ${hostingerConnections.length} Hostinger database(s)`);
+                }
+            }
+            
+            // 3. Load Manual Databases
+            const manualDatabases = getManualDatabases();
+            if (manualDatabases && manualDatabases.length > 0) {
+                const manualGroup = document.createElement('optgroup');
+                manualGroup.label = '✏️ Custom Databases';
+                
+                manualDatabases.forEach(db => {
+                    const option = document.createElement('option');
+                    option.value = JSON.stringify({
+                        type: 'manual',
+                        host: db.host,
+                        database: db.database,
+                        username: db.username,
+                        password: db.password,
+                        port: db.port
+                    });
+                    // Show database name, username and host clearly
+                    option.textContent = `✏️ ${db.database} - User: ${db.username} (${db.host}:${db.port})`;
+                    manualGroup.appendChild(option);
+                });
+                
+                selector.appendChild(manualGroup);
+                databasesFound = true;
+            }
+            
+            if (!databasesFound) {
+                selector.innerHTML = '<option value="">No databases available. Add one manually or connect in Dashboard.</option>';
+            }
+            
+            // Load previously selected database
+            loadSelectedDatabase();
+        }
+        
+        // Get localhost databases from localStorage
+        function getLocalhostDatabases() {
+            const saved = localStorage.getItem(LOCALHOST_DATABASES_KEY);
+            return saved ? JSON.parse(saved) : [];
+        }
+        
+        // Get Hostinger connections from localStorage
+        function getHostingerConnections() {
+            const saved = localStorage.getItem(HOSTINGER_CONNECTIONS_KEY);
+            return saved ? JSON.parse(saved) : [];
+        }
+        
+        // Get manual databases from localStorage
+        function getManualDatabases() {
+            const saved = localStorage.getItem(MANUAL_DATABASES_KEY);
+            return saved ? JSON.parse(saved) : [];
+        }
+        
+        // Save manual databases to localStorage
+        function saveManualDatabasesToStorage(databases) {
+            localStorage.setItem(MANUAL_DATABASES_KEY, JSON.stringify(databases));
+        }
+        
+        // Toggle manual database input form
+        function toggleManualDatabaseInput() {
+            const form = document.getElementById('manualDatabaseForm');
+            const localhostForm = document.getElementById('localhostCredentialsForm');
+            
+            if (form.style.display === 'none') {
+                form.style.display = 'block';
+                localhostForm.style.display = 'none'; // Hide localhost form
+            } else {
+                form.style.display = 'none';
+                // Clear form
+                document.getElementById('manualHost').value = '';
+                document.getElementById('manualDatabase').value = '';
+                document.getElementById('manualUsername').value = '';
+                document.getElementById('manualPassword').value = '';
+                document.getElementById('manualPort').value = '3306';
+            }
+        }
+        
+        // Toggle localhost credentials form
+        function toggleLocalhostCredentials() {
+            const form = document.getElementById('localhostCredentialsForm');
+            const manualForm = document.getElementById('manualDatabaseForm');
+            
+            if (form.style.display === 'none') {
+                form.style.display = 'block';
+                manualForm.style.display = 'none'; // Hide manual form
+                
+                // Load current credentials
+                const creds = getLocalhostCredentials();
+                document.getElementById('localhostHost').value = creds.host;
+                document.getElementById('localhostUsername').value = creds.username;
+                document.getElementById('localhostPassword').value = creds.password;
+                document.getElementById('localhostPort').value = creds.port;
+            } else {
+                form.style.display = 'none';
+            }
+        }
+        
+        // Save localhost credentials from form
+        function saveLocalhostCredentialsFromForm() {
+            const credentials = {
+                host: document.getElementById('localhostHost').value.trim() || 'localhost',
+                username: document.getElementById('localhostUsername').value.trim() || 'root',
+                password: document.getElementById('localhostPassword').value,
+                port: document.getElementById('localhostPort').value.trim() || '3306'
+            };
+            
+            saveLocalhostCredentials(credentials);
+            
+            // Reload databases with new credentials
+            loadAllDatabases();
+            
+            // Hide form
+            toggleLocalhostCredentials();
+            
+            showNotification(`✅ Localhost credentials saved! User: ${credentials.username}`, 3000);
+        }
+        
+        // Save manual database
+        function saveManualDatabase() {
+            const host = document.getElementById('manualHost').value.trim();
+            const database = document.getElementById('manualDatabase').value.trim();
+            const username = document.getElementById('manualUsername').value.trim();
+            const password = document.getElementById('manualPassword').value;
+            const port = document.getElementById('manualPort').value.trim() || '3306';
+            
+            if (!host || !database || !username) {
+                showNotification('⚠️ Please fill Host, Database, and Username fields!', 4000);
+                return;
+            }
+            
+            const newDatabase = {
+                host,
+                database,
+                username,
+                password,
+                port,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Get existing manual databases
+            const manualDatabases = getManualDatabases();
+            
+            // Check if already exists
+            const exists = manualDatabases.some(db => 
+                db.host === host && db.database === database
+            );
+            
+            if (exists) {
+                showNotification('⚠️ This database already exists in manual list!', 4000);
+                return;
+            }
+            
+            // Add new database
+            manualDatabases.push(newDatabase);
+            saveManualDatabasesToStorage(manualDatabases);
+            
+            // Reload selector
+            loadAllDatabases();
+            
+            // Auto-select the new database
+            const selector = document.getElementById('databaseSelector');
+            const newValue = JSON.stringify({
+                type: 'manual',
+                host,
+                database,
+                username,
+                password,
+                port
+            });
+            selector.value = newValue;
+            onDatabaseSelected();
+            
+            // Hide form
+            toggleManualDatabaseInput();
+            
+            showNotification(`✅ Database "${database}" saved and selected!`, 3000);
+        }
+        
+        // When database is selected from dropdown
+        function onDatabaseSelected() {
+            const selector = document.getElementById('databaseSelector');
+            const selectedValue = selector.value;
+            
+            console.log('🔄 Database selection changed. Raw value:', selectedValue);
+            
+            if (!selectedValue) {
+                currentConnectionInfo = null;
+                updateCurrentConnectionInfo(null);
+                localStorage.removeItem(SELECTED_DB_CONNECTION_KEY);
+                console.log('❌ No database selected');
+                return;
+            }
+            
+            try {
+                currentConnectionInfo = JSON.parse(selectedValue);
+                console.log('✅ Parsed connection info:', currentConnectionInfo);
+                
+                // Validate that database name exists
+                if (!currentConnectionInfo.database) {
+                    console.error('⚠️ Database name is missing!', currentConnectionInfo);
+                    showNotification('⚠️ Error: Database name is missing from selection!', 4000);
+                    return;
+                }
+                
+                updateCurrentConnectionInfo(currentConnectionInfo);
+                localStorage.setItem(SELECTED_DB_CONNECTION_KEY, selectedValue);
+                showNotification(`📊 Selected: ${currentConnectionInfo.database}`, 2000);
+            } catch (e) {
+                console.error('❌ Error parsing selected database:', e);
+                console.error('Selected value was:', selectedValue);
+                showNotification('❌ Error selecting database!', 3000);
+            }
+        }
+        
+        // Update Current Connection Info display
+        function updateCurrentConnectionInfo(info) {
+            if (!info) {
+                document.getElementById('currentHost').textContent = '-';
+                document.getElementById('currentDatabase').textContent = '-';
+                document.getElementById('currentUsername').textContent = '-';
+                document.getElementById('currentPort').textContent = '-';
+                return;
+            }
+            
+            document.getElementById('currentHost').textContent = info.host || 'Not specified';
+            document.getElementById('currentDatabase').textContent = info.database || 'Not specified';
+            document.getElementById('currentUsername').textContent = info.username || 'Not specified';
+            document.getElementById('currentPort').textContent = info.port || '3306';
+            
+            // Log current connection for debugging
+            console.log('✅ Current Connection Updated:', {
+                host: info.host,
+                database: info.database,
+                username: info.username,
+                port: info.port,
+                hasPassword: info.password ? 'Yes' : 'No'
+            });
+        }
+        
+        // Load previously selected database
+        function loadSelectedDatabase() {
+            const saved = localStorage.getItem(SELECTED_DB_CONNECTION_KEY);
+            if (saved) {
+                const selector = document.getElementById('databaseSelector');
+                selector.value = saved;
+                try {
+                    currentConnectionInfo = JSON.parse(saved);
+                    updateCurrentConnectionInfo(currentConnectionInfo);
+                } catch (e) {
+                    console.error('Error loading selected database:', e);
+                }
+            }
+        }
+        
+        // Attach event listener to selector
+        document.getElementById('databaseSelector').addEventListener('change', onDatabaseSelected);
+        
+        // Load databases on page load
+        loadAllDatabases();
+        
+        // Refresh databases every 5 seconds to sync with dashboard
+        setInterval(() => {
+            const currentSelection = document.getElementById('databaseSelector').value;
+            loadAllDatabases();
+            if (currentSelection) {
+                document.getElementById('databaseSelector').value = currentSelection;
+            }
+        }, 5000);
     </script>
 </body>
 </html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Default.php</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #0f0; }
+        button { padding: 15px; margin: 10px; font-size: 16px; cursor: pointer; }
+        pre { background: #000; padding: 15px; border: 1px solid #0f0; overflow-x: auto; }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Default.php</h1>
+    
+    <h2>Test 1: Basic PHP Check</h2>
+    <button onclick="testPHP()">Test PHP</button>
+    <pre id="phpResult">Click button to test...</pre>
+    
+    <h2>Test 2: Localhost Database (root, no password)</h2>
+    <button onclick="testLocalhost()">Test Localhost</button>
+    <pre id="localhostResult">Click button to test...</pre>
+    
+    <h2>Test 3: Default.php with Localhost</h2>
+    <button onclick="testDefaultLocalhost()">Test Default.php Localhost</button>
+    <pre id="defaultResult">Click button to test...</pre>
+
+    <script>
+        async function testPHP() {
+            const result = document.getElementById('phpResult');
+            result.textContent = '⏳ Testing...';
+            
+            try {
+                const response = await fetch('test-localhost.php');
+                const text = await response.text();
+                result.className = 'success';
+                result.textContent = text;
+            } catch (error) {
+                result.className = 'error';
+                result.textContent = '❌ Error: ' + error.message;
+            }
+        }
+        
+        async function testLocalhost() {
+            const result = document.getElementById('localhostResult');
+            result.textContent = '⏳ Testing localhost connection...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('action', 'test_connection');
+                formData.append('db_host', 'localhost');
+                formData.append('db_name', 'mysql');
+                formData.append('db_user', 'root');
+                formData.append('db_pass', '');
+                formData.append('db_port', '3306');
+                
+                const response = await fetch('default.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const text = await response.text();
+                
+                if (response.ok) {
+                    result.className = 'success';
+                    result.textContent = '✅ SUCCESS:\n' + text;
+                } else {
+                    result.className = 'error';
+                    result.textContent = '❌ HTTP ' + response.status + ':\n' + text;
+                }
+            } catch (error) {
+                result.className = 'error';
+                result.textContent = '❌ Error: ' + error.message;
+            }
+        }
+        
+        async function testDefaultLocalhost() {
+            const result = document.getElementById('defaultResult');
+            result.textContent = '⏳ Testing default.php with al-essa database...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('action', 'get_database_info');
+                formData.append('db_host', 'localhost');
+                formData.append('db_name', 'al-essa');
+                formData.append('db_user', 'root');
+                formData.append('db_pass', '');
+                formData.append('db_port', '3306');
+                
+                console.log('Sending request with:', {
+                    action: 'get_database_info',
+                    db_host: 'localhost',
+                    db_name: 'al-essa',
+                    db_user: 'root',
+                    db_pass: '(empty)',
+                    db_port: '3306'
+                });
+                
+                const response = await fetch('default.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+                
+                const text = await response.text();
+                console.log('Response text:', text);
+                
+                if (response.ok) {
+                    result.className = 'success';
+                    result.textContent = '✅ SUCCESS:\n' + text;
+                } else {
+                    result.className = 'error';
+                    result.textContent = '❌ HTTP ' + response.status + ':\n' + text;
+                }
+            } catch (error) {
+                result.className = 'error';
+                result.textContent = '❌ Error: ' + error.message;
+                console.error('Full error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
