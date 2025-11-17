@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GL Blank Builder</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 30px; color: #fff; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 42px; margin-bottom: 10px; text-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 16px; padding: 25px; margin-bottom: 25px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+        .card-title { font-size: 20px; font-weight: bold; color: #fbbf24; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(34,197,94,0.4); }
+        .btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; }
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 13px; }
+        .form-input { width: 100%; padding: 10px 12px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; color: #fff; font-size: 14px; }
+        .form-input:focus { outline: none; border-color: #fbbf24; background: rgba(255,255,255,0.2); }
+        .form-input::placeholder { color: rgba(255,255,255,0.5); }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table thead { background: rgba(251,191,36,0.2); }
+        .data-table th { padding: 12px; text-align: left; color: #fbbf24; font-weight: bold; border-bottom: 2px solid rgba(251,191,36,0.3); }
+        .data-table td { padding: 10px 12px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .data-table tbody tr:hover { background: rgba(251,191,36,0.1); }
+        .search-box { width: 100%; padding: 12px 15px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: #fff; font-size: 14px; margin-bottom: 20px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: linear-gradient(135deg, rgba(102,126,234,0.95) 0%, rgba(118,75,162,0.95) 100%); border-radius: 16px; padding: 30px; max-width: 600px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-close { background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>GL Blank Builder</h1>
+        <p>Powered by AppMaker - Full CRUD Application</p>
+    </div>
+    
+    <div class="card">
+        <div class="card-title">🔍 Search & Filter</div>
+        <input type="text" id="searchInput" class="search-box" placeholder="🔍 Type to search instantly..." oninput="searchRecords()">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div id="resultCount" style="font-size: 13px; opacity: 0.8;"></div>
+            <button class="btn btn-primary" onclick="showAddModal()"><span>➕</span> Add New</button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-title">📊 MyTableNaif1 Records</div>
+        <div id="dataContainer" style="overflow-x: auto;">
+            <div style="text-align: center; padding: 40px; opacity: 0.6;">Loading...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div id="recordModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle" style="color: #fbbf24; font-size: 22px;">Add Record</h2>
+            <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
+        <form id="recordForm" onsubmit="saveRecord(event)">
+            <div id="formFields"></div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-danger" onclick="closeModal()" style="flex: 1;">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="flex: 1;"><span>💾</span> Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const API_URL = 'MackendInBrainstraick.php';
+let records = [];
+let currentEditId = null;
+
+console.log('🚀 Application loaded - Generated by AppMaker');
+console.log('📡 API URL:', API_URL);
+console.log('🗄️ Table:', 'MyTableNaif1');
+console.log('🌐 Connection Type:', API_URL.startsWith('http') ? 'Absolute URL (Cross-origin)' : 'Relative Path (Same server)');
+console.log('🔗 Full API Path:', new URL(API_URL, window.location.href).href);
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('📋 Loading records...');
+    loadRecords();
+});
+
+async function apiRequest(action, data = {}) {
+    console.log('📤 API Request to:', API_URL);
+    console.log('📤 Action:', action);
+    console.log('📤 Data:', data);
+    
+    const formData = new FormData();
+    formData.append('action', action);
+    for (const key in data) {
+        formData.append(key, data[key]);
+    }
+    
+    try {
+        const response = await fetch(API_URL, { method: 'POST', body: formData });
+        
+        console.log('📥 Response Status:', response.status, response.statusText);
+        console.log('📥 Response OK:', response.ok);
+        
+        // Get response as text first
+        const responseText = await response.text();
+        console.log('📥 Raw Response (first 500 chars):', responseText.substring(0, 500));
+        
+        // Check if response is HTML error page
+        if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+            console.error('❌ Server returned HTML instead of JSON!');
+            console.error('❌ This usually means the API file was not found or has a PHP error');
+            console.error('❌ Full response:', responseText);
+            throw new Error('API file not found or returned HTML error. Check: ' + API_URL);
+        }
+        
+        // Try to parse as JSON
+        try {
+            const result = JSON.parse(responseText);
+            console.log('✅ Parsed JSON successfully:', result);
+            return result;
+        } catch (jsonError) {
+            console.error('❌ JSON Parse Error:', jsonError);
+            console.error('❌ Response was:', responseText);
+            throw new Error('Server returned invalid JSON. Response: ' + responseText.substring(0, 200));
+        }
+    } catch (fetchError) {
+        if (fetchError.message && fetchError.message.includes('Failed to fetch')) {
+            console.error('❌ Network Error - Cannot reach API at:', API_URL);
+            console.error('❌ Check if the backend file exists and is accessible');
+        }
+        console.error('❌ Fetch Error:', fetchError);
+        throw fetchError;
+    }
+}
+
+async function loadRecords(searchTerm = '') {
+    try {
+        console.log('🔍 Loading records, search:', searchTerm || 'none');
+        const result = await apiRequest('list', { search: searchTerm });
+        
+        if (result.success) {
+            console.log('✅ Records loaded:', result.records.length);
+            records = result.records;
+            renderRecords(records);
+            document.getElementById('resultCount').textContent = '📊 ' + records.length + ' record(s) found';
+        } else {
+            console.error('❌ Failed to load records:', result.message);
+            document.getElementById('dataContainer').innerHTML = '<div style="text-align: center; padding: 40px; color: #fca5a5;">❌ Error: ' + result.message + '</div>';
+        }
+    } catch (error) {
+        console.error('❌ Error loading records:', error);
+        console.error('❌ Error details:', error.stack);
+        document.getElementById('dataContainer').innerHTML = '<div style="text-align: center; padding: 40px; color: #fca5a5;">❌ Error: ' + error.message + '<br><small>Check console for details</small></div>';
+    }
+}
+
+function renderRecords(data) {
+    const container = document.getElementById('dataContainer');
+    
+    if (data.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 40px; opacity: 0.6;">📭 No records found</div>';
+        return;
+    }
+    
+    let html = '<table class="data-table"><thead><tr>';
+    html += '<th style="width: 150px;">Actions</th>';
+    
+    const firstRecord = data[0];
+    const columns = Object.keys(firstRecord);
+    
+    columns.forEach(col => {
+        html += '<th>' + col + '</th>';
+    });
+    
+    html += '</tr></thead><tbody>';
+    
+    data.forEach(record => {
+        html += '<tr>';
+        html += '<td><button class="btn btn-primary" onclick="editRecord(' + record['id'] + ')" style="padding: 6px 12px; font-size: 12px; margin-right: 5px;">✏️</button><button class="btn btn-danger" onclick="deleteRecord(' + record['id'] + ')" style="padding: 6px 12px; font-size: 12px;">🗑️</button></td>';
+        
+        columns.forEach(col => {
+            const value = record[col] === null ? '<span style="color: #fca5a5; font-style: italic;">NULL</span>' : record[col];
+            html += '<td>' + value + '</td>';
+        });
+        
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+let searchTimeout;
+function searchRecords() {
+    clearTimeout(searchTimeout);
+    const searchTerm = document.getElementById('searchInput').value.trim();
+    
+    searchTimeout = setTimeout(() => {
+        loadRecords(searchTerm);
+    }, 300);
+}
+
+function showAddModal() {
+    currentEditId = null;
+    document.getElementById('modalTitle').textContent = 'Add New Record';
+    document.getElementById('recordForm').reset();
+    generateFormFields();
+    document.getElementById('recordModal').classList.add('active');
+}
+
+async function editRecord(id) {
+    currentEditId = id;
+    const record = records.find(r => r['id'] == id);
+    
+    if (!record) return;
+    
+    document.getElementById('modalTitle').textContent = 'Edit Record';
+    generateFormFields(record);
+    document.getElementById('recordModal').classList.add('active');
+}
+
+function generateFormFields(record = null) {
+    const container = document.getElementById('formFields');
+    let html = '';
+    
+    const fields = [{"id":"field_1763338079174_1","type":"id","label":"ID","sqlType":"INT","length":"11","autoIncrement":true,"primaryKey":true,"notNull":true,"icon":"\ud83d\udd11","fieldName":"id"},{"id":"field_1763338079174_2","type":"text","label":"Name","sqlType":"VARCHAR","length":"255","notNull":true,"icon":"\ud83d\udcdd","fieldName":"name"},{"id":"field_1763338079174_3","type":"created_at","label":"Created At","sqlType":"TIMESTAMP","defaultValue":"CURRENT_TIMESTAMP","notNull":true,"icon":"\ud83d\udcc5","fieldName":"created_at"},{"id":"field_1763338079174_4","type":"updated_at","label":"Updated At","sqlType":"TIMESTAMP","defaultValue":"CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP","notNull":true,"icon":"\ud83d\udd04","fieldName":"updated_at"}];
+    
+    console.log('Fields loaded:', fields);
+    
+    fields.forEach(field => {
+        if (field.autoIncrement && !record) return;
+        
+        const value = record ? (record[field.fieldName] || '') : '';
+        const required = field.notNull && !field.autoIncrement ? 'required' : '';
+        
+        html += '<div class="form-group">';
+        html += '<label class="form-label">' + field.icon + ' ' + field.fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) + (field.notNull ? ' *' : '') + '</label>';
+        
+        if (field.sqlType === 'TEXT') {
+            html += '<textarea name="' + field.fieldName + '" class="form-input" rows="3" ' + required + '>' + value + '</textarea>';
+        } else if (field.sqlType === 'DATE') {
+            html += '<input type="date" name="' + field.fieldName + '" class="form-input" value="' + value + '" ' + required + '>';
+        } else if (field.sqlType === 'DATETIME' || field.sqlType === 'TIMESTAMP') {
+            const datetimeValue = value ? value.replace(' ', 'T').slice(0, 16) : '';
+            html += '<input type="datetime-local" name="' + field.fieldName + '" class="form-input" value="' + datetimeValue + '" ' + required + '>';
+        } else if (field.sqlType === 'TINYINT' && field.length === '1') {
+            html += '<select name="' + field.fieldName + '" class="form-input" ' + required + '>';
+            html += '<option value="">-- Select --</option>';
+            html += '<option value="1" ' + (value == 1 ? 'selected' : '') + '>✅ Yes</option>';
+            html += '<option value="0" ' + (value == 0 ? 'selected' : '') + '>❌ No</option>';
+            html += '</select>';
+        } else if (field.sqlType === 'INT' || field.sqlType === 'DECIMAL') {
+            const step = field.sqlType === 'DECIMAL' ? '0.01' : '1';
+            html += '<input type="number" name="' + field.fieldName + '" class="form-input" value="' + value + '" step="' + step + '" ' + required + '>';
+        } else {
+            html += '<input type="text" name="' + field.fieldName + '" class="form-input" value="' + value + '" ' + required + '>';
+        }
+        
+        html += '</div>';
+    });
+    
+    container.innerHTML = html;
+}
+
+function closeModal() {
+    document.getElementById('recordModal').classList.remove('active');
+    currentEditId = null;
+}
+
+async function saveRecord(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const data = {};
+    for (const [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+    
+    try {
+        const action = currentEditId ? 'update' : 'create';
+        if (currentEditId) {
+            data['id'] = currentEditId;
+        }
+        
+        const result = await apiRequest(action, data);
+        
+        if (result.success) {
+            closeModal();
+            loadRecords();
+            showToast('✅ ' + result.message, 'success');
+        } else {
+            showToast('❌ ' + result.message, 'error');
+        }
+    } catch (error) {
+        showToast('❌ Error: ' + error.message, 'error');
+    }
+}
+
+async function deleteRecord(id) {
+    const confirmed = confirm('Delete this record? This cannot be undone!');
+    if (!confirmed) return;
+    
+    try {
+        const result = await apiRequest('delete', { 'id': id });
+        
+        if (result.success) {
+            loadRecords();
+            showToast('✅ Record deleted', 'success');
+        } else {
+            showToast('❌ ' + result.message, 'error');
+        }
+    } catch (error) {
+        showToast('❌ Error: ' + error.message, 'error');
+    }
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    const colors = {
+        success: 'linear-gradient(135deg, #22c55e 0%, #15803d 100%)',
+        error: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+    };
+    
+    toast.style.cssText = 'position: fixed; bottom: 30px; right: 30px; background: ' + colors[type] + '; color: white; padding: 15px 25px; border-radius: 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); z-index: 10000; animation: slideIn 0.3s ease-out;';
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-out forwards';
+        setTimeout(() => document.body.removeChild(toast), 300);
+    }, 3000);
+}
+</script>
+
+<style>
+@keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
+</style>
+</body>
+</html>
