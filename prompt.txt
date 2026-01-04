@@ -1,0 +1,1 @@
+Add a toggle slider button to switch the English text container on the right between English and Arabic translations. Keep the tutorial and voice speaker unchanged. Make the slider visually appealing and functional for smooth back-and-forth switching.
