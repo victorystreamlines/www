@@ -187,6 +187,252 @@
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
     }
 
+    /* Speech Bubble Animation */
+    .speech-bubble {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: white;
+      border-radius: 16px;
+      padding: 20px 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      max-width: 320px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      animation: bubbleSlideIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 1000;
+      border: 2px solid #667eea;
+    }
+
+    .speech-bubble::before {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      right: 40px;
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 10px solid white;
+    }
+
+    .speaker-icon {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      animation: speakerPulse 2s infinite;
+    }
+
+    .bubble-content {
+      flex: 1;
+    }
+
+    .bubble-content h4 {
+      margin: 0 0 8px 0;
+      color: #667eea;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .bubble-content p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    .bubble-progress {
+      width: 100%;
+      height: 3px;
+      background: #e0e0e0;
+      border-radius: 2px;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+
+    .bubble-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      animation: progressFill 10s linear infinite;
+    }
+
+    /* Highlight Animation */
+    .setting-row.animated-highlight {
+      position: relative;
+      animation: highlightPulse 2s ease-in-out infinite;
+      background: rgba(102, 126, 234, 0.1) !important;
+      border-radius: 4px;
+    }
+
+    .setting-row.animated-highlight::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border: 2px solid #667eea;
+      border-radius: 6px;
+      animation: borderGlow 2s ease-in-out infinite;
+    }
+
+    /* Hand Pointer */
+    .pointer-hand {
+      position: absolute;
+      font-size: 30px;
+      z-index: 200;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .pointer-hand.clicking {
+      animation: clickAnimation 2s ease-in-out;
+    }
+
+    /* Tutorial Control Button */
+    .tutorial-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      z-index: 1001;
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tutorial-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    }
+
+    .tutorial-button.playing {
+      background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+    }
+
+    /* Keyframe Animations */
+    @keyframes bubbleSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(50px) scale(0.8);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes speakerPulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+      }
+
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+      }
+    }
+
+    @keyframes progressFill {
+      0% {
+        width: 0%;
+      }
+
+      100% {
+        width: 100%;
+      }
+    }
+
+    @keyframes highlightPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 20px 5px rgba(102, 126, 234, 0.6);
+      }
+    }
+
+    @keyframes borderGlow {
+
+      0%,
+      100% {
+        opacity: 0.5;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes clickAnimation {
+      0% {
+        opacity: 0;
+        transform: scale(0);
+      }
+
+      10% {
+        opacity: 1;
+        transform: scale(1.2);
+      }
+
+      15% {
+        transform: scale(0.9);
+      }
+
+      20% {
+        transform: scale(1);
+      }
+
+      80% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0;
+      }
+    }
+
+    .setting-input.changing {
+      animation: valueChange 0.5s ease;
+      background: #fffbcc;
+    }
+
+    @keyframes valueChange {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+        background: #fff4a3;
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+
     .header {
       padding: 12px;
       border-bottom: 1px solid #e0e0e0;
@@ -781,6 +1027,180 @@
     </div>
 
   </div>
+
+  <!-- Tutorial Button -->
+  <button class="tutorial-button" id="tutorialBtn">
+    <span>▶</span>
+    <span id="btnText">Play Tutorial</span>
+  </button>
+
+  <!-- Speech Bubble (Hidden by default) -->
+  <div class="speech-bubble" id="speechBubble" style="display: none;">
+    <div class="speaker-icon">🎓</div>
+    <div class="bubble-content">
+      <h4 id="bubbleTitle">Step 1: Infill Density</h4>
+      <p id="bubbleText">Watch as we increase the infill density from 15% to 50% for a stronger print!</p>
+      <div class="bubble-progress">
+        <div class="bubble-progress-fill" id="bubbleProgress"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hand Pointer -->
+  <div class="pointer-hand" id="pointerHand">👆</div>
+
+  <script>
+    // Tutorial Animation Controller
+    let isPlaying = false;
+    let animationTimeout;
+
+    const tutorialBtn = document.getElementById('tutorialBtn');
+    const btnText = document.getElementById('btnText');
+    const speechBubble = document.getElementById('speechBubble');
+    const bubbleTitle = document.getElementById('bubbleTitle');
+    const bubbleText = document.getElementById('bubbleText');
+    const pointerHand = document.getElementById('pointerHand');
+    const explanationPanel = document.querySelector('.explanation-panel');
+
+    // Get the two important setting rows
+    const densityRow = document.querySelector('.setting-row.highlight');
+    const patternRow = document.querySelectorAll('.setting-row.highlight')[1];
+    const densityInput = densityRow.querySelector('.setting-input');
+    const patternSpan = patternRow.querySelector('.setting-value span');
+
+    // Get strength indicators in explanation panel
+    const strengthFill = document.querySelector('.strength-fill');
+    const strengthIndicator = document.querySelector('.strength-indicator');
+    const densityTitle = document.querySelector('.comparison-item .title');
+
+    const tutorialSteps = [
+      {
+        duration: 3000,
+        title: "Step 1: Understanding Infill Density",
+        text: "The infill density controls how much material fills the inside of your print. Currently it's at 15%.",
+        action: () => {
+          densityRow.classList.add('animated-highlight');
+          positionPointer(densityInput);
+        }
+      },
+      {
+        duration: 3000,
+        title: "Step 2: Increasing Density",
+        text: "Let's increase it to 50% for much stronger results!",
+        action: () => {
+          densityInput.classList.add('changing');
+          setTimeout(() => {
+            densityInput.value = '50';
+            densityInput.classList.remove('changing');
+          }, 500);
+        }
+      },
+      {
+        duration: 3000,
+        title: "Step 3: Infill Pattern",
+        text: "The pattern determines the internal structure. Grid pattern provides strength in all directions.",
+        action: () => {
+          densityRow.classList.remove('animated-highlight');
+          patternRow.classList.add('animated-highlight');
+          positionPointer(patternSpan);
+        }
+      },
+      {
+        duration: 3000,
+        title: "Step 4: Combining Both Settings",
+        text: "When you combine higher density with a strong pattern, you get maximum strength!",
+        action: () => {
+          explanationPanel.classList.add('strengthening');
+          setTimeout(() => {
+            strengthFill.style.width = '85%';
+            strengthFill.style.background = 'linear-gradient(90deg, #4CAF50, #8BC34A)';
+            strengthIndicator.textContent = 'Strength: High';
+            densityTitle.textContent = '50% DENSITY';
+          }, 500);
+        }
+      },
+      {
+        duration: 3000,
+        title: "Step 5: Final Result",
+        text: "Your 3D print is now much stronger and more durable! Perfect for functional parts.",
+        action: () => {
+          patternRow.classList.remove('animated-highlight');
+          pointerHand.style.opacity = '0';
+        }
+      }
+    ];
+
+    function positionPointer(element) {
+      const rect = element.getBoundingClientRect();
+      pointerHand.style.left = (rect.left - 40) + 'px';
+      pointerHand.style.top = (rect.top + rect.height / 2 - 15) + 'px';
+      pointerHand.classList.remove('clicking');
+      void pointerHand.offsetWidth; // Trigger reflow
+      pointerHand.classList.add('clicking');
+      pointerHand.style.opacity = '1';
+    }
+
+    function resetAnimation() {
+      densityRow.classList.remove('animated-highlight');
+      patternRow.classList.remove('animated-highlight');
+      explanationPanel.classList.remove('strengthening');
+      densityInput.value = '15';
+      strengthFill.style.width = '40%';
+      strengthFill.style.background = 'linear-gradient(90deg, #ff9800, #ff5722)';
+      strengthIndicator.textContent = 'Strength: Moderate';
+      densityTitle.textContent = '15% DENSITY';
+      pointerHand.style.opacity = '0';
+    }
+
+    async function playTutorial() {
+      if (isPlaying) {
+        // Stop the tutorial
+        clearTimeout(animationTimeout);
+        isPlaying = false;
+        tutorialBtn.classList.remove('playing');
+        btnText.textContent = 'Play Tutorial';
+        tutorialBtn.querySelector('span:first-child').textContent = '▶';
+        speechBubble.style.display = 'none';
+        resetAnimation();
+        return;
+      }
+
+      isPlaying = true;
+      tutorialBtn.classList.add('playing');
+      btnText.textContent = 'Stop Tutorial';
+      tutorialBtn.querySelector('span:first-child').textContent = '⏸';
+      speechBubble.style.display = 'flex';
+
+      resetAnimation();
+
+      for (let i = 0; i < tutorialSteps.length; i++) {
+        if (!isPlaying) break;
+
+        const step = tutorialSteps[i];
+        bubbleTitle.textContent = step.title;
+        bubbleText.textContent = step.text;
+
+        step.action();
+
+        await new Promise(resolve => {
+          animationTimeout = setTimeout(resolve, step.duration);
+        });
+      }
+
+      if (isPlaying) {
+        // Tutorial completed
+        setTimeout(() => {
+          isPlaying = false;
+          tutorialBtn.classList.remove('playing');
+          btnText.textContent = 'Play Tutorial';
+          tutorialBtn.querySelector('span:first-child').textContent = '▶';
+          speechBubble.style.display = 'none';
+        }, 1000);
+      }
+    }
+
+    tutorialBtn.addEventListener('click', playTutorial);
+  </script>
 </body>
 
 </html>
