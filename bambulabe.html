@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Printer Settings</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 320px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .header {
+      padding: 12px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+    
+    .nozzle-section {
+      padding: 16px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .nozzle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 12px;
+    }
+    
+    .nozzle-card {
+      text-align: center;
+      position: relative;
+    }
+    
+    .nozzle-icon {
+      width: 60px;
+      height: 60px;
+      background: #333;
+      margin: 0 auto 8px;
+      border-radius: 4px;
+    }
+    
+    .badge {
+      position: absolute;
+      top: -5px;
+      right: 20px;
+      background: #4CAF50;
+      color: white;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .nozzle-label {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .nozzle-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .nozzle-status {
+      font-size: 12px;
+      color: #999;
+    }
+    
+    .param-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 12px;
+    }
+    
+    .param-label {
+      color: #666;
+    }
+    
+    .param-value {
+      color: #333;
+    }
+    
+    .section {
+      padding: 16px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    
+    .section-title {
+      font-weight: 600;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .filament-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .filament-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      border-radius: 4px;
+    }
+    
+    .filament-color {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+    }
+    
+    .filament-number {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .tab {
+      padding: 6px 16px;
+      border-radius: 16px;
+      font-size: 12px;
+      cursor: pointer;
+      border: 1px solid #e0e0e0;
+    }
+    
+    .tab.active {
+      background: #4CAF50;
+      color: white;
+      border-color: #4CAF50;
+    }
+    
+    .process-title {
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    
+    .quality-tabs {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      font-size: 12px;
+    }
+    
+    .quality-tab {
+      color: #999;
+      cursor: pointer;
+      padding-bottom: 4px;
+    }
+    
+    .quality-tab.active {
+      color: #333;
+      font-weight: 600;
+      border-bottom: 2px solid #4CAF50;
+    }
+    
+    .settings-group {
+      margin-bottom: 16px;
+    }
+    
+    .settings-group-title {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      font-size: 12px;
+    }
+    
+    .setting-label {
+      color: #333;
+    }
+    
+    .setting-value {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .setting-input {
+      width: 60px;
+      padding: 4px 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      text-align: right;
+    }
+    
+    .setting-unit {
+      color: #999;
+      font-size: 11px;
+    }
+    
+    .pattern-icon {
+      width: 20px;
+      height: 20px;
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 2px;
+    }
+    
+    .checkbox {
+      width: 16px;
+      height: 16px;
+      accent-color: #4CAF50;
+    }
+    
+    .highlight {
+      position: relative;
+    }
+    
+    .arrow {
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 20px solid #ff5722;
+      right: -30px;
+      top: 50%;
+      transform: translateY(-50%) rotate(45deg);
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .btn {
+      padding: 4px 8px;
+      border: 1px solid #e0e0e0;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    .btn-orange {
+      background: #ff9800;
+      color: white;
+      border: none;
+    }
+    
+    .toggle {
+      position: relative;
+      width: 40px;
+      height: 20px;
+      background: #4CAF50;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      right: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      🖨️ Printer
+    </div>
+    
+    <!-- Nozzle Section -->
+    <div class="nozzle-section">
+      <div class="nozzle-grid">
+        <div class="nozzle-card">
+          <div class="nozzle-icon"></div>
+          <div class="badge">✓</div>
+          <div class="nozzle-title">Bambu Lab H2D</div>
+          <div class="nozzle-label">Left Nozzle</div>
+          <div class="nozzle-status">AMS Not installed</div>
+          <div class="param-row">
+            <span class="param-label">Diameter</span>
+            <span class="param-value">0.4</span>
+          </div>
+          <div class="param-row">
+            <span class="param-label">Flow</span>
+            <span class="param-value">Standard</span>
+          </div>
+        </div>
+        
+        <div class="nozzle-card">
+          <div class="nozzle-icon" style="background: #d4a574;"></div>
+          <div class="nozzle-title">Texture...</div>
+          <div class="nozzle-label">Right Nozzle</div>
+          <div class="nozzle-status">AMS Not installed</div>
+          <div class="param-row">
+            <span class="param-label">Diameter</span>
+            <span class="param-value">0.4</span>
+          </div>
+          <div class="param-row">
+            <span class="param-label">Flow</span>
+            <span class="param-value">Standard</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Project Filaments -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">
+          🎨 Project Filaments
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-orange">Flushing volumes</button>
+          <button class="btn">+</button>
+          <button class="btn">-</button>
+          <button class="btn">⚙️</button>
+        </div>
+      </div>
+      <div class="filament-list">
+        <div class="filament-item">
+          <div class="filament-color" style="background: #2196F3;"></div>
+          <span>■ PLA Basic</span>
+          <span style="margin-left: auto;">⊙</span>
+          <div class="filament-number" style="background: #FFD700; color: #333;">2</div>
+          <span>■ PLA Glow</span>
+        </div>
+        <div class="filament-item">
+          <div class="filament-color" style="background: #4CAF50;"></div>
+          <span>■ PLA Glow</span>
+          <span style="margin-left: auto;">⊙</span>
+          <div class="filament-number" style="background: #2196F3; color: white;">4</div>
+          <span>■ PLA Basic</span>
+        </div>
+        <div class="filament-item">
+          <div class="filament-number" style="background: #f5f5f5; color: #333;">5</div>
+          <span>■ PLA Basic</span>
+          <span style="margin-left: auto;">⊙</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Process Section -->
+    <div class="section">
+      <div class="tabs">
+        <div class="tab active">Global</div>
+        <div class="tab">Objects</div>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 12px;">Advanced</span>
+          <div class="toggle"></div>
+        </div>
+      </div>
+      
+      <div class="process-title">0.16mm Standard @BBL H2D</div>
+      
+      <div class="quality-tabs">
+        <div class="quality-tab">Quality</div>
+        <div class="quality-tab active">Strength</div>
+        <div class="quality-tab">Speed</div>
+        <div class="quality-tab">Support</div>
+        <div class="quality-tab">Others</div>
+      </div>
+      
+      <!-- Bottom Shell Settings -->
+      <div class="settings-group">
+        <div class="setting-row">
+          <span class="setting-label">Bottom shell layers</span>
+          <div class="setting-value">
+            <input type="text" class="setting-input" value="4">
+          </div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Bottom shell thickness</span>
+          <div class="setting-value">
+            <input type="text" class="setting-input" value="0">
+            <span class="setting-unit">mm</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Bottom solid infill layers</span>
+          <div class="setting-value">
+            <input type="text" class="setting-input" value="4">
+          </div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Internal solid infill pattern</span>
+          <div class="setting-value">
+            <div class="pattern-icon"></div>
+            <span>Rectilinear</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sparse Infill Settings (Highlighted) -->
+      <div class="settings-group">
+        <div class="settings-group-title">Sparse infill</div>
+        <div class="setting-row highlight">
+          <span class="setting-label">Sparse infill density</span>
+          <div class="setting-value">
+            <input type="text" class="setting-input" value="15">
+            <span class="setting-unit">%</span>
+          </div>
+          <div class="arrow"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Fill multiline</span>
+          <div class="setting-value">
+            <input type="text" class="setting-input" value="1">
+          </div>
+        </div>
+        <div class="setting-row highlight">
+          <span class="setting-label">Sparse infill pattern</span>
+          <div class="setting-value">
+            <div class="pattern-icon"></div>
+            <span>Grid</span>
+          </div>
+          <div class="arrow"></div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Length of sparse infill anchor</span>
+          <div class="setting-value">
+            <input type="text" class="setting-input" value="400%">
+            <span class="setting-unit">mm or %</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Maximum length of sparse infill anchor</span>
+          <div class="setting-value">
+            <input type="text" class="setting-input" value="20">
+            <span class="setting-unit">mm or %</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Advanced Settings -->
+      <div class="settings-group">
+        <div class="settings-group-title">⚙️ Advanced</div>
+        <div class="setting-row">
+          <span class="setting-label">Infill/Wall overlap</span>
+          <div class="setting-value">
+            <input type="text" class="setting-input" value="15">
+            <span class="setting-unit">%</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Infill direction</span>
+          <div class="setting-value">
+            <input type="text" class="setting-input" value="45">
+            <span class="setting-unit">°</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Bridge direction</span>
+          <div class="setting-value">
+            <input type="text" class="setting-input" value="0">
+            <span class="setting-unit">°</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Minimum sparse infill threshold</span>
+          <div class="setting-value">
+            <input type="text" class="setting-input" value="15">
+            <span class="setting-unit">mm²</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Infill combination</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Detect narrow internal solid infill</span>
+          <div class="setting-value">
+            <input type="checkbox" class="checkbox" checked>
+          </div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Ensure vertical shell thickness</span>
+          <div class="setting-value">
+            <span>Enabled</span>
+          </div>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Detect floating vertical shells</span>
+          <div class="setting-value">
+            <input type="checkbox" class="checkbox" checked>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
