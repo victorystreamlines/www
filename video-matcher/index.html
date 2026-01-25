@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Dub Matcher - Prompt Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2332;
+            --bg-input: #0d1321;
+            --accent-cyan: #06d6a0;
+            --accent-magenta: #ef476f;
+            --accent-amber: #ffd166;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-subtle: rgba(255,255,255,0.08);
+            --glow-cyan: rgba(6, 214, 160, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.4;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(6, 214, 160, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(239, 71, 111, 0.1) 0%, transparent 50%),
+                linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .logo-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 8px 32px var(--glow-cyan);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-top: 8px;
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 24px;
+            animation: fadeInUp 0.6s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-cyan), transparent);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* Form elements */
+        label {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 18px;
+            font-size: 1rem;
+            font-family: 'IBM Plex Mono', monospace;
+            background: var(--bg-input);
+            border: 2px solid var(--border-subtle);
+            border-radius: 12px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 4px var(--glow-cyan);
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Input with browse button */
+        .input-with-btn {
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-with-btn input[type="text"] {
+            flex: 1;
+        }
+
+        .browse-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, var(--accent-magenta), #be185d);
+            border: none;
+            border-radius: 12px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .browse-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(239, 71, 111, 0.4);
+        }
+
+        .browse-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Hidden file input */
+        #folderPicker {
+            display: none;
+        }
+
+        /* Selected path display */
+        .selected-path {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: rgba(6, 214, 160, 0.1);
+            border: 1px dashed var(--accent-cyan);
+            border-radius: 10px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+            display: none;
+            word-break: break-all;
+        }
+
+        .selected-path.show {
+            display: block;
+        }
+
+        .selected-path .path-label {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        /* Preset buttons */
+        .presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .preset-btn {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-family: 'IBM Plex Mono', monospace;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            background: var(--bg-card);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        /* Copy container */
+        .prompt-container {
+            position: relative;
+            background: var(--bg-input);
+            border: 2px solid var(--border-subtle);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 18px;
+            background: rgba(6, 214, 160, 0.1);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .prompt-label {
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .copy-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--accent-cyan), #0891b2);
+            border: none;
+            border-radius: 8px;
+            color: var(--bg-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--glow-cyan);
+        }
+
+        .copy-btn.copied {
+            background: linear-gradient(135deg, var(--accent-amber), #f59e0b);
+        }
+
+        .prompt-text {
+            padding: 20px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .prompt-text::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .prompt-text::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .prompt-text::-webkit-scrollbar-thumb {
+            background: var(--text-muted);
+            border-radius: 4px;
+        }
+
+        /* Highlight in prompt */
+        .highlight {
+            color: var(--accent-cyan);
+            font-weight: 500;
+        }
+
+        /* Stats section */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 16px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Instructions */
+        .instructions {
+            background: linear-gradient(135deg, rgba(6, 214, 160, 0.1), rgba(239, 71, 111, 0.05));
+            border-left: 4px solid var(--accent-cyan);
+            padding: 20px 24px;
+            border-radius: 0 12px 12px 0;
+            margin-top: 20px;
+        }
+
+        .instructions h3 {
+            color: var(--accent-cyan);
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+
+        .instructions ol {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.8;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .footer-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 16px 24px;
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            font-weight: 600;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px var(--glow-cyan);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            h1 { font-size: 1.8rem; }
+            .card { padding: 24px; }
+            .stats { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">🎬</div>
+            </div>
+            <h1>Video Dub Matcher</h1>
+            <p class="subtitle">AI Prompt Generator for Arabic Video Dubbing Workflow</p>
+        </header>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">📁</div>
+                <h2 class="card-title">Select Working Folder</h2>
+            </div>
+            
+            <div class="input-group">
+                <label for="folderPath">Folder Name (under C:\laragon\www\)</label>
+                <div class="input-with-btn">
+                    <input type="text" id="folderPath" placeholder="e.g., dubbed-videos" value="">
+                    <button class="browse-btn" onclick="openFolderPicker()">
+                        <span>📂</span>
+                        <span>Browse</span>
+                    </button>
+                    <input type="file" id="folderPicker" webkitdirectory directory multiple>
+                </div>
+                <div class="selected-path" id="selectedPath">
+                    <span class="path-label">Selected Folder</span>
+                    <span id="fullPathDisplay"></span>
+                </div>
+            </div>
+            
+            <label>Quick Presets:</label>
+            <div class="presets">
+                <button class="preset-btn" onclick="setFolder('videos')">videos</button>
+                <button class="preset-btn" onclick="setFolder('dubbed-videos')">dubbed-videos</button>
+                <button class="preset-btn" onclick="setFolder('dub-project')">dub-project</button>
+                <button class="preset-btn" onclick="setFolder('arabic-dub')">arabic-dub</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-icon">📋</div>
+                <h2 class="card-title">Generated Prompt</h2>
+            </div>
+            
+            <div class="prompt-container">
+                <div class="prompt-header">
+                    <span class="prompt-label">Copy & Paste to AI</span>
+                    <button class="copy-btn" onclick="copyPrompt()">
+                        <span id="copyIcon">📄</span>
+                        <span id="copyText">Copy Prompt</span>
+                    </button>
+                </div>
+                <div class="prompt-text" id="promptText">
+<!-- Prompt will be generated here -->
+                </div>
+            </div>
+
+            <div class="instructions">
+                <h3>📌 How to Use</h3>
+                <ol>
+                    <li>Click <strong>Browse</strong> to pick a folder, or type the folder name manually</li>
+                    <li>Click <strong>Copy Prompt</strong> to copy the generated request</li>
+                    <li>Paste the prompt in your AI chat to execute the matching</li>
+                    <li>The AI will match by filename first, then by video content if names differ</li>
+                    <li>Repeat after adding new Arabic videos until all are matched</li>
+                </ol>
+            </div>
+        </div>
+
+        <footer>
+            <div class="footer-icon">🎯</div>
+            <p>Video Dub Matcher — Streamline your dubbing workflow</p>
+        </footer>
+    </div>
+
+    <div class="toast" id="toast">✅ Prompt copied to clipboard!</div>
+
+    <script>
+        const folderInput = document.getElementById('folderPath');
+        const promptText = document.getElementById('promptText');
+        const folderPicker = document.getElementById('folderPicker');
+        const selectedPathDiv = document.getElementById('selectedPath');
+        const fullPathDisplay = document.getElementById('fullPathDisplay');
+
+        function openFolderPicker() {
+            folderPicker.click();
+        }
+
+        // Handle folder selection
+        folderPicker.addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                // Get the folder path from the first file's webkitRelativePath
+                const firstFile = this.files[0];
+                const relativePath = firstFile.webkitRelativePath;
+                const folderName = relativePath.split('/')[0];
+                
+                folderInput.value = folderName;
+                selectedPathDiv.classList.add('show');
+                fullPathDisplay.textContent = `C:\\laragon\\www\\${folderName}`;
+                updatePrompt();
+            }
+        });
+
+        function setFolder(name) {
+            folderInput.value = name;
+            selectedPathDiv.classList.add('show');
+            fullPathDisplay.textContent = `C:\\laragon\\www\\${name}`;
+            updatePrompt();
+        }
+
+        function updatePrompt() {
+            const folder = folderInput.value.trim() || '[FOLDER_NAME]';
+            const fullPath = `C:\\laragon\\www\\${folder}`;
+            
+            const prompt = `Please perform a VIDEO DUB MATCHING operation in the folder:
+📁 Path: ${fullPath}
+
+🎯 TASK INSTRUCTIONS:
+
+1. SCAN the folder for all video files (mp4, mkv, avi, mov, webm, etc.)
+
+2. IDENTIFY videos by language:
+   - ENGLISH videos: Original videos awaiting dubbing
+   - ARABIC videos: Dubbed versions (may have "_AR", "_Arabic", "عربي", or similar markers, OR may have completely different names)
+
+3. MATCHING STRATEGY (Two-Phase Approach):
+
+   📝 PHASE 1 - FILENAME MATCHING:
+   - First, try to match Arabic and English videos by filename similarity
+   - Look for core filename matches (ignoring language suffixes/prefixes like "_AR", "_Arabic", "_EN", "عربي", etc.)
+   - If filename match is found → proceed to replacement
+
+   🔍 PHASE 2 - CONTENT ANALYSIS (When filenames don't match):
+   - If no filename match is found for an Arabic video, ANALYZE THE VIDEO CONTENT
+   - Extract key information: thumbnails, video duration, visual scenes, any on-screen text
+   - Compare with English videos to find content that matches (same material, same scenes, same structure)
+   - Since it's the SAME video material just in different languages (English → Arabic dub), the visual content will be identical or very similar
+   - Use content fingerprinting: scene structure, video length, visual markers, embedded metadata
+   - If content match is confirmed → proceed to replacement
+
+4. For EACH confirmed match (by filename OR content):
+   a. RENAME the Arabic video to have the EXACT same filename as the English video
+   b. DELETE the English video (since it's now replaced by Arabic dub)
+
+5. For English videos with NO match (neither filename nor content):
+   - KEEP them in the folder (waiting for future dubbing)
+   - List them in the report as "Pending Dubbing"
+
+6. Generate a DETAILED REPORT showing:
+   ✅ Matched by Filename: [Arabic file] → [English file] (filename match)
+   ✅ Matched by Content: [Arabic file] → [English file] (content analysis match)
+   ⏳ Pending Dubbing: [English files still waiting for Arabic dub]
+   ❓ Unmatched Arabic: [Arabic files that couldn't be matched to any English video]
+   📊 Statistics: Total scanned, replaced by filename, replaced by content, pending
+
+⚠️ IMPORTANT RULES:
+- Always try filename matching FIRST (faster)
+- Only use content analysis when filename doesn't match
+- Preserve original English titles EXACTLY when renaming Arabic files
+- Only delete English files when match is 100% confirmed
+- Be careful with content analysis - ensure it's the same video material
+- Handle edge cases (partial matches, similar but different videos) carefully
+- When in doubt, ask for confirmation before deleting
+
+🔄 This is a RECURRING task - run it each time new Arabic videos are added until all English videos are replaced.
+
+Please proceed with the scan and matching now.`;
+
+            promptText.textContent = prompt;
+            
+            // Update selected path display if folder is set
+            if (folder !== '[FOLDER_NAME]') {
+                selectedPathDiv.classList.add('show');
+                fullPathDisplay.textContent = fullPath;
+            }
+        }
+
+        function copyPrompt() {
+            const text = promptText.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const icon = document.getElementById('copyIcon');
+                const copyText = document.getElementById('copyText');
+                
+                btn.classList.add('copied');
+                icon.textContent = '✅';
+                copyText.textContent = 'Copied!';
+                
+                showToast();
+                
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    icon.textContent = '📄';
+                    copyText.textContent = 'Copy Prompt';
+                }, 2000);
+            });
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize
+        folderInput.addEventListener('input', updatePrompt);
+        updatePrompt();
+    </script>
+</body>
+</html>
