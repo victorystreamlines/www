@@ -1,3 +1,9 @@
-I want you to tutor me and explain to me in detail about the PNG image format or the GIF image format. Basically, what I mean is that any image file, when I opened it using a text editor or any basic program that is not specifically designed for images, I saw a very strange collection of symbols and characters that are not regular readable text and they are also not HTML code either. These strange symbols and unusual characters that I am seeing are actually the internal structure of the image file itself, and I encountered them when I opened the raw file of the image directly. So I want you to tell me what exactly is this type of file, what is it made of, and what are these strange symbols that appear when I open it in a text editor or similar program.
+<!-- SPT:READ_APP -->
+Please take the time to carefully and thoroughly review this particular application in order to gain a comprehensive understanding of its main objectives, core functionality, key features, and the intended goals it aims to achieve. Additionally, make sure to read through all of the related files that are associated with this application, which include JavaScript files, PHP files, CSS files, and HTML files. Once you have completed your thorough and comprehensive review of the application and all of its associated files, please return to provide your findings and insights.
 
-I also want to understand how this image file is transported or transferred from one place to another, for example when you send it over the internet or share it between devices or programs. How does that process work exactly? And additionally, I want to know how we can actually use this file and what we can do with it in practical terms. And another very important question I have is related to what happens when I copy and paste the image. When I copy the image and then paste it somewhere, and it shows up inside any kind of dialog box or inside an AI chat interface, how exactly does it appear or display itself? Does it show up as HTML code, or does it show up as its own raw basic internal structure made up of all those strange and unusual symbols that I originally saw when I opened the file? Please explain all of these things in detail.
+────────────────────────────────────
+📎 ATTACHED FILES (1)
+────────────────────────────────────
+  📄 widgetprompter.html (104.7 KB)
+
+<!-- /SPT:READ_APP -->
