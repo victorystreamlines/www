@@ -1,0 +1,2794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Widget Prompter — Page Notes Reverse-Engineer</title>
+<style>
+  /* ─────────────────────────────────────────────
+     Widget Prompter — single-file, framework-free
+     Mirrors the host widget's gold/dark aesthetic
+     ───────────────────────────────────────────── */
+  :root {
+    --wp-gold        : #d4a853;
+    --wp-gold-light  : #f0d78c;
+    --wp-gold-dim    : #c9963c;
+    --wp-violet      : #7289f5;
+    --wp-violet-dim  : #4a5dd4;
+    --wp-bg          : #080912;
+    --wp-bg-soft     : #0f1126;
+    --wp-card        : rgba(22, 24, 52, 0.78);
+    --wp-card-border : rgba(212, 168, 83, 0.28);
+    --wp-text        : #e8eaf8;
+    --wp-text-dim    : #9da0bf;
+    --wp-green       : #4ade80;
+    --wp-red         : #ef4444;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color: var(--wp-text);
+    background:
+      radial-gradient(circle at 12% 10%, rgba(212, 168, 83, 0.18), transparent 38%),
+      radial-gradient(circle at 88% 14%, rgba(114, 137, 245, 0.16), transparent 36%),
+      radial-gradient(circle at 50% 95%, rgba(212, 168, 83, 0.10), transparent 50%),
+      linear-gradient(160deg, var(--wp-bg) 0%, var(--wp-bg-soft) 100%);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(212, 168, 83, 0.6) 30%,
+      rgba(240, 215, 140, 0.85) 50%,
+      rgba(212, 168, 83, 0.6) 70%,
+      transparent 100%);
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  /* ── Header ───────────────────────────────────────── */
+  header.wp-hero {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 56px 28px 28px;
+    text-align: center;
+  }
+  .wp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 14px 6px 12px;
+    border-radius: 999px;
+    background: rgba(212, 168, 83, 0.10);
+    border: 1px solid rgba(212, 168, 83, 0.35);
+    color: var(--wp-gold-light);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .wp-badge-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--wp-gold);
+    box-shadow: 0 0 10px var(--wp-gold);
+  }
+  h1.wp-title {
+    margin: 18px 0 8px;
+    font-size: clamp(1.9rem, 4.5vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--wp-gold-light) 0%, var(--wp-gold) 50%, var(--wp-gold-dim) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  p.wp-subtitle {
+    margin: 0 auto;
+    max-width: 640px;
+    color: var(--wp-text-dim);
+    font-size: 0.98rem;
+    line-height: 1.65;
+  }
+
+  /* ── Layout ───────────────────────────────────────── */
+  main.wp-main {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 12px 28px 80px;
+    display: grid;
+    gap: 22px;
+  }
+
+  /* ── Card ─────────────────────────────────────────── */
+  .wp-card {
+    position: relative;
+    background: var(--wp-card);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid var(--wp-card-border);
+    border-radius: 18px;
+    box-shadow:
+      0 0 0 1px rgba(212, 168, 83, 0.08),
+      0 18px 50px rgba(0, 0, 0, 0.55),
+      0 4px 22px rgba(114, 137, 245, 0.06);
+    overflow: hidden;
+  }
+  .wp-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent, rgba(212, 168, 83, 0.55) 50%, transparent);
+    pointer-events: none;
+  }
+  .wp-card-head {
+    padding: 18px 22px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(212, 168, 83, 0.10);
+    background: linear-gradient(135deg,
+      rgba(212, 168, 83, 0.06) 0%,
+      rgba(114, 137, 245, 0.04) 100%);
+  }
+  .wp-step-num {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--wp-gold) 0%, var(--wp-gold-dim) 100%);
+    color: #0a0b14;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(212, 168, 83, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  .wp-step-title {
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, var(--wp-gold-light), var(--wp-gold));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .wp-card-body { padding: 20px 22px 22px; }
+
+  /* ── Mode toggle ──────────────────────────────────── */
+  .wp-mode-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .wp-mode-radio { display: none; }
+  .wp-mode-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    background: rgba(8, 10, 24, 0.5);
+    cursor: pointer;
+    transition: all 0.22s ease;
+    text-align: left;
+  }
+  .wp-mode-card-icon {
+    font-size: 1.35rem;
+    color: var(--wp-text-dim);
+  }
+  .wp-mode-card-title {
+    font-weight: 700;
+    color: var(--wp-text);
+  }
+  .wp-mode-card-desc {
+    font-size: 0.78rem;
+    color: var(--wp-text-dim);
+    line-height: 1.5;
+  }
+  .wp-mode-card:hover {
+    border-color: rgba(212, 168, 83, 0.38);
+    background: rgba(212, 168, 83, 0.05);
+    transform: translateY(-1px);
+  }
+  .wp-mode-radio:checked + .wp-mode-card {
+    border-color: var(--wp-gold);
+    background: linear-gradient(135deg,
+      rgba(212, 168, 83, 0.16) 0%,
+      rgba(212, 168, 83, 0.06) 100%);
+    box-shadow: 0 0 22px rgba(212, 168, 83, 0.18),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .wp-mode-radio:checked + .wp-mode-card .wp-mode-card-icon { color: var(--wp-gold); }
+
+  /* ── File picker area ─────────────────────────────── */
+  .wp-pickers {
+    display: grid;
+    gap: 10px;
+    padding: 14px 16px;
+    background: rgba(8, 10, 24, 0.48);
+    border: 1px dashed rgba(212, 168, 83, 0.22);
+    border-radius: 12px;
+  }
+  .wp-pickers[hidden] { display: none; }
+  .wp-pick-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .wp-pick-label {
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--wp-gold-light);
+    min-width: 130px;
+  }
+  .wp-file-btn {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(114, 137, 245, 0.35);
+    background: rgba(114, 137, 245, 0.10);
+    color: #c2cdff;
+    font-family: inherit;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.22s ease;
+  }
+  .wp-file-btn:hover {
+    background: rgba(114, 137, 245, 0.22);
+    border-color: rgba(114, 137, 245, 0.55);
+    transform: translateY(-1px);
+  }
+  .wp-file-btn input { display: none; }
+  .wp-file-icon {
+    width: 16px; height: 16px;
+  }
+
+  /* ── Chips list ───────────────────────────────────── */
+  .wp-chips {
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(212, 168, 83, 0.18);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .wp-chips:empty::before {
+    content: 'No pages selected yet — pick a folder or files above.';
+    color: var(--wp-text-dim);
+    font-size: 0.78rem;
+    font-style: italic;
+    padding: 6px 4px;
+  }
+  .wp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px 5px 12px;
+    border-radius: 999px;
+    background: rgba(212, 168, 83, 0.10);
+    border: 1px solid rgba(212, 168, 83, 0.30);
+    color: var(--wp-gold-light);
+    font-family: 'Roboto Mono', 'Consolas', monospace;
+    font-size: 0.72rem;
+    max-width: 100%;
+  }
+  .wp-chip-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 360px;
+  }
+  .wp-chip-x {
+    background: none;
+    border: none;
+    color: rgba(240, 215, 140, 0.65);
+    cursor: pointer;
+    width: 16px; height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    padding: 0;
+    transition: all 0.18s ease;
+  }
+  .wp-chip-x:hover {
+    background: rgba(239, 68, 68, 0.25);
+    color: #fca5a5;
+  }
+
+  /* ── Options grid ─────────────────────────────────── */
+  .wp-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+  }
+  .wp-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(8, 10, 24, 0.45);
+    cursor: pointer;
+    transition: all 0.22s ease;
+  }
+  .wp-toggle:hover {
+    border-color: rgba(212, 168, 83, 0.30);
+    background: rgba(212, 168, 83, 0.04);
+  }
+  .wp-toggle input { display: none; }
+  .wp-toggle-box {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    border: 1.5px solid rgba(212, 168, 83, 0.40);
+    background: rgba(8, 10, 24, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.22s ease;
+  }
+  .wp-toggle-check {
+    width: 14px; height: 14px;
+    color: #0a0b14;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: all 0.22s ease;
+  }
+  .wp-toggle input:checked ~ .wp-toggle-box {
+    background: linear-gradient(135deg, var(--wp-gold-light), var(--wp-gold));
+    border-color: var(--wp-gold);
+    box-shadow: 0 0 12px rgba(212, 168, 83, 0.4);
+  }
+  .wp-toggle input:checked ~ .wp-toggle-box .wp-toggle-check {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .wp-toggle-text {
+    flex: 1;
+    min-width: 0;
+  }
+  .wp-toggle-name {
+    font-weight: 700;
+    color: var(--wp-text);
+    font-size: 0.88rem;
+    margin-bottom: 2px;
+  }
+  .wp-toggle-desc {
+    font-size: 0.74rem;
+    color: var(--wp-text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── Inputs ───────────────────────────────────────── */
+  .wp-input-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr);
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .wp-input-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--wp-text-dim);
+    letter-spacing: 0.04em;
+  }
+  .wp-input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(212, 168, 83, 0.22);
+    background: rgba(8, 10, 24, 0.6);
+    color: var(--wp-text);
+    font-family: 'Roboto Mono', 'Consolas', monospace;
+    font-size: 0.84rem;
+    transition: all 0.22s ease;
+    outline: none;
+  }
+  .wp-input:focus {
+    border-color: var(--wp-gold);
+    box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.18);
+  }
+
+  /* ── Generate button ──────────────────────────────── */
+  .wp-cta-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 8px;
+  }
+  .wp-cta {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 40px;
+    border-radius: 14px;
+    border: 1px solid rgba(240, 215, 140, 0.4);
+    background: linear-gradient(135deg, var(--wp-gold-light) 0%, var(--wp-gold) 50%, var(--wp-gold-dim) 100%);
+    color: #0a0b14;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 8px 28px rgba(212, 168, 83, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .wp-cta::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -75%;
+    width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.6s ease;
+    pointer-events: none;
+  }
+  .wp-cta:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 14px 40px rgba(212, 168, 83, 0.55),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  .wp-cta:hover::after { left: 125%; }
+  .wp-cta:active { transform: translateY(0) scale(0.98); }
+
+  /* ── Modal ────────────────────────────────────────── */
+  .wp-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(2, 3, 8, 0.78);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: wpFadeIn 0.25s ease;
+  }
+  .wp-modal.is-open { display: flex; }
+  @keyframes wpFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .wp-modal-card {
+    width: 100%;
+    max-width: 880px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(160deg, #0e102a 0%, #060713 100%);
+    border: 1px solid rgba(212, 168, 83, 0.42);
+    border-radius: 18px;
+    box-shadow:
+      0 0 0 1px rgba(212, 168, 83, 0.18),
+      0 30px 80px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+    animation: wpRise 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes wpRise {
+    from { opacity: 0; transform: translateY(18px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  }
+  .wp-modal-head {
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg,
+      rgba(212, 168, 83, 0.13) 0%,
+      rgba(114, 137, 245, 0.06) 100%);
+    border-bottom: 1px solid rgba(212, 168, 83, 0.22);
+  }
+  .wp-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 1.05rem;
+  }
+  .wp-modal-title-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--wp-gold), var(--wp-gold-dim));
+    color: #0a0b14;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+  }
+  .wp-modal-close {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--wp-text-dim);
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.18s ease;
+  }
+  .wp-modal-close:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+  }
+  .wp-modal-body {
+    flex: 1;
+    overflow: hidden;
+    padding: 14px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+  }
+  .wp-prompt-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.74rem;
+    color: var(--wp-text-dim);
+  }
+  .wp-prompt-meta strong { color: var(--wp-gold-light); }
+  .wp-prompt-textarea {
+    flex: 1;
+    min-height: 280px;
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    background: #050610;
+    border: 1px solid rgba(212, 168, 83, 0.22);
+    color: #d6dafc;
+    font-family: 'Roboto Mono', 'Consolas', 'Courier New', monospace;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    resize: none;
+    outline: none;
+  }
+  .wp-prompt-textarea:focus {
+    border-color: var(--wp-gold);
+    box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.18);
+  }
+  .wp-modal-foot {
+    padding: 14px 22px 18px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    border-top: 1px solid rgba(212, 168, 83, 0.16);
+    flex-wrap: wrap;
+  }
+  .wp-foot-btn {
+    padding: 10px 22px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+  }
+  .wp-foot-btn-primary {
+    background: linear-gradient(135deg, var(--wp-gold-light), var(--wp-gold), var(--wp-gold-dim));
+    color: #0a0b14;
+    box-shadow: 0 4px 16px rgba(212, 168, 83, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  .wp-foot-btn-primary.is-copied {
+    background: linear-gradient(135deg, #86efac, #4ade80);
+  }
+  .wp-foot-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(212, 168, 83, 0.5); }
+  .wp-foot-btn-ghost {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--wp-text-dim);
+    border-color: rgba(255, 255, 255, 0.10);
+  }
+  .wp-foot-btn-ghost:hover { background: rgba(255, 255, 255, 0.10); color: var(--wp-text); }
+
+  /* ── Toast ────────────────────────────────────────── */
+  .wp-toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    padding: 10px 20px;
+    border-radius: 999px;
+    background: rgba(8, 10, 24, 0.92);
+    border: 1px solid rgba(212, 168, 83, 0.4);
+    color: var(--wp-green);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    transition: all 0.25s ease;
+    z-index: 10000;
+    pointer-events: none;
+  }
+  .wp-toast.is-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Footer note ──────────────────────────────────── */
+  footer.wp-foot-note {
+    text-align: center;
+    color: var(--wp-text-dim);
+    font-size: 0.74rem;
+    padding: 18px 28px 38px;
+    line-height: 1.6;
+  }
+  footer.wp-foot-note code {
+    background: rgba(212, 168, 83, 0.10);
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid rgba(212, 168, 83, 0.22);
+    color: var(--wp-gold-light);
+  }
+
+  /* ── Modal: target mode toggle + pickers + chips ──── */
+  .wp-modal-targets {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(8, 10, 24, 0.55);
+    border: 1px solid rgba(212, 168, 83, 0.18);
+  }
+  .wp-modal-toggle {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 10px;
+    border: 1px solid rgba(212, 168, 83, 0.18);
+  }
+  .wp-modal-toggle-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: var(--wp-text-dim);
+    font-family: inherit;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    border-radius: 7px;
+    transition: all 0.22s ease;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .wp-modal-toggle-btn:hover { color: var(--wp-text); }
+  .wp-modal-toggle-btn.is-active {
+    background: linear-gradient(135deg, var(--wp-gold-light), var(--wp-gold));
+    color: #0a0b14;
+    box-shadow: 0 4px 14px rgba(212, 168, 83, 0.30),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  .wp-modal-info {
+    font-size: 0.78rem;
+    color: var(--wp-text-dim);
+    line-height: 1.55;
+    padding: 4px 2px;
+  }
+  .wp-modal-info strong { color: var(--wp-gold-light); }
+  .wp-modal-info code {
+    background: rgba(212, 168, 83, 0.10);
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(212, 168, 83, 0.22);
+    color: var(--wp-gold-light);
+    font-family: 'Roboto Mono', monospace;
+  }
+  .wp-modal-pickers {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .wp-modal-file-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(114, 137, 245, 0.35);
+    background: rgba(114, 137, 245, 0.10);
+    color: #c2cdff;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.22s ease;
+  }
+  .wp-modal-file-btn:hover {
+    background: rgba(114, 137, 245, 0.22);
+    border-color: rgba(114, 137, 245, 0.55);
+    transform: translateY(-1px);
+  }
+  .wp-modal-file-btn input { display: none; }
+  .wp-modal-file-btn svg { width: 13px; height: 13px; }
+  .wp-modal-file-btn-clear {
+    border-color: rgba(239, 68, 68, 0.32);
+    background: rgba(239, 68, 68, 0.08);
+    color: #fca5a5;
+  }
+  .wp-modal-file-btn-clear:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+  .wp-modal-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    max-height: 110px;
+    overflow-y: auto;
+    padding: 2px 0;
+  }
+  .wp-modal-chips:empty::before {
+    content: 'No specific pages picked yet.';
+    color: var(--wp-text-dim);
+    font-size: 0.74rem;
+    font-style: italic;
+    padding: 4px 2px;
+  }
+
+  /* ── Responsive ───────────────────────────────────── */
+  @media (max-width: 640px) {
+    .wp-mode-grid { grid-template-columns: 1fr; }
+    .wp-input-row { grid-template-columns: 1fr; }
+    .wp-cta { padding: 14px 28px; font-size: 0.86rem; }
+    header.wp-hero { padding-top: 36px; }
+    .wp-card-body { padding: 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+
+  /* ── Ensure embedded-source <script type="text/plain"> blocks
+        never render as visible text regardless of UA/extension CSS ── */
+  script[type] {
+    display: none !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+</style>
+</head>
+<body>
+
+<header class="wp-hero">
+  <div class="wp-badge">
+    <span class="wp-badge-dot"></span>
+    Widget Prompter
+  </div>
+  <h1 class="wp-title">Page&nbsp;Notes — Reverse-Engineer Brief</h1>
+  <p class="wp-subtitle">
+    Generate a complete, framework-agnostic AI prompt that recreates the floating
+    Page Notes + Inspector widget inside any application — Node, PHP, ASP.NET, static.
+    Pick the target pages, choose options, hit Generate, and paste the result into your AI of choice.
+  </p>
+</header>
+
+<main class="wp-main">
+
+  <!-- ── STEP 1 — Target pages ─────────────────────────── -->
+  <section class="wp-card">
+    <div class="wp-card-head">
+      <div class="wp-step-num">1</div>
+      <div class="wp-step-title">Target Pages</div>
+    </div>
+    <div class="wp-card-body">
+      <div class="wp-mode-grid" role="radiogroup" aria-label="Target mode">
+        <label>
+          <input type="radio" class="wp-mode-radio" name="wp-mode" value="all" checked>
+          <div class="wp-mode-card">
+            <div class="wp-mode-card-icon">📚</div>
+            <div class="wp-mode-card-title">All pages in app</div>
+            <div class="wp-mode-card-desc">
+              Instruct the AI to inject the widget into every <code>.html</code> file
+              found at the project root and any subfolder.
+            </div>
+          </div>
+        </label>
+        <label>
+          <input type="radio" class="wp-mode-radio" name="wp-mode" value="specific">
+          <div class="wp-mode-card">
+            <div class="wp-mode-card-icon">🎯</div>
+            <div class="wp-mode-card-title">Specific page(s)</div>
+            <div class="wp-mode-card-desc">
+              Pick a folder or individual HTML files from disk. Their relative
+              paths will be embedded in the prompt as the explicit target list.
+            </div>
+          </div>
+        </label>
+      </div>
+
+      <div class="wp-pickers" id="wpPickers" hidden>
+        <div class="wp-pick-row">
+          <span class="wp-pick-label">📁 Folder:</span>
+          <label class="wp-file-btn">
+            <svg class="wp-file-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <span>Pick a folder</span>
+            <input type="file" id="wpFolderPicker" webkitdirectory directory multiple>
+          </label>
+          <label class="wp-file-btn">
+            <svg class="wp-file-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span>Pick individual HTML files</span>
+            <input type="file" id="wpFilePicker" multiple accept=".html,.htm">
+          </label>
+          <button type="button" class="wp-file-btn" id="wpClearChips" style="border-color:rgba(239,68,68,0.35); background:rgba(239,68,68,0.08); color:#fca5a5;">
+            <svg class="wp-file-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            <span>Clear</span>
+          </button>
+        </div>
+        <div class="wp-chips" id="wpChips" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── STEP 2 — Options ──────────────────────────────── -->
+  <section class="wp-card">
+    <div class="wp-card-head">
+      <div class="wp-step-num">2</div>
+      <div class="wp-step-title">Options</div>
+    </div>
+    <div class="wp-card-body">
+      <div class="wp-options-grid">
+        <label class="wp-toggle">
+          <input type="checkbox" id="optInspector" checked>
+          <span class="wp-toggle-box">
+            <svg class="wp-toggle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <span class="wp-toggle-text">
+            <span class="wp-toggle-name">Inspector Mode (admin-only)</span>
+            <span class="wp-toggle-desc">Middle-click any DOM element to capture page + selector path + opening tag into the notes. Hidden unless admin keys are set.</span>
+          </span>
+        </label>
+        <label class="wp-toggle">
+          <input type="checkbox" id="optSaveAll" checked>
+          <span class="wp-toggle-box">
+            <svg class="wp-toggle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <span class="wp-toggle-text">
+            <span class="wp-toggle-name">"Save to All Pages" button</span>
+            <span class="wp-toggle-desc">Adds a globe button that broadcasts the note to every known <code>pageNotes:*</code> key plus a global fallback.</span>
+          </span>
+        </label>
+        <label class="wp-toggle">
+          <input type="checkbox" id="optFa" checked>
+          <span class="wp-toggle-box">
+            <svg class="wp-toggle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <span class="wp-toggle-text">
+            <span class="wp-toggle-name">Use Font Awesome icons</span>
+            <span class="wp-toggle-desc">The boilerplate uses <code>fa-solid</code> icons (pen-nib, scroll, xmark). If unchecked, the AI is told to substitute with inline SVGs.</span>
+          </span>
+        </label>
+        <label class="wp-toggle">
+          <input type="checkbox" id="optReducedMotion" checked>
+          <span class="wp-toggle-box">
+            <svg class="wp-toggle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <span class="wp-toggle-text">
+            <span class="wp-toggle-name">Respect prefers-reduced-motion</span>
+            <span class="wp-toggle-desc">Already in the CSS. Disable only if you want a kiosk-style always-on animation.</span>
+          </span>
+        </label>
+      </div>
+
+      <div class="wp-input-row">
+        <label class="wp-input-label" for="optAdminLocal">Admin localStorage key</label>
+        <input class="wp-input" id="optAdminLocal" type="text" value="gl_admin_auth" spellcheck="false">
+      </div>
+      <div class="wp-input-row">
+        <label class="wp-input-label" for="optAdminSession">Admin sessionStorage key</label>
+        <input class="wp-input" id="optAdminSession" type="text" value="gl_admin_session" spellcheck="false">
+      </div>
+      <div class="wp-input-row">
+        <label class="wp-input-label" for="optMaxChars">Max notepad characters</label>
+        <input class="wp-input" id="optMaxChars" type="number" value="2000" min="200" step="50">
+      </div>
+      <div class="wp-input-row">
+        <label class="wp-input-label" for="optAppName">Application name (cosmetic)</label>
+        <input class="wp-input" id="optAppName" type="text" placeholder="e.g. My Dashboard, Genetic Invent Dictionary..." spellcheck="false">
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Generate button ───────────────────────────────── -->
+  <div class="wp-cta-row">
+    <button type="button" class="wp-cta" id="wpGenerate">
+      🚀 Generate AI Prompt
+    </button>
+  </div>
+
+</main>
+
+<footer class="wp-foot-note">
+  Drop this single file into any project root next to your widget folder.
+  <br>
+  Browser support for folder-pick: <code>Chrome / Edge</code>. Firefox falls back to per-file selection.
+</footer>
+
+<!-- ── Modal ──────────────────────────────────────────── -->
+<div class="wp-modal" id="wpModal" role="dialog" aria-modal="true" aria-labelledby="wpModalTitle">
+  <div class="wp-modal-card">
+    <div class="wp-modal-head">
+      <div class="wp-modal-title" id="wpModalTitle">
+        <span class="wp-modal-title-icon">✨</span>
+        <span>Your AI Prompt is ready</span>
+      </div>
+      <button type="button" class="wp-modal-close" id="wpModalClose" aria-label="Close">×</button>
+    </div>
+    <div class="wp-modal-body">
+      <div class="wp-modal-targets" id="wpModalTargets">
+        <div class="wp-modal-toggle" role="tablist" aria-label="Target mode">
+          <button type="button" class="wp-modal-toggle-btn" data-modal-mode="all"      id="wpMmAll"  role="tab" aria-selected="true">📚 All pages</button>
+          <button type="button" class="wp-modal-toggle-btn" data-modal-mode="specific" id="wpMmSpec" role="tab" aria-selected="false">🎯 Specific pages</button>
+        </div>
+        <div class="wp-modal-info" id="wpMmAllInfo">
+          AI will inject the boilerplate into <strong>every <code>.html</code> file</strong>
+          at the project root and any subfolder.
+        </div>
+        <div class="wp-modal-pickers" id="wpMmPickers" hidden>
+          <label class="wp-modal-file-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <span>Folder</span>
+            <input type="file" id="wpMmFolder" webkitdirectory directory multiple>
+          </label>
+          <label class="wp-modal-file-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span>HTML files</span>
+            <input type="file" id="wpMmFiles" multiple accept=".html,.htm">
+          </label>
+          <button type="button" class="wp-modal-file-btn wp-modal-file-btn-clear" id="wpMmClear">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            <span>Clear</span>
+          </button>
+        </div>
+        <div class="wp-modal-chips" id="wpMmChips" aria-live="polite"></div>
+      </div>
+      <div class="wp-prompt-meta">
+        <span><strong id="wpPromptChars">0</strong> characters</span>
+        <span>·</span>
+        <span><strong id="wpPromptTargets">0</strong> target pages</span>
+        <span>·</span>
+        <span>Paste into any AI agent that can write files.</span>
+      </div>
+      <textarea class="wp-prompt-textarea" id="wpPromptOutput" readonly spellcheck="false"></textarea>
+    </div>
+    <div class="wp-modal-foot">
+      <button type="button" class="wp-foot-btn wp-foot-btn-ghost" id="wpDownload">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download .md
+      </button>
+      <button type="button" class="wp-foot-btn wp-foot-btn-primary" id="wpCopy">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy Prompt
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="wp-toast" id="wpToast"></div>
+
+<!-- ─────────────────────────────────────────────────────
+     EMBEDDED WIDGET SOURCE — verbatim copy of the
+     widget files. Read by the prompt builder so the
+     output is fully self-contained (no fetches needed).
+     `<script type="text/plain">` is NOT executed by the
+     browser; we just read its .textContent.
+     ───────────────────────────────────────────────────── -->
+<script type="text/plain" id="wpSrcCss" hidden>/* ============================================================
+   AI Page Notes Widget — Premium Redesign
+   Scope: #ai-page-notes-* / .apn-*  — zero global overrides
+   ============================================================ */
+
+/* ── Design tokens ──────────────────────────────────────────── */
+:root {
+  --apn-bubble-bottom   : 32px;
+  --apn-bubble-right    : 32px;
+  --apn-panel-width     : 336px;
+  --apn-panel-max-h     : 500px;
+  --apn-z-bubble        : 99800;
+  --apn-z-panel         : 99801;
+
+  /* Palette */
+  --apn-gold            : #d4a853;
+  --apn-gold-light      : #f0d78c;
+  --apn-gold-dim        : #c9963c;
+  --apn-violet          : #7289f5;
+  --apn-violet-dim      : #4a5dd4;
+  --apn-bg-deep         : #080912;
+  --apn-bg-panel        : rgba(10, 11, 24, 0.82);
+  --apn-surface         : rgba(22, 24, 52, 0.75);
+  --apn-surface-hover   : rgba(30, 33, 66, 0.85);
+  --apn-border-gold     : rgba(212, 168, 83, 0.28);
+  --apn-border-subtle   : rgba(114, 137, 245, 0.14);
+  --apn-text            : #e8eaf8;
+  --apn-text-dim        : #9da0bf;
+  --apn-green           : #4ade80;
+
+  /* Shapes */
+  --apn-radius-panel    : 20px;
+  --apn-radius-btn      : 10px;
+
+  /* Shadows */
+  --apn-shadow-bubble   : 0 0 0 1px rgba(212,168,83,0.35),
+                          0 8px 28px rgba(0,0,0,0.55),
+                          0 0 40px rgba(212,168,83,0.18);
+  --apn-shadow-panel    : 0 0 0 1px rgba(212,168,83,0.18),
+                          0 0 0 4px rgba(212,168,83,0.05),
+                          0 24px 64px rgba(0,0,0,0.7),
+                          0 4px 24px rgba(114,137,245,0.08);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BUBBLE
+   ══════════════════════════════════════════════════════════════ */
+#ai-page-notes-bubble {
+  position   : fixed;
+  bottom     : var(--apn-bubble-bottom);
+  right      : var(--apn-bubble-right);
+  z-index    : var(--apn-z-bubble);
+  width      : 52px;
+  height     : 52px;
+  border-radius : 50%;
+  border     : none;
+  cursor     : grab;
+  display    : flex;
+  align-items : center;
+  justify-content : center;
+  font-size  : 1.15rem;
+  color      : #0a0b14;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+
+  /* Layered gold gradient */
+  background : linear-gradient(145deg,
+    var(--apn-gold-light) 0%,
+    var(--apn-gold)       45%,
+    var(--apn-gold-dim)   75%,
+    #a8782e               100%
+  );
+  box-shadow : var(--apn-shadow-bubble);
+  transition : transform 0.2s cubic-bezier(0.34,1.56,0.64,1),
+               box-shadow 0.2s ease;
+}
+
+/* Inner ring overlay */
+#ai-page-notes-bubble::before {
+  content       : '';
+  position      : absolute;
+  inset         : 4px;
+  border-radius : 50%;
+  border        : 1px solid rgba(255,255,255,0.35);
+  pointer-events: none;
+}
+
+/* Idle pulse ring */
+#ai-page-notes-bubble::after {
+  content       : '';
+  position      : absolute;
+  inset         : -6px;
+  border-radius : 50%;
+  border        : 1.5px solid rgba(212,168,83,0.3);
+  animation     : apn-pulse-ring 2.8s ease-out infinite;
+  pointer-events: none;
+}
+
+@keyframes apn-pulse-ring {
+  0%   { opacity: 0.9; transform: scale(1);    }
+  70%  { opacity: 0;   transform: scale(1.35); }
+  100% { opacity: 0;   transform: scale(1.35); }
+}
+
+#ai-page-notes-bubble:hover {
+  transform  : scale(1.12) translateY(-2px);
+  box-shadow : 0 0 0 1px rgba(212,168,83,0.55),
+               0 12px 36px rgba(0,0,0,0.6),
+               0 0 60px rgba(212,168,83,0.32);
+}
+#ai-page-notes-bubble:active { cursor: grabbing; transform: scale(1.04); }
+
+/* Green dot — has notes */
+#ai-page-notes-bubble.apn-has-notes .apn-indicator {
+  display : block;
+}
+.apn-indicator {
+  display       : none;
+  position      : absolute;
+  top           : 4px;
+  right         : 4px;
+  width         : 10px;
+  height        : 10px;
+  border-radius : 50%;
+  background    : var(--apn-green);
+  border        : 2px solid var(--apn-bg-deep);
+  box-shadow    : 0 0 8px rgba(74,222,128,0.8);
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PANEL
+   ══════════════════════════════════════════════════════════════ */
+#ai-page-notes-panel {
+  position    : fixed;
+  z-index     : var(--apn-z-panel);
+  width       : var(--apn-panel-width);
+  max-height  : var(--apn-panel-max-h);
+  display     : flex;
+  flex-direction: column;
+  overflow    : hidden;
+
+  /* Glass morphism */
+  background  : var(--apn-bg-panel);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border-radius: var(--apn-radius-panel);
+  border      : 1px solid var(--apn-border-gold);
+  box-shadow  : var(--apn-shadow-panel);
+
+  /* Default position — JS overrides */
+  bottom      : calc(var(--apn-bubble-bottom) + 66px);
+  right       : var(--apn-bubble-right);
+
+  /* Open/close animation */
+  opacity     : 0;
+  transform   : translateY(14px) scale(0.96);
+  pointer-events: none;
+  transition  : opacity 0.26s cubic-bezier(0.16,1,0.3,1),
+                transform 0.26s cubic-bezier(0.16,1,0.3,1);
+  will-change : transform, opacity;
+}
+
+/* Diagonal gold shimmer line at top edge */
+#ai-page-notes-panel::before {
+  content       : '';
+  position      : absolute;
+  top           : 0; left: 0; right: 0;
+  height        : 1px;
+  background    : linear-gradient(90deg,
+    transparent 0%,
+    rgba(212,168,83,0.7) 30%,
+    rgba(240,215,140,0.9) 50%,
+    rgba(212,168,83,0.7) 70%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index       : 1;
+}
+
+/* Subtle violet glow in corner */
+#ai-page-notes-panel::after {
+  content       : '';
+  position      : absolute;
+  bottom        : -40px; right: -30px;
+  width         : 180px; height: 180px;
+  border-radius : 50%;
+  background    : radial-gradient(circle, rgba(114,137,245,0.09) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+#ai-page-notes-panel.apn-open {
+  opacity        : 1;
+  transform      : translateY(0) scale(1);
+  pointer-events : all;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.apn-header {
+  display         : flex;
+  align-items     : center;
+  justify-content : space-between;
+  padding         : 15px 18px 13px;
+  flex-shrink     : 0;
+  position        : relative;
+  background      : linear-gradient(135deg,
+    rgba(212,168,83,0.09) 0%,
+    rgba(114,137,245,0.05) 100%
+  );
+  border-bottom   : 1px solid var(--apn-border-gold);
+}
+
+.apn-title {
+  display     : flex;
+  align-items : center;
+  gap         : 10px;
+}
+
+.apn-title-icon {
+  width           : 30px;
+  height          : 30px;
+  border-radius   : 8px;
+  background      : linear-gradient(135deg, var(--apn-gold) 0%, var(--apn-gold-dim) 100%);
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  color           : #0a0b14;
+  font-size       : 0.82rem;
+  box-shadow      : 0 2px 8px rgba(212,168,83,0.4),
+                    inset 0 1px 0 rgba(255,255,255,0.25);
+  flex-shrink     : 0;
+}
+
+.apn-title-text {
+  font-family     : 'Poppins', system-ui, sans-serif;
+  font-size       : 0.72rem;
+  font-weight     : 700;
+  letter-spacing  : 0.14em;
+  text-transform  : uppercase;
+  background      : linear-gradient(90deg, var(--apn-gold-light), var(--apn-gold));
+  -webkit-background-clip: text;
+  background-clip : text;
+  -webkit-text-fill-color: transparent;
+}
+
+.apn-close-btn {
+  width       : 30px;
+  height      : 30px;
+  border-radius: 8px;
+  border      : 1px solid rgba(255,255,255,0.08);
+  background  : rgba(255,255,255,0.05);
+  color       : var(--apn-text-dim);
+  cursor      : pointer;
+  font-size   : 0.88rem;
+  display     : flex;
+  align-items : center;
+  justify-content: center;
+  transition  : background 0.18s, color 0.18s, border-color 0.18s;
+  flex-shrink : 0;
+}
+.apn-close-btn:hover {
+  background    : rgba(248,113,113,0.15);
+  color         : #fca5a5;
+  border-color  : rgba(248,113,113,0.3);
+}
+
+/* ── Char counter bar ──────────────────────────────────────── */
+.apn-counter-row {
+  display         : flex;
+  align-items     : center;
+  gap             : 10px;
+  padding         : 7px 18px 5px;
+  background      : rgba(0,0,0,0.12);
+  border-bottom   : 1px solid rgba(212,168,83,0.06);
+  flex-shrink     : 0;
+}
+.apn-counter-label {
+  font-family : 'Poppins', monospace, sans-serif;
+  font-size   : 0.66rem;
+  font-weight : 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color       : var(--apn-text-dim);
+  white-space : nowrap;
+}
+.apn-counter-bar-wrap {
+  flex        : 1;
+  height      : 3px;
+  border-radius: 999px;
+  background  : rgba(255,255,255,0.06);
+  overflow    : hidden;
+}
+.apn-counter-bar {
+  height      : 100%;
+  width       : 0%;
+  border-radius: 999px;
+  background  : linear-gradient(90deg, var(--apn-gold-dim), var(--apn-gold-light));
+  transition  : width 0.3s ease;
+}
+
+/* ── Textarea ────────────────────────────────────────────────── */
+.apn-textarea {
+  flex        : 1;
+  min-height  : 190px;
+  max-height  : 260px;
+  resize      : vertical;
+  background  : rgba(6, 7, 18, 0.5);
+  border      : none;
+  border-bottom: 1px solid rgba(212,168,83,0.1);
+  color       : var(--apn-text);
+  font-family : 'Poppins', system-ui, sans-serif;
+  font-size   : 0.875rem;
+  line-height : 1.7;
+  padding     : 16px 18px;
+  outline     : none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212,168,83,0.35) rgba(15,16,28,0.5);
+  transition  : background 0.2s;
+  position    : relative;
+}
+.apn-textarea::placeholder {
+  color       : rgba(157,160,191,0.5);
+  font-style  : italic;
+  font-size   : 0.84rem;
+}
+.apn-textarea:focus {
+  background  : rgba(8, 10, 24, 0.7);
+  box-shadow  : inset 0 0 0 1px rgba(212,168,83,0.12);
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.apn-footer {
+  display     : flex;
+  gap         : 8px;
+  padding     : 13px 14px 14px;
+  flex-shrink : 0;
+  background  : linear-gradient(180deg,
+    rgba(10,11,24,0.4) 0%,
+    rgba(10,11,24,0.7) 100%
+  );
+  position    : relative;
+}
+
+/* Divider shimmer above footer */
+.apn-footer::before {
+  content   : '';
+  position  : absolute;
+  top: 0; left: 14px; right: 14px;
+  height    : 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(212,168,83,0.2) 50%,
+    transparent
+  );
+}
+
+.apn-btn {
+  flex        : 1;
+  padding     : 8px 6px;
+  border-radius: var(--apn-radius-btn);
+  border      : 1px solid transparent;
+  font-family : 'Poppins', system-ui, sans-serif;
+  font-size   : 0.72rem;
+  font-weight : 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor      : pointer;
+  display     : flex;
+  align-items : center;
+  justify-content: center;
+  gap         : 5px;
+  transition  : transform 0.15s cubic-bezier(0.34,1.56,0.64,1),
+                box-shadow 0.15s ease,
+                background 0.18s ease,
+                border-color 0.18s ease;
+  position    : relative;
+  overflow    : hidden;
+}
+
+/* Shimmer on hover */
+.apn-btn::after {
+  content     : '';
+  position    : absolute;
+  top: 0; left: -75%;
+  width       : 50%;
+  height      : 100%;
+  background  : linear-gradient(90deg,
+    transparent,
+    rgba(255,255,255,0.18),
+    transparent
+  );
+  transition  : left 0.4s ease;
+  pointer-events: none;
+}
+.apn-btn:hover::after { left: 125%; }
+.apn-btn:hover  { transform: translateY(-2px); }
+.apn-btn:active { transform: translateY(0) scale(0.97); }
+
+/* Save */
+.apn-btn-save {
+  background  : linear-gradient(135deg, var(--apn-gold-light) 0%, var(--apn-gold) 50%, var(--apn-gold-dim) 100%);
+  color       : #0a0b14;
+  border-color: rgba(240,215,140,0.3);
+  box-shadow  : 0 2px 12px rgba(212,168,83,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.apn-btn-save:hover {
+  box-shadow  : 0 4px 20px rgba(212,168,83,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+/* Copy */
+.apn-btn-copy {
+  background  : rgba(114,137,245,0.12);
+  color       : #a5b4ff;
+  border-color: rgba(114,137,245,0.25);
+  box-shadow  : 0 2px 8px rgba(114,137,245,0.1);
+}
+.apn-btn-copy:hover {
+  background  : rgba(114,137,245,0.22);
+  border-color: rgba(114,137,245,0.45);
+  box-shadow  : 0 4px 16px rgba(114,137,245,0.22);
+}
+.apn-btn-copy.apn-copied {
+  background  : rgba(74,222,128,0.15);
+  color       : #86efac;
+  border-color: rgba(74,222,128,0.35);
+  box-shadow  : 0 2px 12px rgba(74,222,128,0.2);
+}
+
+/* Clear */
+.apn-btn-clear {
+  background  : rgba(239, 68, 68, 0.08);
+  color       : #fca5a5;
+  border-color: rgba(239,68,68,0.2);
+  box-shadow  : 0 2px 8px rgba(239,68,68,0.08);
+}
+.apn-btn-clear:hover {
+  background  : rgba(239,68,68,0.18);
+  border-color: rgba(239,68,68,0.4);
+  box-shadow  : 0 4px 16px rgba(239,68,68,0.18);
+}
+
+/* ── Toast ───────────────────────────────────────────────────── */
+#ai-page-notes-toast {
+  position    : fixed;
+  z-index     : calc(var(--apn-z-panel) + 2);
+  bottom      : calc(var(--apn-bubble-bottom) + 70px);
+  right       : var(--apn-bubble-right);
+  background  : rgba(10, 11, 24, 0.92);
+  backdrop-filter: blur(12px);
+  border      : 1px solid var(--apn-border-gold);
+  color       : var(--apn-green);
+  font-family : 'Poppins', system-ui, sans-serif;
+  font-size   : 0.74rem;
+  font-weight : 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding     : 7px 16px;
+  border-radius: 999px;
+  box-shadow  : 0 4px 22px rgba(0,0,0,0.5),
+                0 0 14px rgba(74,222,128,0.12);
+  opacity     : 0;
+  transform   : translateY(6px);
+  transition  : opacity 0.22s ease, transform 0.22s ease;
+  pointer-events: none;
+}
+#ai-page-notes-toast.apn-visible {
+  opacity     : 1;
+  transform   : translateY(0);
+}
+
+/* ── Save to All Pages row ───────────────────────────────────── */
+.apn-save-all-row {
+  padding: 0 14px 14px;
+  background: rgba(0,0,0,0.18);
+}
+.apn-btn-save-all {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(212,168,83,0.28);
+  background: linear-gradient(135deg,
+    rgba(212,168,83,0.09) 0%,
+    rgba(201,150,60,0.06) 100%
+  );
+  color: rgba(212,168,83,0.85);
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-size: 0.71rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.22s ease, border-color 0.22s ease,
+              box-shadow 0.22s ease, transform 0.18s ease;
+}
+.apn-btn-save-all::before {
+  content: '';
+  position: absolute; top: 0; left: 8%; right: 8%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,168,83,0.45), transparent);
+  pointer-events: none;
+}
+.apn-btn-save-all::after {
+  content: '';
+  position: absolute; top: 0; left: -80%;
+  width: 55%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(212,168,83,0.12), transparent);
+  transition: left 0.5s ease;
+  pointer-events: none;
+}
+.apn-btn-save-all:hover::after { left: 130%; }
+.apn-btn-save-all:hover {
+  background: linear-gradient(135deg,
+    rgba(212,168,83,0.18) 0%,
+    rgba(201,150,60,0.12) 100%
+  );
+  border-color: rgba(212,168,83,0.55);
+  color: #f0d78c;
+  box-shadow: 0 0 22px rgba(212,168,83,0.15),
+              inset 0 1px 0 rgba(255,255,255,0.06);
+  transform: translateY(-1px);
+}
+.apn-btn-save-all:active { transform: translateY(0) scale(0.98); }
+.apn-btn-save-all svg {
+  flex-shrink: 0; opacity: 0.72;
+  transition: opacity 0.2s, transform 0.35s ease;
+}
+.apn-btn-save-all:hover svg { opacity: 1; transform: rotate(18deg); }
+
+/* ── Inspector toggle row ────────────────────────────────────── */
+.apn-inspect-row {
+  padding    : 0 14px 14px;
+  background : rgba(0, 0, 0, 0.18);
+}
+.apn-btn-inspect {
+  width           : 100%;
+  display         : flex;
+  align-items     : center;
+  justify-content : center;
+  gap             : 9px;
+  padding         : 10px 16px;
+  border-radius   : 12px;
+  border          : 1px solid rgba(114, 137, 245, 0.3);
+  background      : linear-gradient(135deg,
+    rgba(114, 137, 245, 0.10) 0%,
+    rgba(74, 93, 212, 0.08)   100%
+  );
+  color           : rgba(165, 180, 255, 0.9);
+  font-family     : 'Poppins', system-ui, sans-serif;
+  font-size       : 0.71rem;
+  font-weight     : 700;
+  letter-spacing  : 0.1em;
+  text-transform  : uppercase;
+  cursor          : pointer;
+  position        : relative;
+  overflow        : hidden;
+  transition      : background 0.22s ease, border-color 0.22s ease,
+                    box-shadow 0.22s ease, transform 0.18s ease, color 0.22s ease;
+}
+.apn-btn-inspect::before {
+  content   : '';
+  position  : absolute;
+  top       : 0; left: 8%; right: 8%;
+  height    : 1px;
+  background: linear-gradient(90deg, transparent, rgba(114, 137, 245, 0.45), transparent);
+  pointer-events: none;
+}
+.apn-btn-inspect::after {
+  content   : '';
+  position  : absolute;
+  top       : 0; left: -80%;
+  width     : 55%;
+  height    : 100%;
+  background: linear-gradient(90deg, transparent, rgba(114, 137, 245, 0.14), transparent);
+  transition: left 0.5s ease;
+  pointer-events: none;
+}
+.apn-btn-inspect:hover::after { left: 130%; }
+.apn-btn-inspect:hover {
+  background   : linear-gradient(135deg,
+    rgba(114, 137, 245, 0.20) 0%,
+    rgba(74, 93, 212, 0.14)   100%
+  );
+  border-color : rgba(114, 137, 245, 0.6);
+  color        : #d2dbff;
+  box-shadow   : 0 0 22px rgba(114, 137, 245, 0.18),
+                 inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transform    : translateY(-1px);
+}
+.apn-btn-inspect:active { transform: translateY(0) scale(0.98); }
+.apn-btn-inspect svg {
+  flex-shrink: 0;
+  opacity    : 0.78;
+  transition : opacity 0.2s ease, transform 0.4s ease;
+}
+.apn-btn-inspect:hover svg { opacity: 1; transform: rotate(-12deg) scale(1.08); }
+
+.apn-inspect-hint {
+  margin-left   : auto;
+  font-size     : 0.6rem;
+  letter-spacing: 0.06em;
+  padding       : 2px 7px;
+  border-radius : 6px;
+  background    : rgba(114, 137, 245, 0.18);
+  color         : rgba(210, 219, 255, 0.85);
+  text-transform: lowercase;
+  border        : 1px solid rgba(114, 137, 245, 0.3);
+  font-weight   : 600;
+}
+
+/* Active (Inspector ON) — switch palette to gold/alert */
+.apn-btn-inspect.apn-inspect-on {
+  background   : linear-gradient(135deg,
+    rgba(250, 204, 21, 0.20) 0%,
+    rgba(217, 119, 6, 0.16)  100%
+  );
+  border-color : rgba(250, 204, 21, 0.6);
+  color        : #fde68a;
+  box-shadow   : 0 0 24px rgba(250, 204, 21, 0.28),
+                 inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation    : apn-inspect-pulse 1.8s ease-in-out infinite;
+}
+.apn-btn-inspect.apn-inspect-on .apn-inspect-hint {
+  background   : rgba(250, 204, 21, 0.22);
+  border-color : rgba(250, 204, 21, 0.45);
+  color        : #fef3c7;
+}
+@keyframes apn-inspect-pulse {
+  0%, 100% { box-shadow: 0 0 18px rgba(250, 204, 21, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.06); }
+  50%      { box-shadow: 0 0 32px rgba(250, 204, 21, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+}
+
+/* ── Inspector overlay (highlight rectangle over hovered element) */
+#apn-inspect-overlay {
+  position       : fixed;
+  pointer-events : none;
+  z-index        : 99700;
+  border         : 2px dashed #facc15;
+  border-radius  : 4px;
+  background     : rgba(250, 204, 21, 0.08);
+  box-shadow     : 0 0 18px rgba(250, 204, 21, 0.30),
+                   inset 0 0 0 1px rgba(250, 204, 21, 0.35);
+  display        : none;
+  transition     : top 0.06s ease, left 0.06s ease,
+                   width 0.06s ease, height 0.06s ease;
+}
+#apn-inspect-overlay.apn-active { display: block; }
+
+/* Floating tag label that follows the hovered element */
+#apn-inspect-label {
+  position       : fixed;
+  pointer-events : none;
+  z-index        : 99701;
+  background     : linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
+  color          : #0a0b14;
+  padding        : 3px 10px;
+  border-radius  : 6px;
+  font-family    : 'Roboto Mono', 'Consolas', monospace;
+  font-size      : 0.7rem;
+  font-weight    : 800;
+  letter-spacing : 0.02em;
+  white-space    : nowrap;
+  max-width      : 70vw;
+  overflow       : hidden;
+  text-overflow  : ellipsis;
+  box-shadow     : 0 4px 14px rgba(0, 0, 0, 0.5),
+                   0 0 0 1px rgba(250, 204, 21, 0.5);
+  display        : none;
+}
+#apn-inspect-label.apn-active { display: block; }
+
+/* Crosshair cursor + dim non-widget UI to focus the page on inspection */
+body.apn-inspect-mode,
+body.apn-inspect-mode *:not(#ai-page-notes-bubble):not(#ai-page-notes-bubble *) {
+  cursor: crosshair !important;
+}
+
+/* ── Mobile ──────────────────────────────────────────────────── */
+@media (max-width: 520px) {
+  #ai-page-notes-panel {
+    width       : calc(100vw - 20px) !important;
+    right       : 10px !important;
+    left        : 10px !important;
+    bottom      : calc(var(--apn-bubble-bottom) + 64px) !important;
+    max-height  : 58vh;
+    border-radius: 16px;
+  }
+  .apn-btn {
+    font-size   : 0.68rem;
+    padding     : 7px 4px;
+  }
+  .apn-inspect-hint { display: none; }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  #ai-page-notes-bubble,
+  #ai-page-notes-bubble::after,
+  #ai-page-notes-panel,
+  #ai-page-notes-toast,
+  .apn-btn,
+  .apn-btn::after,
+  .apn-close-btn,
+  .apn-counter-bar,
+  .apn-btn-inspect,
+  .apn-btn-inspect::after,
+  #apn-inspect-overlay { transition: none !important; animation: none !important; }
+}
+</script>
+
+<script type="text/plain" id="wpSrcJs" hidden>/**
+ * AI Page Notes Widget — notepad-widget.js
+ *
+ * - Draggable bubble with position saved in localStorage
+ * - Per-page notes  key: pageNotes:<pathname>
+ * - Global broadcast key: pageNotes:__global__
+ * - Save | Copy | Clear | Close | Save to All Pages
+ * - Escape key closes panel
+ * - No external dependencies
+ */
+(function () {
+  'use strict';
+
+  /* ── Config ─────────────────────────────────────────────── */
+  var STORAGE_KEY_NOTES  = 'pageNotes:' + window.location.pathname;
+  var STORAGE_KEY_GLOBAL = 'pageNotes:__global__';
+  var STORAGE_KEY_POS    = 'pageNotesBubblePos:' + window.location.pathname;
+  var TOAST_DURATION_MS  = 2000;
+  var COPY_RESET_MS      = 1600;
+  var MAX_CHARS          = 2000;
+
+  /* ── Grab elements ──────────────────────────────────────── */
+  var bubble    = document.getElementById('ai-page-notes-bubble');
+  var panel     = document.getElementById('ai-page-notes-panel');
+  var textarea  = document.getElementById('ai-page-notes-textarea');
+  var btnSave   = document.getElementById('ai-page-notes-save');
+  var btnCopy   = document.getElementById('ai-page-notes-copy');
+  var btnClear  = document.getElementById('ai-page-notes-clear');
+  var btnClose  = document.getElementById('ai-page-notes-close');
+  var toast     = document.getElementById('ai-page-notes-toast');
+  var charCount = document.getElementById('ai-page-notes-charcount');
+  var charBar   = document.getElementById('ai-page-notes-charbar');
+
+  if (!bubble || !panel || !textarea) return;
+
+  /* ── State ──────────────────────────────────────────────── */
+  var panelOpen  = false;
+  var dragging   = false;
+  var dragOffX   = 0;
+  var dragOffY   = 0;
+  var toastTimer = null;
+
+  /* ── Notes: load ─────────────────────────────────────────── */
+  function loadNotes() {
+    var saved = localStorage.getItem(STORAGE_KEY_NOTES) || '';
+    if (!saved) saved = localStorage.getItem(STORAGE_KEY_GLOBAL) || '';
+    textarea.value = saved;
+    updateBubbleIndicator(saved);
+  }
+
+  function updateBubbleIndicator(text) {
+    bubble.classList.toggle('apn-has-notes', !!(text && text.trim().length > 0));
+  }
+
+  /* ── Save — current page only ────────────────────────────── */
+  function saveNotes() {
+    var val = textarea.value;
+    localStorage.setItem(STORAGE_KEY_NOTES, val);
+    updateBubbleIndicator(val);
+    showToast('✓ Saved for this page');
+  }
+
+  /* ── Save All Pages ─────────────────────────────────────── */
+  function saveToAllPages() {
+    var val = textarea.value;
+    var noteKeys = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf('pageNotes:') === 0 && k !== STORAGE_KEY_GLOBAL) {
+        noteKeys.push(k);
+      }
+    }
+    if (noteKeys.indexOf(STORAGE_KEY_NOTES) === -1) noteKeys.push(STORAGE_KEY_NOTES);
+    for (var j = 0; j < noteKeys.length; j++) {
+      localStorage.setItem(noteKeys[j], val);
+    }
+    localStorage.setItem(STORAGE_KEY_GLOBAL, val);
+    updateBubbleIndicator(val);
+    var n = noteKeys.length;
+    showToast('✓ Saved to ' + n + ' page' + (n !== 1 ? 's' : '') + ' + global');
+  }
+
+  /* ── Char counter ────────────────────────────────────────── */
+  function updateCharCounter(text) {
+    if (!charCount || !charBar) return;
+    var len = text.length;
+    charCount.textContent = len + ' char' + (len === 1 ? '' : 's');
+    var pct = Math.min(100, (len / MAX_CHARS) * 100);
+    charBar.style.width = pct + '%';
+    charBar.style.background = pct > 85
+      ? 'linear-gradient(90deg,#f97316,#ef4444)'
+      : 'linear-gradient(90deg,var(--apn-gold-dim),var(--apn-gold-light))';
+  }
+
+  /* ── Auto-save (debounced) ───────────────────────────────── */
+  var autoSaveTimer = null;
+  textarea.addEventListener('input', function () {
+    updateCharCounter(textarea.value);
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(function () {
+      localStorage.setItem(STORAGE_KEY_NOTES, textarea.value);
+      updateBubbleIndicator(textarea.value);
+    }, 600);
+  });
+
+  /* ── Copy ────────────────────────────────────────────────── */
+  function copyNotes() {
+    var text = textarea.value;
+    if (!text.trim()) { showToast('Nothing to copy'); return; }
+    function markCopied() {
+      btnCopy.textContent = 'Copied!';
+      btnCopy.classList.add('apn-copied');
+      setTimeout(function () { btnCopy.textContent = 'Copy'; btnCopy.classList.remove('apn-copied'); }, COPY_RESET_MS);
+      showToast('Copied to clipboard');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(markCopied).catch(function () { fallbackCopy(text, markCopied); });
+    } else { fallbackCopy(text, markCopied); }
+  }
+
+  function fallbackCopy(text, cb) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); cb(); } catch (e) { showToast('Copy failed'); }
+    document.body.removeChild(ta);
+  }
+
+  /* ── Clear ───────────────────────────────────────────────── */
+  function clearNotes() {
+    textarea.value = '';
+    localStorage.removeItem(STORAGE_KEY_NOTES);
+    updateBubbleIndicator('');
+    updateCharCounter('');
+    showToast('Cleared');
+  }
+
+  /* ── Toast ───────────────────────────────────────────────── */
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('apn-visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('apn-visible'); }, TOAST_DURATION_MS);
+  }
+
+  /* ── Panel open / close ──────────────────────────────────── */
+  function openPanel() { positionPanel(); panel.classList.add('apn-open'); panelOpen = true; textarea.focus(); }
+  function closePanel() { panel.classList.remove('apn-open'); panelOpen = false; }
+  function togglePanel() { if (panelOpen) closePanel(); else openPanel(); }
+
+  function positionPanel() {
+    var bRect = bubble.getBoundingClientRect();
+    var pw = panel.offsetWidth  || 336;
+    var ph = panel.offsetHeight || 500;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var top  = bRect.top - ph - 12;
+    var left = bRect.right - pw;
+    if (top < 8)            top  = bRect.bottom + 12;
+    if (left < 8)           left = 8;
+    if (left + pw > vw - 8) left = vw - pw - 8;
+    if (top  + ph > vh - 8) top  = vh - ph - 8;
+    panel.style.top    = top  + 'px';
+    panel.style.left   = left + 'px';
+    panel.style.bottom = 'auto';
+    panel.style.right  = 'auto';
+  }
+
+  /* ── Build "Save to All Pages" button dynamically ────────── */
+  (function buildSaveAllBtn() {
+    var footer = panel.querySelector('.apn-footer');
+    if (!footer) return;
+    var row = document.createElement('div');
+    row.className = 'apn-save-all-row';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'apn-btn-save-all';
+    btn.setAttribute('aria-label', 'Save notes to all pages');
+    btn.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+      + 'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true">'
+      + '<circle cx="12" cy="12" r="10"/>'
+      + '<line x1="2" y1="12" x2="22" y2="12"/>'
+      + '<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'
+      + '</svg>'
+      + '<span>Save to All Pages</span>';
+    btn.addEventListener('click', saveToAllPages);
+    row.appendChild(btn);
+    footer.insertAdjacentElement('afterend', row);
+  })();
+
+  /* ── Listeners ───────────────────────────────────────────── */
+  bubble.addEventListener('click', function () { if (!dragging) togglePanel(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panelOpen) closePanel(); });
+  btnSave .addEventListener('click', saveNotes);
+  btnCopy .addEventListener('click', copyNotes);
+  btnClear.addEventListener('click', clearNotes);
+  btnClose.addEventListener('click', closePanel);
+
+  /* ── Drag (Pointer Events, robust against host-page event hijacking) ── */
+  var didDrag       = false;
+  var activePointer = null;
+  function dragStart(cx, cy) {
+    var r = bubble.getBoundingClientRect();
+    dragOffX = cx - r.left; dragOffY = cy - r.top;
+    dragging = true; didDrag = false;
+    bubble.style.transition = 'none';
+    bubble.style.cursor = 'grabbing';
+  }
+  function dragMove(cx, cy) {
+    if (!dragging) return;
+    var x = Math.max(0, Math.min(cx - dragOffX, window.innerWidth  - bubble.offsetWidth));
+    var y = Math.max(0, Math.min(cy - dragOffY, window.innerHeight - bubble.offsetHeight));
+    bubble.style.left = x + 'px'; bubble.style.top = y + 'px';
+    bubble.style.right = 'auto';  bubble.style.bottom = 'auto';
+    didDrag = true;
+    if (panelOpen) positionPanel();
+  }
+  function dragEnd() {
+    if (!dragging) return;
+    dragging = false;
+    bubble.style.transition = ''; bubble.style.cursor = 'grab';
+    try {
+      localStorage.setItem(STORAGE_KEY_POS, JSON.stringify({
+        x: parseInt(bubble.style.left, 10), y: parseInt(bubble.style.top, 10)
+      }));
+    } catch (e) {}
+    if (didDrag) {
+      bubble.addEventListener('click', function suppress(e) {
+        e.stopImmediatePropagation();
+        bubble.removeEventListener('click', suppress, true);
+      }, true);
+    }
+  }
+  if (window.PointerEvent) {
+    bubble.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      e.preventDefault();
+      activePointer = e.pointerId;
+      try { bubble.setPointerCapture(e.pointerId); } catch (_) {}
+      dragStart(e.clientX, e.clientY);
+    });
+    bubble.addEventListener('pointermove', function (e) {
+      if (!dragging || e.pointerId !== activePointer) return;
+      dragMove(e.clientX, e.clientY);
+    });
+    function _pointerEnd(e) {
+      if (e.pointerId !== activePointer) return;
+      try { bubble.releasePointerCapture(e.pointerId); } catch (_) {}
+      activePointer = null;
+      dragEnd();
+    }
+    bubble.addEventListener('pointerup',     _pointerEnd);
+    bubble.addEventListener('pointercancel', _pointerEnd);
+  } else {
+    bubble.addEventListener('mousedown', function (e) { if (e.button === 0) { e.preventDefault(); dragStart(e.clientX, e.clientY); } });
+    document.addEventListener('mousemove', function (e) { dragMove(e.clientX, e.clientY); }, true);
+    document.addEventListener('mouseup',   dragEnd, true);
+    bubble.addEventListener('touchstart', function (e) { dragStart(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+    document.addEventListener('touchmove', function (e) { if (dragging) { e.preventDefault(); dragMove(e.touches[0].clientX, e.touches[0].clientY); } }, { passive: false, capture: true });
+    document.addEventListener('touchend',  dragEnd, true);
+  }
+
+  /* ── Restore bubble position ─────────────────────────────── */
+  function restoreBubblePos() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY_POS);
+      if (!raw) return;
+      var pos = JSON.parse(raw);
+      var vw = window.innerWidth - bubble.offsetWidth;
+      var vh = window.innerHeight - bubble.offsetHeight;
+      bubble.style.left   = Math.max(0, Math.min(pos.x, vw)) + 'px';
+      bubble.style.top    = Math.max(0, Math.min(pos.y, vh)) + 'px';
+      bubble.style.right  = 'auto';
+      bubble.style.bottom = 'auto';
+    } catch (e) { /* ignore */ }
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     INSPECTOR MODE — middle-click any element to capture a
+     compact reference (page + DOM path + opening tag) into
+     the notepad. Toggle from the panel. No left/right click
+     hijacking. Escape exits. Widget itself is excluded.
+     Admin-only: hidden unless an admin is logged in (mirrors
+     dictionary auth keys; works on every page independently).
+     ══════════════════════════════════════════════════════════ */
+  var inspectMode    = false;
+  var inspectBtn     = null;
+  var inspectRow     = null;
+  var inspectOverlay = null;
+  var inspectLabel   = null;
+  var inspectTarget  = null;
+
+  function _isAdminLogged() {
+    try { if (localStorage.getItem('gl_admin_auth')   === '1') return true; } catch (e) {}
+    try { if (sessionStorage.getItem('gl_admin_session') === '1') return true; } catch (e) {}
+    return false;
+  }
+
+  function _isWidgetElement(el) {
+    if (!el || el.nodeType !== 1) return true;
+    if (!el.closest) return false;
+    return !!(
+      el.closest('#ai-page-notes-bubble') ||
+      el.closest('#ai-page-notes-panel')  ||
+      el.closest('#ai-page-notes-toast')  ||
+      el.closest('#apn-inspect-overlay')  ||
+      el.closest('#apn-inspect-label')    ||
+      el === document.body                ||
+      el === document.documentElement
+    );
+  }
+
+  function _buildSelectorPath(el) {
+    var path = [];
+    var max = 6;
+    while (el && el.nodeType === 1 && path.length < max && el.tagName !== 'HTML') {
+      var part = el.tagName.toLowerCase();
+      if (el.id) { part += '#' + el.id; path.unshift(part); break; }
+      if (typeof el.className === 'string' && el.className.trim()) {
+        var cls = el.className.trim().split(/\s+/).slice(0, 3).join('.');
+        if (cls) part += '.' + cls;
+      }
+      var parent = el.parentElement;
+      if (parent) {
+        var same = [];
+        for (var i = 0; i < parent.children.length; i++) {
+          if (parent.children[i].tagName === el.tagName) same.push(parent.children[i]);
+        }
+        if (same.length > 1) part += ':nth-of-type(' + (same.indexOf(el) + 1) + ')';
+      }
+      path.unshift(part);
+      el = parent;
+    }
+    return path.join(' > ');
+  }
+
+  function _getOpeningTag(el) {
+    if (!el || !el.outerHTML) return '';
+    var html = el.outerHTML;
+    var idx = html.indexOf('>');
+    var open = idx > -1 ? html.substring(0, idx + 1) : html;
+    if (open.length > 320) open = open.substring(0, 317) + '…>';
+    return open;
+  }
+
+  function _ensureInspectUI() {
+    if (inspectOverlay && inspectLabel) return;
+    inspectOverlay = document.createElement('div');
+    inspectOverlay.id = 'apn-inspect-overlay';
+    inspectOverlay.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(inspectOverlay);
+    inspectLabel = document.createElement('div');
+    inspectLabel.id = 'apn-inspect-label';
+    inspectLabel.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(inspectLabel);
+  }
+
+  function _hideInspectOverlay() {
+    if (inspectOverlay) inspectOverlay.classList.remove('apn-active');
+    if (inspectLabel)   inspectLabel.classList.remove('apn-active');
+    inspectTarget = null;
+  }
+
+  function _inspectMouseMove(e) {
+    if (!inspectMode) return;
+    var t = document.elementFromPoint(e.clientX, e.clientY);
+    if (!t || _isWidgetElement(t)) { _hideInspectOverlay(); return; }
+    inspectTarget = t;
+    var r = t.getBoundingClientRect();
+    inspectOverlay.style.top    = r.top    + 'px';
+    inspectOverlay.style.left   = r.left   + 'px';
+    inspectOverlay.style.width  = r.width  + 'px';
+    inspectOverlay.style.height = r.height + 'px';
+    inspectOverlay.classList.add('apn-active');
+    var tag = t.tagName.toLowerCase();
+    if (t.id) tag += '#' + t.id;
+    else if (typeof t.className === 'string' && t.className.trim()) {
+      tag += '.' + t.className.trim().split(/\s+/).slice(0, 2).join('.');
+    }
+    inspectLabel.textContent = tag;
+    inspectLabel.style.top  = Math.max(4, r.top - 22) + 'px';
+    inspectLabel.style.left = Math.max(4, r.left)     + 'px';
+    inspectLabel.classList.add('apn-active');
+  }
+
+  function _appendReference(target) {
+    var ref =
+      '\n─── REFERENCE ───\n' +
+      '📄 Page: '    + (window.location.pathname || '/') + '\n' +
+      '📍 Path: '    + _buildSelectorPath(target)        + '\n' +
+      '🏷️  HTML: '    + _getOpeningTag(target)            + '\n' +
+      '─────────────────\n';
+    var current = textarea.value || '';
+    var sep = (current.length === 0 || /\n$/.test(current)) ? '' : '\n';
+    textarea.value = current + sep + ref;
+    updateCharCounter(textarea.value);
+    localStorage.setItem(STORAGE_KEY_NOTES, textarea.value);
+    updateBubbleIndicator(textarea.value);
+    showToast('✓ Reference captured');
+  }
+
+  function _inspectMouseDown(e) {
+    if (!inspectMode || e.button !== 1) return;
+    e.preventDefault(); e.stopPropagation();
+  }
+  function _inspectAuxClick(e) {
+    if (!inspectMode || e.button !== 1) return;
+    var target = inspectTarget || document.elementFromPoint(e.clientX, e.clientY);
+    if (!target || _isWidgetElement(target)) return;
+    e.preventDefault(); e.stopPropagation();
+    _appendReference(target);
+  }
+
+  function _setInspectBtnState(active) {
+    if (!inspectBtn) return;
+    inspectBtn.classList.toggle('apn-inspect-on', !!active);
+    var labelEl = inspectBtn.querySelector('.apn-inspect-label-text');
+    if (labelEl) labelEl.textContent = active ? 'Stop Inspector' : 'Inspect Element';
+  }
+
+  function _startInspect() {
+    inspectMode = true;
+    _ensureInspectUI();
+    document.body.classList.add('apn-inspect-mode');
+    document.addEventListener('mousemove', _inspectMouseMove, true);
+    document.addEventListener('mousedown', _inspectMouseDown, true);
+    document.addEventListener('auxclick',  _inspectAuxClick,  true);
+    _setInspectBtnState(true);
+    showToast('🎯 Inspector ON — middle-click any element');
+    if (panelOpen) closePanel();
+  }
+  function _stopInspect() {
+    inspectMode = false;
+    document.body.classList.remove('apn-inspect-mode');
+    document.removeEventListener('mousemove', _inspectMouseMove, true);
+    document.removeEventListener('mousedown', _inspectMouseDown, true);
+    document.removeEventListener('auxclick',  _inspectAuxClick,  true);
+    _hideInspectOverlay();
+    _setInspectBtnState(false);
+  }
+  function _toggleInspect() {
+    if (inspectMode) _stopInspect(); else _startInspect();
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && inspectMode) _stopInspect();
+  });
+
+  (function buildInspectBtn() {
+    var anchor = panel.querySelector('.apn-save-all-row') || panel.querySelector('.apn-footer');
+    if (!anchor) return;
+    var row = document.createElement('div');
+    row.className = 'apn-inspect-row';
+    row.style.display = 'none';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'ai-page-notes-inspect';
+    btn.className = 'apn-btn-inspect';
+    btn.setAttribute('aria-label', 'Toggle element inspector (admin only)');
+    btn.title = 'Toggle inspector — middle-click any element to capture a reference (admin only)';
+    btn.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+      + 'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true">'
+      + '<path d="M13 13l6 6"/>'
+      + '<path d="M7 2l1.5 4.5L13 8l-4.5 1.5L7 14l-1.5-4.5L1 8l4.5-1.5L7 2z"/>'
+      + '<circle cx="11" cy="11" r="8"/>'
+      + '</svg>'
+      + '<span class="apn-inspect-label-text">Inspect Element</span>'
+      + '<span class="apn-inspect-hint" aria-hidden="true">middle-click</span>';
+    btn.addEventListener('click', _toggleInspect);
+    row.appendChild(btn);
+    anchor.insertAdjacentElement('afterend', row);
+    inspectBtn = btn;
+    inspectRow = row;
+  })();
+
+  function _updateInspectVisibility() {
+    if (!inspectRow) return;
+    var allowed = _isAdminLogged();
+    inspectRow.style.display = allowed ? '' : 'none';
+    if (!allowed && inspectMode) _stopInspect();
+  }
+  _updateInspectVisibility();
+
+  window.addEventListener('storage', function (e) {
+    if (!e || !e.key) { _updateInspectVisibility(); return; }
+    if (e.key === 'gl_admin_auth' || e.key === 'gl_admin_session') {
+      _updateInspectVisibility();
+    }
+  });
+  setInterval(_updateInspectVisibility, 1500);
+
+  /* ── Init ───────────────────────────────────────────────── */
+  loadNotes();
+  updateCharCounter(textarea.value);
+  restoreBubblePos();
+
+})();
+</script>
+
+<!-- ─────────────────────────────────────────────────────
+     Page logic — file picking, prompt assembly, modal
+     ───────────────────────────────────────────────────── -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── DOM refs ───────────────────────────────────── */
+  var modeRadios   = document.querySelectorAll('.wp-mode-radio');
+  var pickers      = document.getElementById('wpPickers');
+  var folderInput  = document.getElementById('wpFolderPicker');
+  var fileInput    = document.getElementById('wpFilePicker');
+  var clearChips   = document.getElementById('wpClearChips');
+  var chipsBox     = document.getElementById('wpChips');
+  var generateBtn  = document.getElementById('wpGenerate');
+  var modal        = document.getElementById('wpModal');
+  var modalClose   = document.getElementById('wpModalClose');
+  var promptBox    = document.getElementById('wpPromptOutput');
+  var promptChars  = document.getElementById('wpPromptChars');
+  var promptTgts   = document.getElementById('wpPromptTargets');
+  var copyBtn      = document.getElementById('wpCopy');
+  var downloadBtn  = document.getElementById('wpDownload');
+  var toast        = document.getElementById('wpToast');
+
+  /* Modal target picker refs */
+  var mmAll        = document.getElementById('wpMmAll');
+  var mmSpec       = document.getElementById('wpMmSpec');
+  var mmAllInfo    = document.getElementById('wpMmAllInfo');
+  var mmPickers    = document.getElementById('wpMmPickers');
+  var mmChips      = document.getElementById('wpMmChips');
+  var mmFolder     = document.getElementById('wpMmFolder');
+  var mmFiles      = document.getElementById('wpMmFiles');
+  var mmClear      = document.getElementById('wpMmClear');
+
+  /* Embedded source (read from <script type="text/plain">) */
+  var WIDGET_CSS_SRC = document.getElementById('wpSrcCss').textContent;
+  var WIDGET_JS_SRC  = document.getElementById('wpSrcJs').textContent;
+
+  /* ── State ──────────────────────────────────────── */
+  var selectedPaths = []; /* unique relative paths */
+
+  /* ── Helpers ────────────────────────────────────── */
+  function getMode() {
+    for (var i = 0; i < modeRadios.length; i++) {
+      if (modeRadios[i].checked) return modeRadios[i].value;
+    }
+    return 'all';
+  }
+
+  function syncPickerVisibility() {
+    pickers.hidden = (getMode() !== 'specific');
+  }
+
+  /* Single source of truth for mode — keeps Step 1 radios
+     and modal toggle in sync, and re-renders everything. */
+  function setMode(mode) {
+    if (mode !== 'all' && mode !== 'specific') mode = 'all';
+    /* Page radios */
+    for (var i = 0; i < modeRadios.length; i++) {
+      modeRadios[i].checked = (modeRadios[i].value === mode);
+    }
+    /* Modal toggle */
+    if (mmAll && mmSpec) {
+      mmAll.classList.toggle('is-active',  mode === 'all');
+      mmSpec.classList.toggle('is-active', mode === 'specific');
+      mmAll.setAttribute('aria-selected',  mode === 'all'      ? 'true' : 'false');
+      mmSpec.setAttribute('aria-selected', mode === 'specific' ? 'true' : 'false');
+    }
+    if (mmAllInfo) mmAllInfo.hidden = (mode !== 'all');
+    if (mmPickers) mmPickers.hidden = (mode !== 'specific');
+    syncPickerVisibility();
+    renderModalChips();
+    if (modal.classList.contains('is-open')) regenerateInModal();
+  }
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('is-visible');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () {
+      toast.classList.remove('is-visible');
+    }, 2200);
+  }
+
+  function pathOf(file) {
+    /* Folder picker provides webkitRelativePath; file picker provides only name */
+    return file.webkitRelativePath && file.webkitRelativePath.length > 0
+      ? file.webkitRelativePath
+      : file.name;
+  }
+
+  function isHtml(name) {
+    var lower = String(name || '').toLowerCase();
+    return lower.endsWith('.html') || lower.endsWith('.htm');
+  }
+
+  function addPaths(files) {
+    var added = 0;
+    for (var i = 0; i < files.length; i++) {
+      var p = pathOf(files[i]);
+      if (!isHtml(p)) continue;
+      if (selectedPaths.indexOf(p) === -1) {
+        selectedPaths.push(p);
+        added++;
+      }
+    }
+    selectedPaths.sort();
+    renderChips();
+    renderModalChips();
+    if (modal.classList.contains('is-open')) regenerateInModal();
+    if (added > 0) showToast('Added ' + added + ' page' + (added !== 1 ? 's' : ''));
+  }
+
+  function _removePath(p) {
+    selectedPaths = selectedPaths.filter(function (q) { return q !== p; });
+    renderChips();
+    renderModalChips();
+    if (modal.classList.contains('is-open')) regenerateInModal();
+  }
+
+  function renderChips() {
+    chipsBox.innerHTML = '';
+    selectedPaths.forEach(function (p) {
+      var chip = document.createElement('span');
+      chip.className = 'wp-chip';
+      var text = document.createElement('span');
+      text.className = 'wp-chip-text';
+      text.title = p;
+      text.textContent = p;
+      var x = document.createElement('button');
+      x.className = 'wp-chip-x';
+      x.type = 'button';
+      x.setAttribute('aria-label', 'Remove ' + p);
+      x.textContent = '×';
+      x.addEventListener('click', function () { _removePath(p); });
+      chip.appendChild(text);
+      chip.appendChild(x);
+      chipsBox.appendChild(chip);
+    });
+  }
+
+  function renderModalChips() {
+    if (!mmChips) return;
+    mmChips.innerHTML = '';
+    if (getMode() !== 'specific') return; /* hide chips entirely in All mode */
+    selectedPaths.forEach(function (p) {
+      var chip = document.createElement('span');
+      chip.className = 'wp-chip';
+      var text = document.createElement('span');
+      text.className = 'wp-chip-text';
+      text.title = p;
+      text.textContent = p;
+      var x = document.createElement('button');
+      x.className = 'wp-chip-x';
+      x.type = 'button';
+      x.setAttribute('aria-label', 'Remove ' + p);
+      x.textContent = '×';
+      x.addEventListener('click', function () { _removePath(p); });
+      chip.appendChild(text);
+      chip.appendChild(x);
+      mmChips.appendChild(chip);
+    });
+  }
+
+  function regenerateInModal() {
+    var opts = readOptions();
+    var prompt = buildPrompt(opts);
+    promptBox.value = prompt;
+    promptChars.textContent = prompt.length.toLocaleString();
+    promptTgts.textContent  = (opts.mode === 'all' ? 'all' : opts.targets.length);
+  }
+
+  /* ── Listeners ──────────────────────────────────── */
+  modeRadios.forEach(function (r) {
+    r.addEventListener('change', function () { setMode(r.value); });
+  });
+  syncPickerVisibility();
+
+  folderInput.addEventListener('change', function () {
+    if (folderInput.files && folderInput.files.length) addPaths(folderInput.files);
+    folderInput.value = '';
+  });
+  fileInput.addEventListener('change', function () {
+    if (fileInput.files && fileInput.files.length) addPaths(fileInput.files);
+    fileInput.value = '';
+  });
+  clearChips.addEventListener('click', function () {
+    selectedPaths = [];
+    renderChips();
+    renderModalChips();
+    if (modal.classList.contains('is-open')) regenerateInModal();
+    showToast('Cleared selection');
+  });
+
+  /* Modal toggle + pickers */
+  if (mmAll)  mmAll.addEventListener('click',  function () { setMode('all'); });
+  if (mmSpec) mmSpec.addEventListener('click', function () { setMode('specific'); });
+  if (mmFolder) mmFolder.addEventListener('change', function () {
+    if (mmFolder.files && mmFolder.files.length) {
+      setMode('specific');
+      addPaths(mmFolder.files);
+    }
+    mmFolder.value = '';
+  });
+  if (mmFiles) mmFiles.addEventListener('change', function () {
+    if (mmFiles.files && mmFiles.files.length) {
+      setMode('specific');
+      addPaths(mmFiles.files);
+    }
+    mmFiles.value = '';
+  });
+  if (mmClear) mmClear.addEventListener('click', function () {
+    selectedPaths = [];
+    renderChips();
+    renderModalChips();
+    regenerateInModal();
+    showToast('Cleared selection');
+  });
+
+  /* ── Build the AI prompt ────────────────────────── */
+  function buildHtmlBoilerplate(useFA) {
+    var faLine = useFA
+      ? '<!-- Required: Font Awesome (already in your app? skip this) -->\n<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\n\n'
+      : '';
+    var bubbleIcon = useFA
+      ? '<i class="fa-solid fa-pen-nib"></i>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>';
+    var headerIcon = useFA
+      ? '<i class="fa-solid fa-scroll"></i>'
+      : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4"/><line x1="19" y1="3" x2="19" y2="11"/><line x1="15" y1="3" x2="15" y2="11"/></svg>';
+    var closeIcon = useFA
+      ? '<i class="fa-solid fa-xmark"></i>'
+      : '×';
+
+    return [
+      faLine +
+      '<!-- AI Page Notes Widget stylesheet -->',
+      '<link rel="stylesheet" href="notepad-widget/notepad-widget.css">',
+      '',
+      '<!-- ═══════════════════════════════════════════════════════════',
+      '     AI Page Notes Widget',
+      '     Storage keys: pageNotes:<pathname>, pageNotes:__global__',
+      '     ═══════════════════════════════════════════════════════════ -->',
+      '',
+      '<!-- Floating bubble -->',
+      '<button',
+      '  id="ai-page-notes-bubble"',
+      '  aria-label="Open page notes"',
+      '  title="Page Notes"',
+      '>' + bubbleIcon + '<span class="apn-indicator" aria-hidden="true"></span></button>',
+      '',
+      '<!-- Notes panel -->',
+      '<div id="ai-page-notes-panel" role="dialog" aria-label="Page Notes" aria-modal="false">',
+      '  <div class="apn-header">',
+      '    <span class="apn-title">',
+      '      <span class="apn-title-icon">' + headerIcon + '</span>',
+      '      <span class="apn-title-text">Page Notes</span>',
+      '    </span>',
+      '    <button id="ai-page-notes-close" class="apn-close-btn" aria-label="Close notes panel" title="Close">' + closeIcon + '</button>',
+      '  </div>',
+      '  <div class="apn-counter-row" aria-hidden="true">',
+      '    <span class="apn-counter-label" id="ai-page-notes-charcount">0 chars</span>',
+      '    <div class="apn-counter-bar-wrap">',
+      '      <div class="apn-counter-bar" id="ai-page-notes-charbar"></div>',
+      '    </div>',
+      '  </div>',
+      '  <textarea',
+      '    id="ai-page-notes-textarea"',
+      '    class="apn-textarea"',
+      '    placeholder="Type your notes here… auto-saved as you write."',
+      '    aria-label="Page notes textarea"',
+      '    spellcheck="true"',
+      '  ></textarea>',
+      '  <div class="apn-footer">',
+      '    <button id="ai-page-notes-save"  class="apn-btn apn-btn-save"  aria-label="Save notes">Save</button>',
+      '    <button id="ai-page-notes-copy"  class="apn-btn apn-btn-copy"  aria-label="Copy notes">Copy</button>',
+      '    <button id="ai-page-notes-clear" class="apn-btn apn-btn-clear" aria-label="Clear notes">Clear</button>',
+      '  </div>',
+      '</div>',
+      '',
+      '<!-- Toast notification -->',
+      '<div id="ai-page-notes-toast" role="status" aria-live="polite"></div>',
+      '',
+      '<!-- Widget logic -->',
+      '<script src="notepad-widget/notepad-widget.js"><\/script>'
+    ].join('\n');
+  }
+
+  /* JS source customised for the user's chosen options
+     (admin keys, max chars, optional inspector / save-all). */
+  function customiseJsSrc(src, opts) {
+    var out = src;
+    /* Admin keys */
+    if (opts.adminLocal && opts.adminLocal !== 'gl_admin_auth') {
+      out = out.replace(/'gl_admin_auth'/g, "'" + opts.adminLocal + "'");
+    }
+    if (opts.adminSession && opts.adminSession !== 'gl_admin_session') {
+      out = out.replace(/'gl_admin_session'/g, "'" + opts.adminSession + "'");
+    }
+    /* Max chars */
+    if (opts.maxChars && opts.maxChars !== 2000) {
+      out = out.replace(/var MAX_CHARS\s*=\s*\d+;/, 'var MAX_CHARS          = ' + opts.maxChars + ';');
+    }
+    return out;
+  }
+
+  function indent(text, spaces) {
+    var pad = new Array(spaces + 1).join(' ');
+    return String(text).split('\n').map(function (l) { return l.length ? pad + l : l; }).join('\n');
+  }
+
+  function buildPrompt(opts) {
+    var L = [];
+    var modeIsAll = (opts.mode === 'all');
+    var targets = opts.targets || [];
+    var appName = opts.appName || 'this application';
+
+    L.push('# 🎯 AI MISSION — Build the Page Notes + Inspector Widget');
+    L.push('');
+    L.push('You will create a **portable, framework-agnostic, single-folder browser widget** for **' + appName + '** that gives every page a draggable gold "notes" bubble with the following capabilities:');
+    L.push('');
+    L.push('- **Per-page persistent notes** (auto-saved in `localStorage`).');
+    L.push('- **"Save to All Pages"** — broadcast the current note to every page in the app.');
+    L.push('- **Inspector Mode (admin-only)** — middle-click any DOM element to capture a compact reference (page + selector path + opening tag) into the notes.');
+    L.push('- **Char counter, drag-to-reposition bubble, mobile-friendly, `prefers-reduced-motion` support.**');
+    L.push('- **Zero external runtime dependencies** (pure HTML / CSS / vanilla JS). Optional: Font Awesome for icons.');
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('## 📂 FILES TO CREATE — exact paths, exact contents');
+    L.push('');
+    L.push('Create these two files at the application root, in a folder called `notepad-widget/`:');
+    L.push('');
+    L.push('1. `notepad-widget/notepad-widget.css`');
+    L.push('2. `notepad-widget/notepad-widget.js`');
+    L.push('');
+    L.push('Save them **byte-for-byte** as below. Do NOT refactor, rename classes, or reorder rules — the JS depends on the exact class/id names.');
+    L.push('');
+    L.push('### 🎨 File 1 — `notepad-widget/notepad-widget.css`');
+    L.push('');
+    L.push('```css');
+    L.push(WIDGET_CSS_SRC.replace(/\s+$/, ''));
+    L.push('```');
+    L.push('');
+    L.push('### ⚡ File 2 — `notepad-widget/notepad-widget.js`');
+    L.push('');
+    L.push('```js');
+    L.push(customiseJsSrc(WIDGET_JS_SRC, opts).replace(/\s+$/, ''));
+    L.push('```');
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('## 🧩 HTML BOILERPLATE — insert just before `</body>` in every target page');
+    L.push('');
+    L.push('```html');
+    L.push(buildHtmlBoilerplate(!!opts.useFa));
+    L.push('```');
+    L.push('');
+    if (opts.useFa) {
+      L.push('> Already loading Font Awesome elsewhere? Skip the `<link>` line. Otherwise leave it — the widget needs `fa-solid fa-pen-nib`, `fa-solid fa-scroll`, `fa-solid fa-xmark`.');
+      L.push('');
+    } else {
+      L.push('> Font Awesome was disabled in this generation. Inline SVGs are already inside the boilerplate — no external icon library is required.');
+      L.push('');
+    }
+    L.push('---');
+    L.push('');
+    L.push('## 🎯 TARGET PAGES — where to inject the boilerplate');
+    L.push('');
+    if (modeIsAll) {
+      L.push('**All pages mode.** Inject the boilerplate into **every `.html` and `.htm` file** at the project root and any subfolder, *except*:');
+      L.push('- The widget files themselves (`notepad-widget/*`).');
+      L.push('- Any file in a build/dist/output folder (e.g. `node_modules/`, `dist/`, `build/`, `.next/`, `vendor/`, etc.).');
+      L.push('- Files starting with `_` if your framework treats them as partials.');
+    } else if (targets.length === 0) {
+      L.push('**Specific pages mode** was selected, but **no pages were chosen** in the Widget Prompter.');
+      L.push('');
+      L.push('> Decide manually which pages to wire, OR re-run the Prompter and pick a folder / individual files.');
+    } else {
+      L.push('**Specific pages mode.** Inject the boilerplate ONLY into these files (relative to the project root):');
+      L.push('');
+      targets.forEach(function (p) {
+        L.push('- `' + p + '`');
+      });
+      L.push('');
+      L.push('> Paths are taken from the user\'s file picker. If your project root differs, adjust the prefix accordingly.');
+    }
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('## 📡 STORAGE KEYS (already used by the JS — for reference)');
+    L.push('');
+    L.push('| Key | Purpose |');
+    L.push('|---|---|');
+    L.push('| `pageNotes:<pathname>` | Per-page notes (auto-saved every 600 ms after typing). |');
+    L.push('| `pageNotes:__global__` | Broadcast fallback — picked up by pages without a per-page key. |');
+    L.push('| `pageNotesBubblePos:<pathname>` | Drag position of the bubble per page. |');
+    L.push('| `' + (opts.adminLocal || 'gl_admin_auth') + '` (localStorage) | Admin-logged-in flag, value `"1"`. Inspector toggle visibility. |');
+    L.push('| `' + (opts.adminSession || 'gl_admin_session') + '` (sessionStorage) | Same role for session-only login. |');
+    L.push('');
+    L.push('## 🔍 INSPECTOR REFERENCE FORMAT');
+    L.push('');
+    L.push('When Inspector is ON and the user middle-clicks any element, this block is appended to the notes:');
+    L.push('');
+    L.push('```');
+    L.push('─── REFERENCE ───');
+    L.push('📄 Page: /current-pathname');
+    L.push('📍 Path: section#hero > div.cta > button.primary');
+    L.push('🏷️  HTML: <button class="primary" type="submit">');
+    L.push('─────────────────');
+    L.push('```');
+    L.push('');
+    L.push('No element content (no text), no CSS, no children — just a compact reference for the AI to identify the component.');
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('## 🛡️ HARD CONSTRAINTS');
+    L.push('');
+    L.push('1. **Exact filenames and folder.** The folder is `notepad-widget/`. The two files are `notepad-widget.css` and `notepad-widget.js`. Do not rename.');
+    L.push('2. **Exact element IDs.** `#ai-page-notes-bubble`, `#ai-page-notes-panel`, `#ai-page-notes-textarea`, `#ai-page-notes-save`, `#ai-page-notes-copy`, `#ai-page-notes-clear`, `#ai-page-notes-close`, `#ai-page-notes-toast`, `#ai-page-notes-charcount`, `#ai-page-notes-charbar`. JS will silently abort if any are missing.');
+    L.push('3. **Exact class names.** All widget styles are scoped under `#ai-page-notes-*` and `.apn-*`. Do not rename these.');
+    L.push('4. **Zero global pollution.** The JS lives inside an IIFE. Do not move logic into globals.');
+    L.push('5. **Self-built dynamic buttons.** `Save to All Pages` and `Inspect Element` are appended at runtime by the JS — do **not** add them to the HTML boilerplate.');
+    L.push('6. **Admin gate.** The Inspect button row defaults to `display: none` and is only revealed by `_updateInspectVisibility()` when admin storage flags equal `"1"`. Do not weaken this gate.');
+    L.push('7. **No frameworks.** No React, Vue, jQuery, Svelte, etc. No bundler. No CDN runtime. Just raw HTML, CSS, and vanilla JS.');
+    L.push('8. **Mobile + reduced motion.** Keep the `@media (max-width: 520px)` and `@media (prefers-reduced-motion: reduce)` blocks intact.');
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('## ⚙️ OPTIONS USED IN THIS GENERATION');
+    L.push('');
+    L.push('| Option | Value |');
+    L.push('|---|---|');
+    L.push('| Inspector Mode | ' + (opts.useInspector ? 'ENABLED (admin-gated)' : 'CODE INCLUDED but you may strip it post-generation') + ' |');
+    L.push('| "Save to All Pages" button | ' + (opts.useSaveAll ? 'ENABLED' : 'CODE INCLUDED but you may strip it post-generation') + ' |');
+    L.push('| Font Awesome icons | ' + (opts.useFa ? 'ENABLED' : 'DISABLED (inline SVGs in HTML boilerplate)') + ' |');
+    L.push('| `prefers-reduced-motion` | ' + (opts.useReducedMotion ? 'RESPECTED' : 'IGNORED — animations always on') + ' |');
+    L.push('| Admin localStorage key | `' + (opts.adminLocal || 'gl_admin_auth') + '` |');
+    L.push('| Admin sessionStorage key | `' + (opts.adminSession || 'gl_admin_session') + '` |');
+    L.push('| Notes max characters (counter) | `' + (opts.maxChars || 2000) + '` |');
+    L.push('| Mode | `' + (opts.mode === 'all' ? 'all-pages' : 'specific-pages') + '` |');
+    L.push('| Targets | `' + (opts.mode === 'all' ? 'every .html in project' : (targets.length + ' file(s) selected')) + '` |');
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('## ✅ DEFINITION OF DONE');
+    L.push('');
+    L.push('- [ ] `notepad-widget/notepad-widget.css` saved exactly as provided.');
+    L.push('- [ ] `notepad-widget/notepad-widget.js` saved exactly as provided.');
+    L.push('- [ ] HTML boilerplate inserted just before `</body>` in every target page listed above.');
+    L.push('- [ ] Open any wired page → gold bubble appears at bottom-right.');
+    L.push('- [ ] Click bubble → glass panel opens above it; Save / Copy / Clear / Save to All Pages all work.');
+    L.push('- [ ] Type → text auto-saves after 600 ms; reload reveals the same text.');
+    L.push('- [ ] Open a second page → notes are isolated per page; "Save to All Pages" mirrors current text everywhere.');
+    L.push('- [ ] Drag the bubble → its position persists per page across reloads.');
+    L.push('- [ ] Set `localStorage.setItem("' + (opts.adminLocal || 'gl_admin_auth') + '", "1")` → Inspector Element button appears in the panel.');
+    L.push('- [ ] Click Inspector → crosshair cursor; hover shows gold dashed outline + tag label; middle-click any element appends a `─── REFERENCE ───` block to the notes.');
+    L.push('- [ ] Press Escape → Inspector exits; click the toggle again → also exits.');
+    L.push('- [ ] Mobile (<520px): panel takes full width; Inspector hint is hidden.');
+    L.push('- [ ] No console errors. No global variables leaked. No external network requests at runtime.');
+    L.push('');
+    L.push('When the checklist is fully green, the widget is live across the entire app.');
+    L.push('');
+    L.push('🚀 Implement now.');
+
+    return L.join('\n');
+  }
+
+  /* ── Generate → modal ───────────────────────────── */
+  function readOptions() {
+    return {
+      mode:             getMode(),
+      targets:          selectedPaths.slice(),
+      useInspector:     document.getElementById('optInspector').checked,
+      useSaveAll:       document.getElementById('optSaveAll').checked,
+      useFa:            document.getElementById('optFa').checked,
+      useReducedMotion: document.getElementById('optReducedMotion').checked,
+      adminLocal:       (document.getElementById('optAdminLocal').value || 'gl_admin_auth').trim(),
+      adminSession:     (document.getElementById('optAdminSession').value || 'gl_admin_session').trim(),
+      maxChars:         parseInt(document.getElementById('optMaxChars').value, 10) || 2000,
+      appName:          (document.getElementById('optAppName').value || '').trim()
+    };
+  }
+
+  generateBtn.addEventListener('click', function () {
+    var opts = readOptions();
+    if (opts.mode === 'specific' && opts.targets.length === 0) {
+      showToast('Pick at least one page first');
+      return;
+    }
+    /* Sync modal toggle/pickers/chips to the current mode */
+    setMode(opts.mode);
+    var prompt = buildPrompt(opts);
+    promptBox.value = prompt;
+    promptChars.textContent = prompt.length.toLocaleString();
+    promptTgts.textContent  = (opts.mode === 'all' ? 'all' : opts.targets.length);
+    modal.classList.add('is-open');
+    setTimeout(function () { promptBox.focus(); promptBox.scrollTop = 0; }, 50);
+  });
+
+  function closeModal() {
+    modal.classList.remove('is-open');
+    copyBtn.classList.remove('is-copied');
+    copyBtn.querySelector('span') ? null : null; /* noop */
+  }
+  modalClose.addEventListener('click', closeModal);
+  modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
+  });
+
+  /* ── Copy + download ────────────────────────────── */
+  copyBtn.addEventListener('click', function () {
+    var text = promptBox.value;
+    function ok() {
+      copyBtn.classList.add('is-copied');
+      var orig = copyBtn.innerHTML;
+      copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+      showToast('Copied — paste into your AI agent');
+      setTimeout(function () {
+        copyBtn.classList.remove('is-copied');
+        copyBtn.innerHTML = orig;
+      }, 1800);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok).catch(function () {
+        promptBox.select(); document.execCommand('copy'); ok();
+      });
+    } else {
+      promptBox.select(); document.execCommand('copy'); ok();
+    }
+  });
+
+  downloadBtn.addEventListener('click', function () {
+    var blob = new Blob([promptBox.value], { type: 'text/markdown;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'page-notes-widget-prompt.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    showToast('Markdown downloaded');
+  });
+
+})();
+</script>
+
+</body>
+</html>
