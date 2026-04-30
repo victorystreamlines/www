@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Widget Prompter v2 — Page Notes AI Generator</title>
+<style>
+/* ═══════════════════════════════════════════════════════
+   Widget Prompter v2 — single-file, vanilla JS, zero deps
+   Design: dark glass + gold + violet accents
+   ═══════════════════════════════════════════════════════ */
+:root {
+  --gold-1: #f6e1a1;
+  --gold-2: #d4a853;
+  --gold-3: #a87b2a;
+  --violet-1: #9aa9ff;
+  --violet-2: #6576e0;
+  --bg-0: #050712;
+  --bg-1: #0a0d1f;
+  --bg-2: #10142d;
+  --text-0: #f3f5ff;
+  --text-1: #c5c9e6;
+  --text-2: #8c90b4;
+  --green: #4ade80;
+  --red: #f87171;
+  --sh-card: 0 0 0 1px rgba(212, 168, 83, 0.12), 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 60px rgba(114, 137, 245, 0.05);
+  --sh-gold: 0 8px 32px rgba(212, 168, 83, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --t-quick: 0.18s;
+  --t-smooth: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  --t-bounce: 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+
+body {
+  font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-0);
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 5%, rgba(212, 168, 83, 0.18), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 85% 5%, rgba(114, 137, 245, 0.16), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(212, 168, 83, 0.12), transparent 70%),
+    linear-gradient(170deg, var(--bg-0) 0%, var(--bg-1) 50%, var(--bg-2) 100%);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-2) 40%, var(--gold-1) 50%, var(--gold-2) 60%, transparent);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.shell { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+
+.hero { text-align: center; margin-bottom: 36px; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 6px 14px 6px 10px;
+  border-radius: 999px;
+  background: rgba(212, 168, 83, 0.10);
+  border: 1px solid rgba(212, 168, 83, 0.34);
+  color: var(--gold-1);
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+}
+.hero-badge-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--gold-2);
+  box-shadow: 0 0 10px var(--gold-2);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+.hero-badge-v {
+  background: linear-gradient(135deg, var(--violet-1), var(--violet-2));
+  color: #060a1a; font-size: 0.65rem;
+  padding: 2px 7px; border-radius: 5px; font-weight: 800;
+}
+.hero-title {
+  margin: 22px 0 10px;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800; letter-spacing: -0.02em; line-height: 1.08;
+  background: linear-gradient(135deg, var(--gold-1) 0%, var(--gold-2) 55%, var(--gold-3) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero-subtitle {
+  max-width: 640px; margin: 0 auto;
+  color: var(--text-1); font-size: 1rem; line-height: 1.65;
+}
+
+.card {
+  position: relative;
+  background: rgba(14, 16, 38, 0.68);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(212, 168, 83, 0.22);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-card);
+  overflow: hidden; margin-bottom: 20px;
+  animation: card-in 0.5s var(--t-smooth) backwards;
+}
+.card:nth-child(2) { animation-delay: 0.08s; }
+.card:nth-child(3) { animation-delay: 0.16s; }
+@keyframes card-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+.card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 168, 83, 0.55) 50%, transparent);
+  pointer-events: none;
+}
+.card-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid rgba(212, 168, 83, 0.10);
+  background: linear-gradient(135deg, rgba(212, 168, 83, 0.07) 0%, rgba(114, 137, 245, 0.04) 100%);
+}
+.step-num {
+  flex-shrink: 0; width: 34px; height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--gold-1) 0%, var(--gold-2) 50%, var(--gold-3) 100%);
+  color: #06080f; font-weight: 800; font-size: 1rem;
+  display: grid; place-items: center;
+  box-shadow: 0 2px 10px rgba(212, 168, 83, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.step-label {
+  font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.17em; text-transform: uppercase;
+  background: linear-gradient(90deg, var(--gold-1), var(--gold-2));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.card-body { padding: 22px; }
+
+.mode-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.mode-radio { display: none; }
+.mode-card {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 18px;
+  border-radius: var(--r-md);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 7, 18, 0.55);
+  cursor: pointer;
+  transition: all var(--t-smooth);
+  user-select: none;
+}
+.mode-card:hover {
+  border-color: rgba(212, 168, 83, 0.38);
+  background: rgba(212, 168, 83, 0.06);
+  transform: translateY(-2px);
+}
+.mode-radio:checked + .mode-card {
+  border-color: var(--gold-2);
+  background: linear-gradient(135deg, rgba(212, 168, 83, 0.18) 0%, rgba(212, 168, 83, 0.06) 100%);
+  box-shadow: 0 0 24px rgba(212, 168, 83, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.mode-icon { font-size: 1.5rem; color: var(--text-2); transition: color var(--t-quick); }
+.mode-radio:checked + .mode-card .mode-icon { color: var(--gold-1); }
+.mode-title { font-weight: 700; color: var(--text-0); }
+.mode-desc { font-size: 0.8rem; color: var(--text-1); line-height: 1.55; }
+.mode-desc code, .toggle-desc code {
+  background: rgba(212, 168, 83, 0.12);
+  padding: 1px 5px; border-radius: 4px;
+  border: 1px solid rgba(212, 168, 83, 0.22);
+  color: var(--gold-1);
+  font-family: 'Roboto Mono', Consolas, monospace; font-size: 0.76rem;
+}
+
+.pickers {
+  margin-top: 16px; padding: 14px 16px;
+  background: rgba(5, 7, 18, 0.5);
+  border: 1px dashed rgba(212, 168, 83, 0.22);
+  border-radius: var(--r-md);
+  animation: fade-in 0.3s var(--t-smooth);
+}
+.pickers[hidden] { display: none; }
+@keyframes fade-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.picker-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.picker-label {
+  font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--gold-1); min-width: 100px;
+}
+.picker-btn {
+  position: relative; display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 14px; border-radius: var(--r-sm);
+  border: 1px solid rgba(114, 137, 245, 0.36);
+  background: rgba(114, 137, 245, 0.10);
+  color: var(--violet-1);
+  font-family: inherit; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.04em;
+  cursor: pointer; transition: all var(--t-quick); overflow: hidden;
+}
+.picker-btn:hover {
+  background: rgba(114, 137, 245, 0.22);
+  border-color: rgba(114, 137, 245, 0.55);
+  transform: translateY(-1px);
+}
+.picker-btn input { display: none; }
+.picker-btn svg { width: 14px; height: 14px; }
+.picker-btn-danger {
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--red);
+}
+.picker-btn-danger:hover {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.55);
+}
+
+.chips, .modal-chips {
+  margin-top: 12px; padding-top: 12px;
+  border-top: 1px dashed rgba(212, 168, 83, 0.18);
+  display: flex; flex-wrap: wrap; gap: 6px;
+  max-height: 210px; overflow-y: auto;
+}
+.modal-chips { margin-top: 0; padding-top: 0; border-top: none; max-height: 100px; }
+.chips:empty::before, .modal-chips:empty::before {
+  content: 'No pages selected yet — pick a folder or files above.';
+  color: var(--text-2); font-size: 0.78rem; font-style: italic; padding: 4px 2px;
+}
+.modal-chips:empty::before { content: 'No specific pages picked yet.'; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 4px 4px 10px; border-radius: 999px;
+  background: rgba(212, 168, 83, 0.10);
+  border: 1px solid rgba(212, 168, 83, 0.30);
+  color: var(--gold-1);
+  font-family: 'Roboto Mono', Consolas, monospace; font-size: 0.72rem;
+  animation: chip-in 0.22s var(--t-bounce);
+}
+@keyframes chip-in { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+.chip-text { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip-x {
+  background: none; border: none;
+  color: rgba(246, 225, 161, 0.65);
+  cursor: pointer; width: 18px; height: 18px;
+  border-radius: 50%; display: grid; place-items: center;
+  transition: all var(--t-quick);
+  font-size: 0.9rem; line-height: 1; padding: 0;
+}
+.chip-x:hover { background: rgba(248, 113, 113, 0.25); color: #fca5a5; }
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px; margin-bottom: 18px;
+}
+.toggle {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 15px 16px;
+  border-radius: var(--r-md);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 7, 18, 0.48);
+  cursor: pointer; transition: all var(--t-smooth);
+}
+.toggle:hover {
+  border-color: rgba(212, 168, 83, 0.32);
+  background: rgba(212, 168, 83, 0.04);
+  transform: translateY(-1px);
+}
+.toggle input { display: none; }
+.toggle-box {
+  flex-shrink: 0; width: 22px; height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(212, 168, 83, 0.42);
+  background: rgba(5, 7, 18, 0.7);
+  display: grid; place-items: center;
+  transition: all var(--t-smooth);
+}
+.toggle-check {
+  width: 14px; height: 14px; color: #06080f;
+  opacity: 0; transform: scale(0.6);
+  transition: all var(--t-smooth);
+}
+.toggle input:checked ~ .toggle-box {
+  background: linear-gradient(135deg, var(--gold-1), var(--gold-2));
+  border-color: var(--gold-2);
+  box-shadow: 0 0 14px rgba(212, 168, 83, 0.42);
+}
+.toggle input:checked ~ .toggle-box .toggle-check { opacity: 1; transform: scale(1); }
+.toggle-body { flex: 1; min-width: 0; }
+.toggle-name { font-weight: 700; color: var(--text-0); font-size: 0.88rem; margin-bottom: 2px; }
+.toggle-desc { font-size: 0.75rem; color: var(--text-1); line-height: 1.5; }
+
+.input-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr);
+  align-items: center; gap: 12px; margin-top: 12px;
+}
+.input-label { font-size: 0.78rem; font-weight: 700; color: var(--text-1); letter-spacing: 0.04em; }
+.input {
+  width: 100%; padding: 10px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(212, 168, 83, 0.22);
+  background: rgba(5, 7, 18, 0.65);
+  color: var(--text-0);
+  font-family: 'Roboto Mono', Consolas, monospace; font-size: 0.85rem;
+  outline: none; transition: all var(--t-quick);
+}
+.input:focus {
+  border-color: var(--gold-2);
+  box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.18);
+  background: rgba(5, 7, 18, 0.85);
+}
+.input::placeholder { color: var(--text-2); opacity: 0.7; }
+
+.cta-row { display: flex; justify-content: center; margin-top: 12px; }
+.cta {
+  position: relative; display: inline-flex; align-items: center; gap: 12px;
+  padding: 16px 44px; border-radius: 14px;
+  border: 1px solid rgba(246, 225, 161, 0.4);
+  background: linear-gradient(135deg, var(--gold-1) 0%, var(--gold-2) 55%, var(--gold-3) 100%);
+  color: #06080f;
+  font-family: inherit; font-size: 0.95rem; font-weight: 800;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  cursor: pointer; overflow: hidden;
+  box-shadow: var(--sh-gold);
+  transition: all var(--t-bounce);
+}
+.cta::after {
+  content: ''; position: absolute; top: 0; left: -75%;
+  width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transition: left 0.6s ease; pointer-events: none;
+}
+.cta:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 14px 46px rgba(212, 168, 83, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.cta:hover::after { left: 125%; }
+.cta:active { transform: translateY(0) scale(0.98); }
+.cta-icon { width: 18px; height: 18px; }
+
+.modal {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0, 2, 8, 0.82);
+  backdrop-filter: blur(10px);
+  display: none;
+  align-items: center; justify-content: center;
+  padding: 20px;
+  animation: modal-bg-in 0.25s ease;
+}
+.modal.open { display: flex; }
+@keyframes modal-bg-in { from { opacity: 0; } to { opacity: 1; } }
+.modal-card {
+  width: 100%; max-width: 920px; max-height: 92vh;
+  display: flex; flex-direction: column;
+  background: linear-gradient(160deg, #10132a 0%, #06081a 100%);
+  border: 1px solid rgba(212, 168, 83, 0.42);
+  border-radius: var(--r-lg);
+  box-shadow: 0 0 0 1px rgba(212, 168, 83, 0.18), 0 30px 80px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+  animation: modal-rise 0.32s var(--t-smooth);
+}
+@keyframes modal-rise {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(212, 168, 83, 0.22);
+  background: linear-gradient(135deg, rgba(212, 168, 83, 0.14) 0%, rgba(114, 137, 245, 0.06) 100%);
+}
+.modal-title { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.05rem; }
+.modal-title-icon {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--gold-1), var(--gold-2));
+  color: #06080f; display: grid; place-items: center; font-size: 1rem;
+  box-shadow: var(--sh-gold);
+}
+.modal-close {
+  width: 34px; height: 34px; border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-1); font-family: inherit;
+  cursor: pointer; font-size: 1.2rem; line-height: 1;
+  transition: all var(--t-quick);
+}
+.modal-close:hover { background: rgba(248, 113, 113, 0.18); border-color: rgba(248, 113, 113, 0.4); color: #fca5a5; }
+.modal-body {
+  flex: 1; overflow: hidden;
+  padding: 16px 22px;
+  display: flex; flex-direction: column; gap: 12px;
+  min-height: 0;
+}
+.modal-targets {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: rgba(5, 7, 18, 0.5);
+  border: 1px solid rgba(212, 168, 83, 0.16);
+}
+.modal-toggle {
+  display: flex; gap: 4px; padding: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  border: 1px solid rgba(212, 168, 83, 0.18);
+}
+.modal-toggle-btn {
+  flex: 1; padding: 8px 12px;
+  border: none; background: transparent;
+  color: var(--text-2);
+  font-family: inherit; font-size: 0.74rem; font-weight: 700;
+  letter-spacing: 0.08em; cursor: pointer;
+  border-radius: 7px;
+  transition: all var(--t-smooth);
+  text-transform: uppercase;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.modal-toggle-btn:hover { color: var(--text-0); }
+.modal-toggle-btn.active {
+  background: linear-gradient(135deg, var(--gold-1), var(--gold-2));
+  color: #06080f;
+  box-shadow: 0 4px 14px rgba(212, 168, 83, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.modal-info { font-size: 0.78rem; color: var(--text-1); line-height: 1.5; padding: 4px 2px; }
+.modal-info strong { color: var(--gold-1); }
+.modal-info code {
+  background: rgba(212, 168, 83, 0.1);
+  padding: 1px 6px; border-radius: 4px;
+  border: 1px solid rgba(212, 168, 83, 0.22);
+  color: var(--gold-1);
+  font-family: 'Roboto Mono', monospace; font-size: 0.76rem;
+}
+.modal-pickers { display: flex; gap: 8px; flex-wrap: wrap; }
+.modal-pickers[hidden], .modal-chips[hidden], .modal-info[hidden] { display: none !important; }
+.modal-pickers .picker-btn { padding: 7px 12px; font-size: 0.72rem; }
+.prompt-meta {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.74rem; color: var(--text-2); flex-wrap: wrap;
+}
+.prompt-meta strong { color: var(--gold-1); }
+.prompt-output {
+  flex: 1; min-height: 280px; width: 100%;
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: #03050f;
+  border: 1px solid rgba(212, 168, 83, 0.22);
+  color: #d6dafc;
+  font-family: 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 0.82rem; line-height: 1.58;
+  resize: none; outline: none;
+}
+.prompt-output:focus { border-color: var(--gold-2); box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.18); }
+.modal-foot {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding: 14px 22px 18px;
+  border-top: 1px solid rgba(212, 168, 83, 0.16);
+  flex-wrap: wrap;
+}
+.foot-btn {
+  padding: 10px 22px;
+  border-radius: var(--r-sm);
+  border: 1px solid transparent;
+  font-family: inherit; font-size: 0.78rem; font-weight: 700;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  cursor: pointer; transition: all var(--t-quick);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.foot-btn svg { width: 14px; height: 14px; }
+.foot-btn-primary {
+  background: linear-gradient(135deg, var(--gold-1), var(--gold-2), var(--gold-3));
+  color: #06080f;
+  box-shadow: 0 4px 18px rgba(212, 168, 83, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.foot-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(212, 168, 83, 0.55); }
+.foot-btn-primary.copied { background: linear-gradient(135deg, #86efac, #4ade80); }
+.foot-btn-ghost {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-1);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+.foot-btn-ghost:hover { background: rgba(255, 255, 255, 0.10); color: var(--text-0); }
+
+.toast {
+  position: fixed; bottom: 32px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  padding: 10px 22px;
+  border-radius: 999px;
+  background: rgba(5, 7, 18, 0.94);
+  border: 1px solid rgba(212, 168, 83, 0.42);
+  color: var(--green);
+  font-size: 0.76rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65);
+  opacity: 0; transition: all var(--t-smooth);
+  z-index: 10000; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.page-foot {
+  text-align: center; color: var(--text-2);
+  font-size: 0.76rem; padding: 24px 24px 0; line-height: 1.6;
+}
+.page-foot code {
+  background: rgba(212, 168, 83, 0.12);
+  padding: 2px 7px; border-radius: 4px;
+  border: 1px solid rgba(212, 168, 83, 0.22);
+  color: var(--gold-1);
+  font-family: 'Roboto Mono', monospace;
+}
+
+@media (max-width: 640px) {
+  .shell { padding: 32px 16px 60px; }
+  .mode-grid { grid-template-columns: 1fr; }
+  .input-row { grid-template-columns: 1fr; gap: 6px; }
+  .card-body { padding: 16px; }
+  .cta { padding: 14px 28px; font-size: 0.86rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01s !important;
+    transition-duration: 0.01s !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="hero">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      Widget Prompter
+      <span class="hero-badge-v">v2</span>
+    </div>
+    <h1 class="hero-title">Page Notes — Reverse-Engineer Brief</h1>
+    <p class="hero-subtitle">
+      Generate a complete, framework-agnostic AI prompt that recreates the floating
+      Page Notes + Inspector widget inside any application — Node, PHP, ASP.NET, static.
+      Pick target pages, choose options, hit Generate, paste the result into your AI of choice.
+    </p>
+  </header>
+
+  <section class="card">
+    <div class="card-head">
+      <div class="step-num">1</div>
+      <div class="step-label">Target Pages</div>
+    </div>
+    <div class="card-body">
+      <div class="mode-grid" role="radiogroup" aria-label="Target mode">
+        <label>
+          <input type="radio" class="mode-radio" name="mode" value="all" checked>
+          <div class="mode-card">
+            <div class="mode-icon">📚</div>
+            <div class="mode-title">All pages in app</div>
+            <div class="mode-desc">Instruct the AI to inject the widget into every <code>.html</code> file at the project root and any subfolder.</div>
+          </div>
+        </label>
+        <label>
+          <input type="radio" class="mode-radio" name="mode" value="specific">
+          <div class="mode-card">
+            <div class="mode-icon">🎯</div>
+            <div class="mode-title">Specific page(s)</div>
+            <div class="mode-desc">Pick a folder or individual HTML files. Their relative paths will be embedded in the prompt as the explicit target list.</div>
+          </div>
+        </label>
+      </div>
+      <div class="pickers" id="pickers" hidden>
+        <div class="picker-row">
+          <span class="picker-label">📁 Pick</span>
+          <label class="picker-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <span>Folder</span>
+            <input type="file" id="folderPicker" webkitdirectory directory multiple>
+          </label>
+          <label class="picker-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span>HTML files</span>
+            <input type="file" id="filePicker" multiple accept=".html,.htm">
+          </label>
+          <button type="button" class="picker-btn picker-btn-danger" id="clearChips">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            <span>Clear</span>
+          </button>
+        </div>
+        <div class="chips" id="chips" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div class="step-num">2</div>
+      <div class="step-label">Options</div>
+    </div>
+    <div class="card-body">
+      <div class="options-grid">
+        <label class="toggle">
+          <input type="checkbox" id="optInspector" checked>
+          <span class="toggle-box"><svg class="toggle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span class="toggle-body">
+            <span class="toggle-name">Inspector Mode (admin-only)</span>
+            <span class="toggle-desc">Middle-click any DOM element to capture page + selector path + opening tag into the notes. Hidden unless admin keys are set.</span>
+          </span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="optSaveAll" checked>
+          <span class="toggle-box"><svg class="toggle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span class="toggle-body">
+            <span class="toggle-name">"Save to All Pages" button</span>
+            <span class="toggle-desc">Adds a globe button that broadcasts the note to every known <code>pageNotes:*</code> key plus a global fallback.</span>
+          </span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="optFa" checked>
+          <span class="toggle-box"><svg class="toggle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span class="toggle-body">
+            <span class="toggle-name">Use Font Awesome icons</span>
+            <span class="toggle-desc">Uses <code>fa-solid</code> icons (pen-nib, scroll, xmark). If unchecked, the AI substitutes inline SVGs.</span>
+          </span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="optReducedMotion" checked>
+          <span class="toggle-box"><svg class="toggle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          <span class="toggle-body">
+            <span class="toggle-name">Respect prefers-reduced-motion</span>
+            <span class="toggle-desc">Already in the CSS. Disable only if you want kiosk-style always-on animation.</span>
+          </span>
+        </label>
+      </div>
+      <div class="input-row">
+        <label class="input-label" for="optAdminLocal">Admin localStorage key</label>
+        <input class="input" id="optAdminLocal" type="text" value="gl_admin_auth" spellcheck="false">
+      </div>
+      <div class="input-row">
+        <label class="input-label" for="optAdminSession">Admin sessionStorage key</label>
+        <input class="input" id="optAdminSession" type="text" value="gl_admin_session" spellcheck="false">
+      </div>
+      <div class="input-row">
+        <label class="input-label" for="optMaxChars">Max notepad characters</label>
+        <input class="input" id="optMaxChars" type="number" value="2000" min="200" step="50">
+      </div>
+      <div class="input-row">
+        <label class="input-label" for="optAppName">Application name (cosmetic)</label>
+        <input class="input" id="optAppName" type="text" placeholder="e.g. My Dashboard, Finance App..." spellcheck="false">
+      </div>
+    </div>
+  </section>
+
+  <div class="cta-row">
+    <button type="button" class="cta" id="btnGenerate">
+      <svg class="cta-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Generate AI Prompt
+    </button>
+  </div>
+
+  <footer class="page-foot">
+    Drop this single file into any project root — no build step, no dependencies.<br>
+    Folder-pick supported in <code>Chrome / Edge</code>. Firefox falls back to per-file selection.
+  </footer>
+</div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">
+        <span class="modal-title-icon">✨</span>
+        <span>Your AI Prompt is ready</span>
+      </div>
+      <button type="button" class="modal-close" id="modalClose" aria-label="Close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-targets">
+        <div class="modal-toggle" role="tablist">
+          <button type="button" class="modal-toggle-btn active" data-mode="all" role="tab">📚 All pages</button>
+          <button type="button" class="modal-toggle-btn" data-mode="specific" role="tab">🎯 Specific pages</button>
+        </div>
+        <div class="modal-info" id="modalInfoAll">
+          AI will inject the boilerplate into <strong>every <code>.html</code> file</strong> at the project root and any subfolder.
+        </div>
+        <div class="modal-pickers" id="modalPickers" hidden>
+          <label class="picker-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <span>Folder</span>
+            <input type="file" id="modalFolder" webkitdirectory directory multiple>
+          </label>
+          <label class="picker-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span>Files</span>
+            <input type="file" id="modalFiles" multiple accept=".html,.htm">
+          </label>
+          <button type="button" class="picker-btn picker-btn-danger" id="modalClear">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            <span>Clear</span>
+          </button>
+        </div>
+        <div class="modal-chips" id="modalChips" hidden></div>
+      </div>
+      <div class="prompt-meta">
+        <span><strong id="promptChars">0</strong> characters</span>
+        <span>·</span>
+        <span><strong id="promptTargets">0</strong> target pages</span>
+        <span>·</span>
+        <span>Paste into any AI agent that can write files.</span>
+      </div>
+      <textarea class="prompt-output" id="promptOutput" readonly spellcheck="false"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="foot-btn foot-btn-ghost" id="btnDownload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download .md
+      </button>
+      <button type="button" class="foot-btn foot-btn-primary" id="btnCopy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy Prompt
+      </button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+window.__WP_WIDGET_CSS__ = "/* ============================================================\n   AI Page Notes Widget — Premium Redesign\n   Scope: #ai-page-notes-* / .apn-*  — zero global overrides\n   ============================================================ */\n\n/* ── Design tokens ──────────────────────────────────────────── */\n:root {\n  --apn-bubble-bottom   : 32px;\n  --apn-bubble-right    : 32px;\n  --apn-panel-width     : 336px;\n  --apn-panel-max-h     : 500px;\n  --apn-z-bubble        : 99800;\n  --apn-z-panel         : 99801;\n\n  /* Palette */\n  --apn-gold            : #d4a853;\n  --apn-gold-light      : #f0d78c;\n  --apn-gold-dim        : #c9963c;\n  --apn-violet          : #7289f5;\n  --apn-violet-dim      : #4a5dd4;\n  --apn-bg-deep         : #080912;\n  --apn-bg-panel        : rgba(10, 11, 24, 0.82);\n  --apn-surface         : rgba(22, 24, 52, 0.75);\n  --apn-surface-hover   : rgba(30, 33, 66, 0.85);\n  --apn-border-gold     : rgba(212, 168, 83, 0.28);\n  --apn-border-subtle   : rgba(114, 137, 245, 0.14);\n  --apn-text            : #e8eaf8;\n  --apn-text-dim        : #9da0bf;\n  --apn-green           : #4ade80;\n\n  /* Shapes */\n  --apn-radius-panel    : 20px;\n  --apn-radius-btn      : 10px;\n\n  /* Shadows */\n  --apn-shadow-bubble   : 0 0 0 1px rgba(212,168,83,0.35),\n                          0 8px 28px rgba(0,0,0,0.55),\n                          0 0 40px rgba(212,168,83,0.18);\n  --apn-shadow-panel    : 0 0 0 1px rgba(212,168,83,0.18),\n                          0 0 0 4px rgba(212,168,83,0.05),\n                          0 24px 64px rgba(0,0,0,0.7),\n                          0 4px 24px rgba(114,137,245,0.08);\n}\n\n/* ══════════════════════════════════════════════════════════════\n   BUBBLE\n   ══════════════════════════════════════════════════════════════ */\n#ai-page-notes-bubble {\n  position   : fixed;\n  bottom     : var(--apn-bubble-bottom);\n  right      : var(--apn-bubble-right);\n  z-index    : var(--apn-z-bubble);\n  width      : 52px;\n  height     : 52px;\n  border-radius : 50%;\n  border     : none;\n  cursor     : grab;\n  display    : flex;\n  align-items : center;\n  justify-content : center;\n  font-size  : 1.15rem;\n  color      : #0a0b14;\n  user-select: none;\n  -webkit-user-select: none;\n  touch-action: none;\n\n  /* Layered gold gradient */\n  background : linear-gradient(145deg,\n    var(--apn-gold-light) 0%,\n    var(--apn-gold)       45%,\n    var(--apn-gold-dim)   75%,\n    #a8782e               100%\n  );\n  box-shadow : var(--apn-shadow-bubble);\n  transition : transform 0.2s cubic-bezier(0.34,1.56,0.64,1),\n               box-shadow 0.2s ease;\n}\n\n/* Inner ring overlay */\n#ai-page-notes-bubble::before {\n  content       : '';\n  position      : absolute;\n  inset         : 4px;\n  border-radius : 50%;\n  border        : 1px solid rgba(255,255,255,0.35);\n  pointer-events: none;\n}\n\n/* Idle pulse ring */\n#ai-page-notes-bubble::after {\n  content       : '';\n  position      : absolute;\n  inset         : -6px;\n  border-radius : 50%;\n  border        : 1.5px solid rgba(212,168,83,0.3);\n  animation     : apn-pulse-ring 2.8s ease-out infinite;\n  pointer-events: none;\n}\n\n@keyframes apn-pulse-ring {\n  0%   { opacity: 0.9; transform: scale(1);    }\n  70%  { opacity: 0;   transform: scale(1.35); }\n  100% { opacity: 0;   transform: scale(1.35); }\n}\n\n#ai-page-notes-bubble:hover {\n  transform  : scale(1.12) translateY(-2px);\n  box-shadow : 0 0 0 1px rgba(212,168,83,0.55),\n               0 12px 36px rgba(0,0,0,0.6),\n               0 0 60px rgba(212,168,83,0.32);\n}\n#ai-page-notes-bubble:active { cursor: grabbing; transform: scale(1.04); }\n\n/* Green dot — has notes */\n#ai-page-notes-bubble.apn-has-notes .apn-indicator {\n  display : block;\n}\n.apn-indicator {\n  display       : none;\n  position      : absolute;\n  top           : 4px;\n  right         : 4px;\n  width         : 10px;\n  height        : 10px;\n  border-radius : 50%;\n  background    : var(--apn-green);\n  border        : 2px solid var(--apn-bg-deep);\n  box-shadow    : 0 0 8px rgba(74,222,128,0.8);\n  pointer-events: none;\n}\n\n/* ══════════════════════════════════════════════════════════════\n   PANEL\n   ══════════════════════════════════════════════════════════════ */\n#ai-page-notes-panel {\n  position    : fixed;\n  z-index     : var(--apn-z-panel);\n  width       : var(--apn-panel-width);\n  max-height  : var(--apn-panel-max-h);\n  display     : flex;\n  flex-direction: column;\n  overflow    : hidden;\n\n  /* Glass morphism */\n  background  : var(--apn-bg-panel);\n  backdrop-filter: blur(22px) saturate(160%);\n  -webkit-backdrop-filter: blur(22px) saturate(160%);\n  border-radius: var(--apn-radius-panel);\n  border      : 1px solid var(--apn-border-gold);\n  box-shadow  : var(--apn-shadow-panel);\n\n  /* Default position — JS overrides */\n  bottom      : calc(var(--apn-bubble-bottom) + 66px);\n  right       : var(--apn-bubble-right);\n\n  /* Open/close animation */\n  opacity     : 0;\n  transform   : translateY(14px) scale(0.96);\n  pointer-events: none;\n  transition  : opacity 0.26s cubic-bezier(0.16,1,0.3,1),\n                transform 0.26s cubic-bezier(0.16,1,0.3,1);\n  will-change : transform, opacity;\n}\n\n/* Diagonal gold shimmer line at top edge */\n#ai-page-notes-panel::before {\n  content       : '';\n  position      : absolute;\n  top           : 0; left: 0; right: 0;\n  height        : 1px;\n  background    : linear-gradient(90deg,\n    transparent 0%,\n    rgba(212,168,83,0.7) 30%,\n    rgba(240,215,140,0.9) 50%,\n    rgba(212,168,83,0.7) 70%,\n    transparent 100%\n  );\n  pointer-events: none;\n  z-index       : 1;\n}\n\n/* Subtle violet glow in corner */\n#ai-page-notes-panel::after {\n  content       : '';\n  position      : absolute;\n  bottom        : -40px; right: -30px;\n  width         : 180px; height: 180px;\n  border-radius : 50%;\n  background    : radial-gradient(circle, rgba(114,137,245,0.09) 0%, transparent 70%);\n  pointer-events: none;\n}\n\n#ai-page-notes-panel.apn-open {\n  opacity        : 1;\n  transform      : translateY(0) scale(1);\n  pointer-events : all;\n}\n\n/* ── Header ──────────────────────────────────────────────────── */\n.apn-header {\n  display         : flex;\n  align-items     : center;\n  justify-content : space-between;\n  padding         : 15px 18px 13px;\n  flex-shrink     : 0;\n  position        : relative;\n  background      : linear-gradient(135deg,\n    rgba(212,168,83,0.09) 0%,\n    rgba(114,137,245,0.05) 100%\n  );\n  border-bottom   : 1px solid var(--apn-border-gold);\n}\n\n.apn-title {\n  display     : flex;\n  align-items : center;\n  gap         : 10px;\n}\n\n.apn-title-icon {\n  width           : 30px;\n  height          : 30px;\n  border-radius   : 8px;\n  background      : linear-gradient(135deg, var(--apn-gold) 0%, var(--apn-gold-dim) 100%);\n  display         : flex;\n  align-items     : center;\n  justify-content : center;\n  color           : #0a0b14;\n  font-size       : 0.82rem;\n  box-shadow      : 0 2px 8px rgba(212,168,83,0.4),\n                    inset 0 1px 0 rgba(255,255,255,0.25);\n  flex-shrink     : 0;\n}\n\n.apn-title-text {\n  font-family     : 'Poppins', system-ui, sans-serif;\n  font-size       : 0.72rem;\n  font-weight     : 700;\n  letter-spacing  : 0.14em;\n  text-transform  : uppercase;\n  background      : linear-gradient(90deg, var(--apn-gold-light), var(--apn-gold));\n  -webkit-background-clip: text;\n  background-clip : text;\n  -webkit-text-fill-color: transparent;\n}\n\n.apn-close-btn {\n  width       : 30px;\n  height      : 30px;\n  border-radius: 8px;\n  border      : 1px solid rgba(255,255,255,0.08);\n  background  : rgba(255,255,255,0.05);\n  color       : var(--apn-text-dim);\n  cursor      : pointer;\n  font-size   : 0.88rem;\n  display     : flex;\n  align-items : center;\n  justify-content: center;\n  transition  : background 0.18s, color 0.18s, border-color 0.18s;\n  flex-shrink : 0;\n}\n.apn-close-btn:hover {\n  background    : rgba(248,113,113,0.15);\n  color         : #fca5a5;\n  border-color  : rgba(248,113,113,0.3);\n}\n\n/* ── Char counter bar ──────────────────────────────────────── */\n.apn-counter-row {\n  display         : flex;\n  align-items     : center;\n  gap             : 10px;\n  padding         : 7px 18px 5px;\n  background      : rgba(0,0,0,0.12);\n  border-bottom   : 1px solid rgba(212,168,83,0.06);\n  flex-shrink     : 0;\n}\n.apn-counter-label {\n  font-family : 'Poppins', monospace, sans-serif;\n  font-size   : 0.66rem;\n  font-weight : 600;\n  letter-spacing: 0.08em;\n  text-transform: uppercase;\n  color       : var(--apn-text-dim);\n  white-space : nowrap;\n}\n.apn-counter-bar-wrap {\n  flex        : 1;\n  height      : 3px;\n  border-radius: 999px;\n  background  : rgba(255,255,255,0.06);\n  overflow    : hidden;\n}\n.apn-counter-bar {\n  height      : 100%;\n  width       : 0%;\n  border-radius: 999px;\n  background  : linear-gradient(90deg, var(--apn-gold-dim), var(--apn-gold-light));\n  transition  : width 0.3s ease;\n}\n\n/* ── Textarea ────────────────────────────────────────────────── */\n.apn-textarea {\n  flex        : 1;\n  min-height  : 190px;\n  max-height  : 260px;\n  resize      : vertical;\n  background  : rgba(6, 7, 18, 0.5);\n  border      : none;\n  border-bottom: 1px solid rgba(212,168,83,0.1);\n  color       : var(--apn-text);\n  font-family : 'Poppins', system-ui, sans-serif;\n  font-size   : 0.875rem;\n  line-height : 1.7;\n  padding     : 16px 18px;\n  outline     : none;\n  scrollbar-width: thin;\n  scrollbar-color: rgba(212,168,83,0.35) rgba(15,16,28,0.5);\n  transition  : background 0.2s;\n  position    : relative;\n}\n.apn-textarea::placeholder {\n  color       : rgba(157,160,191,0.5);\n  font-style  : italic;\n  font-size   : 0.84rem;\n}\n.apn-textarea:focus {\n  background  : rgba(8, 10, 24, 0.7);\n  box-shadow  : inset 0 0 0 1px rgba(212,168,83,0.12);\n}\n\n/* ── Footer ──────────────────────────────────────────────────── */\n.apn-footer {\n  display     : flex;\n  gap         : 8px;\n  padding     : 13px 14px 14px;\n  flex-shrink : 0;\n  background  : linear-gradient(180deg,\n    rgba(10,11,24,0.4) 0%,\n    rgba(10,11,24,0.7) 100%\n  );\n  position    : relative;\n}\n\n/* Divider shimmer above footer */\n.apn-footer::before {\n  content   : '';\n  position  : absolute;\n  top: 0; left: 14px; right: 14px;\n  height    : 1px;\n  background: linear-gradient(90deg,\n    transparent,\n    rgba(212,168,83,0.2) 50%,\n    transparent\n  );\n}\n\n.apn-btn {\n  flex        : 1;\n  padding     : 8px 6px;\n  border-radius: var(--apn-radius-btn);\n  border      : 1px solid transparent;\n  font-family : 'Poppins', system-ui, sans-serif;\n  font-size   : 0.72rem;\n  font-weight : 700;\n  letter-spacing: 0.06em;\n  text-transform: uppercase;\n  cursor      : pointer;\n  display     : flex;\n  align-items : center;\n  justify-content: center;\n  gap         : 5px;\n  transition  : transform 0.15s cubic-bezier(0.34,1.56,0.64,1),\n                box-shadow 0.15s ease,\n                background 0.18s ease,\n                border-color 0.18s ease;\n  position    : relative;\n  overflow    : hidden;\n}\n\n/* Shimmer on hover */\n.apn-btn::after {\n  content     : '';\n  position    : absolute;\n  top: 0; left: -75%;\n  width       : 50%;\n  height      : 100%;\n  background  : linear-gradient(90deg,\n    transparent,\n    rgba(255,255,255,0.18),\n    transparent\n  );\n  transition  : left 0.4s ease;\n  pointer-events: none;\n}\n.apn-btn:hover::after { left: 125%; }\n.apn-btn:hover  { transform: translateY(-2px); }\n.apn-btn:active { transform: translateY(0) scale(0.97); }\n\n/* Save */\n.apn-btn-save {\n  background  : linear-gradient(135deg, var(--apn-gold-light) 0%, var(--apn-gold) 50%, var(--apn-gold-dim) 100%);\n  color       : #0a0b14;\n  border-color: rgba(240,215,140,0.3);\n  box-shadow  : 0 2px 12px rgba(212,168,83,0.3),\n                inset 0 1px 0 rgba(255,255,255,0.3);\n}\n.apn-btn-save:hover {\n  box-shadow  : 0 4px 20px rgba(212,168,83,0.5),\n                inset 0 1px 0 rgba(255,255,255,0.3);\n}\n\n/* Copy */\n.apn-btn-copy {\n  background  : rgba(114,137,245,0.12);\n  color       : #a5b4ff;\n  border-color: rgba(114,137,245,0.25);\n  box-shadow  : 0 2px 8px rgba(114,137,245,0.1);\n}\n.apn-btn-copy:hover {\n  background  : rgba(114,137,245,0.22);\n  border-color: rgba(114,137,245,0.45);\n  box-shadow  : 0 4px 16px rgba(114,137,245,0.22);\n}\n.apn-btn-copy.apn-copied {\n  background  : rgba(74,222,128,0.15);\n  color       : #86efac;\n  border-color: rgba(74,222,128,0.35);\n  box-shadow  : 0 2px 12px rgba(74,222,128,0.2);\n}\n\n/* Clear */\n.apn-btn-clear {\n  background  : rgba(239, 68, 68, 0.08);\n  color       : #fca5a5;\n  border-color: rgba(239,68,68,0.2);\n  box-shadow  : 0 2px 8px rgba(239,68,68,0.08);\n}\n.apn-btn-clear:hover {\n  background  : rgba(239,68,68,0.18);\n  border-color: rgba(239,68,68,0.4);\n  box-shadow  : 0 4px 16px rgba(239,68,68,0.18);\n}\n\n/* ── Toast ───────────────────────────────────────────────────── */\n#ai-page-notes-toast {\n  position    : fixed;\n  z-index     : calc(var(--apn-z-panel) + 2);\n  bottom      : calc(var(--apn-bubble-bottom) + 70px);\n  right       : var(--apn-bubble-right);\n  background  : rgba(10, 11, 24, 0.92);\n  backdrop-filter: blur(12px);\n  border      : 1px solid var(--apn-border-gold);\n  color       : var(--apn-green);\n  font-family : 'Poppins', system-ui, sans-serif;\n  font-size   : 0.74rem;\n  font-weight : 700;\n  letter-spacing: 0.06em;\n  text-transform: uppercase;\n  padding     : 7px 16px;\n  border-radius: 999px;\n  box-shadow  : 0 4px 22px rgba(0,0,0,0.5),\n                0 0 14px rgba(74,222,128,0.12);\n  opacity     : 0;\n  transform   : translateY(6px);\n  transition  : opacity 0.22s ease, transform 0.22s ease;\n  pointer-events: none;\n}\n#ai-page-notes-toast.apn-visible {\n  opacity     : 1;\n  transform   : translateY(0);\n}\n\n/* ── Save to All Pages row ───────────────────────────────────── */\n.apn-save-all-row {\n  padding: 0 14px 14px;\n  background: rgba(0,0,0,0.18);\n}\n.apn-btn-save-all {\n  width: 100%;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  gap: 9px;\n  padding: 10px 16px;\n  border-radius: 12px;\n  border: 1px solid rgba(212,168,83,0.28);\n  background: linear-gradient(135deg,\n    rgba(212,168,83,0.09) 0%,\n    rgba(201,150,60,0.06) 100%\n  );\n  color: rgba(212,168,83,0.85);\n  font-family: 'Poppins', system-ui, sans-serif;\n  font-size: 0.71rem;\n  font-weight: 700;\n  letter-spacing: 0.1em;\n  text-transform: uppercase;\n  cursor: pointer;\n  position: relative;\n  overflow: hidden;\n  transition: background 0.22s ease, border-color 0.22s ease,\n              box-shadow 0.22s ease, transform 0.18s ease;\n}\n.apn-btn-save-all::before {\n  content: '';\n  position: absolute; top: 0; left: 8%; right: 8%; height: 1px;\n  background: linear-gradient(90deg, transparent, rgba(212,168,83,0.45), transparent);\n  pointer-events: none;\n}\n.apn-btn-save-all::after {\n  content: '';\n  position: absolute; top: 0; left: -80%;\n  width: 55%; height: 100%;\n  background: linear-gradient(90deg, transparent, rgba(212,168,83,0.12), transparent);\n  transition: left 0.5s ease;\n  pointer-events: none;\n}\n.apn-btn-save-all:hover::after { left: 130%; }\n.apn-btn-save-all:hover {\n  background: linear-gradient(135deg,\n    rgba(212,168,83,0.18) 0%,\n    rgba(201,150,60,0.12) 100%\n  );\n  border-color: rgba(212,168,83,0.55);\n  color: #f0d78c;\n  box-shadow: 0 0 22px rgba(212,168,83,0.15),\n              inset 0 1px 0 rgba(255,255,255,0.06);\n  transform: translateY(-1px);\n}\n.apn-btn-save-all:active { transform: translateY(0) scale(0.98); }\n.apn-btn-save-all svg {\n  flex-shrink: 0; opacity: 0.72;\n  transition: opacity 0.2s, transform 0.35s ease;\n}\n.apn-btn-save-all:hover svg { opacity: 1; transform: rotate(18deg); }\n\n/* ── Inspector toggle row ────────────────────────────────────── */\n.apn-inspect-row {\n  padding    : 0 14px 14px;\n  background : rgba(0, 0, 0, 0.18);\n}\n.apn-btn-inspect {\n  width           : 100%;\n  display         : flex;\n  align-items     : center;\n  justify-content : center;\n  gap             : 9px;\n  padding         : 10px 16px;\n  border-radius   : 12px;\n  border          : 1px solid rgba(114, 137, 245, 0.3);\n  background      : linear-gradient(135deg,\n    rgba(114, 137, 245, 0.10) 0%,\n    rgba(74, 93, 212, 0.08)   100%\n  );\n  color           : rgba(165, 180, 255, 0.9);\n  font-family     : 'Poppins', system-ui, sans-serif;\n  font-size       : 0.71rem;\n  font-weight     : 700;\n  letter-spacing  : 0.1em;\n  text-transform  : uppercase;\n  cursor          : pointer;\n  position        : relative;\n  overflow        : hidden;\n  transition      : background 0.22s ease, border-color 0.22s ease,\n                    box-shadow 0.22s ease, transform 0.18s ease, color 0.22s ease;\n}\n.apn-btn-inspect::before {\n  content   : '';\n  position  : absolute;\n  top       : 0; left: 8%; right: 8%;\n  height    : 1px;\n  background: linear-gradient(90deg, transparent, rgba(114, 137, 245, 0.45), transparent);\n  pointer-events: none;\n}\n.apn-btn-inspect::after {\n  content   : '';\n  position  : absolute;\n  top       : 0; left: -80%;\n  width     : 55%;\n  height    : 100%;\n  background: linear-gradient(90deg, transparent, rgba(114, 137, 245, 0.14), transparent);\n  transition: left 0.5s ease;\n  pointer-events: none;\n}\n.apn-btn-inspect:hover::after { left: 130%; }\n.apn-btn-inspect:hover {\n  background   : linear-gradient(135deg,\n    rgba(114, 137, 245, 0.20) 0%,\n    rgba(74, 93, 212, 0.14)   100%\n  );\n  border-color : rgba(114, 137, 245, 0.6);\n  color        : #d2dbff;\n  box-shadow   : 0 0 22px rgba(114, 137, 245, 0.18),\n                 inset 0 1px 0 rgba(255, 255, 255, 0.06);\n  transform    : translateY(-1px);\n}\n.apn-btn-inspect:active { transform: translateY(0) scale(0.98); }\n.apn-btn-inspect svg {\n  flex-shrink: 0;\n  opacity    : 0.78;\n  transition : opacity 0.2s ease, transform 0.4s ease;\n}\n.apn-btn-inspect:hover svg { opacity: 1; transform: rotate(-12deg) scale(1.08); }\n\n.apn-inspect-hint {\n  margin-left   : auto;\n  font-size     : 0.6rem;\n  letter-spacing: 0.06em;\n  padding       : 2px 7px;\n  border-radius : 6px;\n  background    : rgba(114, 137, 245, 0.18);\n  color         : rgba(210, 219, 255, 0.85);\n  text-transform: lowercase;\n  border        : 1px solid rgba(114, 137, 245, 0.3);\n  font-weight   : 600;\n}\n\n/* Active (Inspector ON) — switch palette to gold/alert */\n.apn-btn-inspect.apn-inspect-on {\n  background   : linear-gradient(135deg,\n    rgba(250, 204, 21, 0.20) 0%,\n    rgba(217, 119, 6, 0.16)  100%\n  );\n  border-color : rgba(250, 204, 21, 0.6);\n  color        : #fde68a;\n  box-shadow   : 0 0 24px rgba(250, 204, 21, 0.28),\n                 inset 0 1px 0 rgba(255, 255, 255, 0.08);\n  animation    : apn-inspect-pulse 1.8s ease-in-out infinite;\n}\n.apn-btn-inspect.apn-inspect-on .apn-inspect-hint {\n  background   : rgba(250, 204, 21, 0.22);\n  border-color : rgba(250, 204, 21, 0.45);\n  color        : #fef3c7;\n}\n@keyframes apn-inspect-pulse {\n  0%, 100% { box-shadow: 0 0 18px rgba(250, 204, 21, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.06); }\n  50%      { box-shadow: 0 0 32px rgba(250, 204, 21, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.08); }\n}\n\n/* ── Inspector overlay (highlight rectangle over hovered element) */\n#apn-inspect-overlay {\n  position       : fixed;\n  pointer-events : none;\n  z-index        : 99700;\n  border         : 2px dashed #facc15;\n  border-radius  : 4px;\n  background     : rgba(250, 204, 21, 0.08);\n  box-shadow     : 0 0 18px rgba(250, 204, 21, 0.30),\n                   inset 0 0 0 1px rgba(250, 204, 21, 0.35);\n  display        : none;\n  transition     : top 0.06s ease, left 0.06s ease,\n                   width 0.06s ease, height 0.06s ease;\n}\n#apn-inspect-overlay.apn-active { display: block; }\n\n/* Floating tag label that follows the hovered element */\n#apn-inspect-label {\n  position       : fixed;\n  pointer-events : none;\n  z-index        : 99701;\n  background     : linear-gradient(135deg, #facc15 0%, #f59e0b 100%);\n  color          : #0a0b14;\n  padding        : 3px 10px;\n  border-radius  : 6px;\n  font-family    : 'Roboto Mono', 'Consolas', monospace;\n  font-size      : 0.7rem;\n  font-weight    : 800;\n  letter-spacing : 0.02em;\n  white-space    : nowrap;\n  max-width      : 70vw;\n  overflow       : hidden;\n  text-overflow  : ellipsis;\n  box-shadow     : 0 4px 14px rgba(0, 0, 0, 0.5),\n                   0 0 0 1px rgba(250, 204, 21, 0.5);\n  display        : none;\n}\n#apn-inspect-label.apn-active { display: block; }\n\n/* Crosshair cursor + dim non-widget UI to focus the page on inspection */\nbody.apn-inspect-mode,\nbody.apn-inspect-mode *:not(#ai-page-notes-bubble):not(#ai-page-notes-bubble *) {\n  cursor: crosshair !important;\n}\n\n/* ── Mobile ──────────────────────────────────────────────────── */\n@media (max-width: 520px) {\n  #ai-page-notes-panel {\n    width       : calc(100vw - 20px) !important;\n    right       : 10px !important;\n    left        : 10px !important;\n    bottom      : calc(var(--apn-bubble-bottom) + 64px) !important;\n    max-height  : 58vh;\n    border-radius: 16px;\n  }\n  .apn-btn {\n    font-size   : 0.68rem;\n    padding     : 7px 4px;\n  }\n  .apn-inspect-hint { display: none; }\n}\n\n/* ── Reduced motion ──────────────────────────────────────────── */\n@media (prefers-reduced-motion: reduce) {\n  #ai-page-notes-bubble,\n  #ai-page-notes-bubble::after,\n  #ai-page-notes-panel,\n  #ai-page-notes-toast,\n  .apn-btn,\n  .apn-btn::after,\n  .apn-close-btn,\n  .apn-counter-bar,\n  .apn-btn-inspect,\n  .apn-btn-inspect::after,\n  #apn-inspect-overlay { transition: none !important; animation: none !important; }\n}\n";
+window.__WP_WIDGET_JS__  = "/**\n * AI Page Notes Widget — notepad-widget.js\n *\n * - Draggable bubble with position saved in localStorage\n * - Per-page notes  key: pageNotes:<pathname>\n * - Global broadcast key: pageNotes:__global__\n * - Save | Copy | Clear | Close | Save to All Pages\n * - Escape key closes panel\n * - No external dependencies\n */\n(function () {\n  'use strict';\n\n  /* ── Config ─────────────────────────────────────────────── */\n  var STORAGE_KEY_NOTES  = 'pageNotes:' + window.location.pathname;\n  var STORAGE_KEY_GLOBAL = 'pageNotes:__global__';\n  var STORAGE_KEY_POS    = 'pageNotesBubblePos:' + window.location.pathname;\n  var TOAST_DURATION_MS  = 2000;\n  var COPY_RESET_MS      = 1600;\n  var MAX_CHARS          = 2000;\n\n  /* ── Grab elements ──────────────────────────────────────── */\n  var bubble    = document.getElementById('ai-page-notes-bubble');\n  var panel     = document.getElementById('ai-page-notes-panel');\n  var textarea  = document.getElementById('ai-page-notes-textarea');\n  var btnSave   = document.getElementById('ai-page-notes-save');\n  var btnCopy   = document.getElementById('ai-page-notes-copy');\n  var btnClear  = document.getElementById('ai-page-notes-clear');\n  var btnClose  = document.getElementById('ai-page-notes-close');\n  var toast     = document.getElementById('ai-page-notes-toast');\n  var charCount = document.getElementById('ai-page-notes-charcount');\n  var charBar   = document.getElementById('ai-page-notes-charbar');\n\n  if (!bubble || !panel || !textarea) return;\n\n  /* ── State ──────────────────────────────────────────────── */\n  var panelOpen  = false;\n  var dragging   = false;\n  var dragOffX   = 0;\n  var dragOffY   = 0;\n  var toastTimer = null;\n\n  /* ── Notes: load ─────────────────────────────────────────── */\n  function loadNotes() {\n    var saved = localStorage.getItem(STORAGE_KEY_NOTES) || '';\n    if (!saved) saved = localStorage.getItem(STORAGE_KEY_GLOBAL) || '';\n    textarea.value = saved;\n    updateBubbleIndicator(saved);\n  }\n\n  function updateBubbleIndicator(text) {\n    bubble.classList.toggle('apn-has-notes', !!(text && text.trim().length > 0));\n  }\n\n  /* ── Save — current page only ────────────────────────────── */\n  function saveNotes() {\n    var val = textarea.value;\n    localStorage.setItem(STORAGE_KEY_NOTES, val);\n    updateBubbleIndicator(val);\n    showToast('✓ Saved for this page');\n  }\n\n  /* ── Save All Pages ─────────────────────────────────────── */\n  function saveToAllPages() {\n    var val = textarea.value;\n    var noteKeys = [];\n    for (var i = 0; i < localStorage.length; i++) {\n      var k = localStorage.key(i);\n      if (k && k.indexOf('pageNotes:') === 0 && k !== STORAGE_KEY_GLOBAL) {\n        noteKeys.push(k);\n      }\n    }\n    if (noteKeys.indexOf(STORAGE_KEY_NOTES) === -1) noteKeys.push(STORAGE_KEY_NOTES);\n    for (var j = 0; j < noteKeys.length; j++) {\n      localStorage.setItem(noteKeys[j], val);\n    }\n    localStorage.setItem(STORAGE_KEY_GLOBAL, val);\n    updateBubbleIndicator(val);\n    var n = noteKeys.length;\n    showToast('✓ Saved to ' + n + ' page' + (n !== 1 ? 's' : '') + ' + global');\n  }\n\n  /* ── Char counter ────────────────────────────────────────── */\n  function updateCharCounter(text) {\n    if (!charCount || !charBar) return;\n    var len = text.length;\n    charCount.textContent = len + ' char' + (len === 1 ? '' : 's');\n    var pct = Math.min(100, (len / MAX_CHARS) * 100);\n    charBar.style.width = pct + '%';\n    charBar.style.background = pct > 85\n      ? 'linear-gradient(90deg,#f97316,#ef4444)'\n      : 'linear-gradient(90deg,var(--apn-gold-dim),var(--apn-gold-light))';\n  }\n\n  /* ── Auto-save (debounced) ───────────────────────────────── */\n  var autoSaveTimer = null;\n  textarea.addEventListener('input', function () {\n    updateCharCounter(textarea.value);\n    clearTimeout(autoSaveTimer);\n    autoSaveTimer = setTimeout(function () {\n      localStorage.setItem(STORAGE_KEY_NOTES, textarea.value);\n      updateBubbleIndicator(textarea.value);\n    }, 600);\n  });\n\n  /* ── Copy ────────────────────────────────────────────────── */\n  function copyNotes() {\n    var text = textarea.value;\n    if (!text.trim()) { showToast('Nothing to copy'); return; }\n    function markCopied() {\n      btnCopy.textContent = 'Copied!';\n      btnCopy.classList.add('apn-copied');\n      setTimeout(function () { btnCopy.textContent = 'Copy'; btnCopy.classList.remove('apn-copied'); }, COPY_RESET_MS);\n      showToast('Copied to clipboard');\n    }\n    if (navigator.clipboard && navigator.clipboard.writeText) {\n      navigator.clipboard.writeText(text).then(markCopied).catch(function () { fallbackCopy(text, markCopied); });\n    } else { fallbackCopy(text, markCopied); }\n  }\n\n  function fallbackCopy(text, cb) {\n    var ta = document.createElement('textarea');\n    ta.value = text;\n    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';\n    document.body.appendChild(ta); ta.focus(); ta.select();\n    try { document.execCommand('copy'); cb(); } catch (e) { showToast('Copy failed'); }\n    document.body.removeChild(ta);\n  }\n\n  /* ── Clear ───────────────────────────────────────────────── */\n  function clearNotes() {\n    textarea.value = '';\n    localStorage.removeItem(STORAGE_KEY_NOTES);\n    updateBubbleIndicator('');\n    updateCharCounter('');\n    showToast('Cleared');\n  }\n\n  /* ── Toast ───────────────────────────────────────────────── */\n  function showToast(msg) {\n    toast.textContent = msg;\n    toast.classList.add('apn-visible');\n    clearTimeout(toastTimer);\n    toastTimer = setTimeout(function () { toast.classList.remove('apn-visible'); }, TOAST_DURATION_MS);\n  }\n\n  /* ── Panel open / close ──────────────────────────────────── */\n  function openPanel() { positionPanel(); panel.classList.add('apn-open'); panelOpen = true; textarea.focus(); }\n  function closePanel() { panel.classList.remove('apn-open'); panelOpen = false; }\n  function togglePanel() { if (panelOpen) closePanel(); else openPanel(); }\n\n  function positionPanel() {\n    var bRect = bubble.getBoundingClientRect();\n    var pw = panel.offsetWidth  || 336;\n    var ph = panel.offsetHeight || 500;\n    var vw = window.innerWidth;\n    var vh = window.innerHeight;\n    var top  = bRect.top - ph - 12;\n    var left = bRect.right - pw;\n    if (top < 8)            top  = bRect.bottom + 12;\n    if (left < 8)           left = 8;\n    if (left + pw > vw - 8) left = vw - pw - 8;\n    if (top  + ph > vh - 8) top  = vh - ph - 8;\n    panel.style.top    = top  + 'px';\n    panel.style.left   = left + 'px';\n    panel.style.bottom = 'auto';\n    panel.style.right  = 'auto';\n  }\n\n  /* ── Build \"Save to All Pages\" button dynamically ────────── */\n  (function buildSaveAllBtn() {\n    var footer = panel.querySelector('.apn-footer');\n    if (!footer) return;\n    var row = document.createElement('div');\n    row.className = 'apn-save-all-row';\n    var btn = document.createElement('button');\n    btn.type = 'button';\n    btn.className = 'apn-btn-save-all';\n    btn.setAttribute('aria-label', 'Save notes to all pages');\n    btn.innerHTML =\n      '<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" '\n      + 'stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" width=\"14\" height=\"14\" aria-hidden=\"true\">'\n      + '<circle cx=\"12\" cy=\"12\" r=\"10\"/>'\n      + '<line x1=\"2\" y1=\"12\" x2=\"22\" y2=\"12\"/>'\n      + '<path d=\"M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z\"/>'\n      + '</svg>'\n      + '<span>Save to All Pages</span>';\n    btn.addEventListener('click', saveToAllPages);\n    row.appendChild(btn);\n    footer.insertAdjacentElement('afterend', row);\n  })();\n\n  /* ── Listeners ───────────────────────────────────────────── */\n  bubble.addEventListener('click', function () { if (!dragging) togglePanel(); });\n  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panelOpen) closePanel(); });\n  btnSave .addEventListener('click', saveNotes);\n  btnCopy .addEventListener('click', copyNotes);\n  btnClear.addEventListener('click', clearNotes);\n  btnClose.addEventListener('click', closePanel);\n\n  /* ── Drag (Pointer Events, robust against host-page event hijacking) ── */\n  var didDrag       = false;\n  var activePointer = null;\n  function dragStart(cx, cy) {\n    var r = bubble.getBoundingClientRect();\n    dragOffX = cx - r.left; dragOffY = cy - r.top;\n    dragging = true; didDrag = false;\n    bubble.style.transition = 'none';\n    bubble.style.cursor = 'grabbing';\n  }\n  function dragMove(cx, cy) {\n    if (!dragging) return;\n    var x = Math.max(0, Math.min(cx - dragOffX, window.innerWidth  - bubble.offsetWidth));\n    var y = Math.max(0, Math.min(cy - dragOffY, window.innerHeight - bubble.offsetHeight));\n    bubble.style.left = x + 'px'; bubble.style.top = y + 'px';\n    bubble.style.right = 'auto';  bubble.style.bottom = 'auto';\n    didDrag = true;\n    if (panelOpen) positionPanel();\n  }\n  function dragEnd() {\n    if (!dragging) return;\n    dragging = false;\n    bubble.style.transition = ''; bubble.style.cursor = 'grab';\n    try {\n      localStorage.setItem(STORAGE_KEY_POS, JSON.stringify({\n        x: parseInt(bubble.style.left, 10), y: parseInt(bubble.style.top, 10)\n      }));\n    } catch (e) {}\n    if (didDrag) {\n      bubble.addEventListener('click', function suppress(e) {\n        e.stopImmediatePropagation();\n        bubble.removeEventListener('click', suppress, true);\n      }, true);\n    }\n  }\n  if (window.PointerEvent) {\n    bubble.addEventListener('pointerdown', function (e) {\n      if (e.pointerType === 'mouse' && e.button !== 0) return;\n      e.preventDefault();\n      activePointer = e.pointerId;\n      try { bubble.setPointerCapture(e.pointerId); } catch (_) {}\n      dragStart(e.clientX, e.clientY);\n    });\n    bubble.addEventListener('pointermove', function (e) {\n      if (!dragging || e.pointerId !== activePointer) return;\n      dragMove(e.clientX, e.clientY);\n    });\n    function _pointerEnd(e) {\n      if (e.pointerId !== activePointer) return;\n      try { bubble.releasePointerCapture(e.pointerId); } catch (_) {}\n      activePointer = null;\n      dragEnd();\n    }\n    bubble.addEventListener('pointerup',     _pointerEnd);\n    bubble.addEventListener('pointercancel', _pointerEnd);\n  } else {\n    bubble.addEventListener('mousedown', function (e) { if (e.button === 0) { e.preventDefault(); dragStart(e.clientX, e.clientY); } });\n    document.addEventListener('mousemove', function (e) { dragMove(e.clientX, e.clientY); }, true);\n    document.addEventListener('mouseup',   dragEnd, true);\n    bubble.addEventListener('touchstart', function (e) { dragStart(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });\n    document.addEventListener('touchmove', function (e) { if (dragging) { e.preventDefault(); dragMove(e.touches[0].clientX, e.touches[0].clientY); } }, { passive: false, capture: true });\n    document.addEventListener('touchend',  dragEnd, true);\n  }\n\n  /* ── Restore bubble position ─────────────────────────────── */\n  function restoreBubblePos() {\n    try {\n      var raw = localStorage.getItem(STORAGE_KEY_POS);\n      if (!raw) return;\n      var pos = JSON.parse(raw);\n      var vw = window.innerWidth - bubble.offsetWidth;\n      var vh = window.innerHeight - bubble.offsetHeight;\n      bubble.style.left   = Math.max(0, Math.min(pos.x, vw)) + 'px';\n      bubble.style.top    = Math.max(0, Math.min(pos.y, vh)) + 'px';\n      bubble.style.right  = 'auto';\n      bubble.style.bottom = 'auto';\n    } catch (e) { /* ignore */ }\n  }\n\n  /* ══════════════════════════════════════════════════════════\n     INSPECTOR MODE — middle-click any element to capture a\n     compact reference (page + DOM path + opening tag) into\n     the notepad. Toggle from the panel. No left/right click\n     hijacking. Escape exits. Widget itself is excluded.\n     Admin-only: hidden unless an admin is logged in (mirrors\n     dictionary auth keys; works on every page independently).\n     ══════════════════════════════════════════════════════════ */\n  var inspectMode    = false;\n  var inspectBtn     = null;\n  var inspectRow     = null;\n  var inspectOverlay = null;\n  var inspectLabel   = null;\n  var inspectTarget  = null;\n\n  function _isAdminLogged() {\n    try { if (localStorage.getItem('gl_admin_auth')   === '1') return true; } catch (e) {}\n    try { if (sessionStorage.getItem('gl_admin_session') === '1') return true; } catch (e) {}\n    return false;\n  }\n\n  function _isWidgetElement(el) {\n    if (!el || el.nodeType !== 1) return true;\n    if (!el.closest) return false;\n    return !!(\n      el.closest('#ai-page-notes-bubble') ||\n      el.closest('#ai-page-notes-panel')  ||\n      el.closest('#ai-page-notes-toast')  ||\n      el.closest('#apn-inspect-overlay')  ||\n      el.closest('#apn-inspect-label')    ||\n      el === document.body                ||\n      el === document.documentElement\n    );\n  }\n\n  function _buildSelectorPath(el) {\n    var path = [];\n    var max = 6;\n    while (el && el.nodeType === 1 && path.length < max && el.tagName !== 'HTML') {\n      var part = el.tagName.toLowerCase();\n      if (el.id) { part += '#' + el.id; path.unshift(part); break; }\n      if (typeof el.className === 'string' && el.className.trim()) {\n        var cls = el.className.trim().split(/\\s+/).slice(0, 3).join('.');\n        if (cls) part += '.' + cls;\n      }\n      var parent = el.parentElement;\n      if (parent) {\n        var same = [];\n        for (var i = 0; i < parent.children.length; i++) {\n          if (parent.children[i].tagName === el.tagName) same.push(parent.children[i]);\n        }\n        if (same.length > 1) part += ':nth-of-type(' + (same.indexOf(el) + 1) + ')';\n      }\n      path.unshift(part);\n      el = parent;\n    }\n    return path.join(' > ');\n  }\n\n  function _getOpeningTag(el) {\n    if (!el || !el.outerHTML) return '';\n    var html = el.outerHTML;\n    var idx = html.indexOf('>');\n    var open = idx > -1 ? html.substring(0, idx + 1) : html;\n    if (open.length > 320) open = open.substring(0, 317) + '…>';\n    return open;\n  }\n\n  function _ensureInspectUI() {\n    if (inspectOverlay && inspectLabel) return;\n    inspectOverlay = document.createElement('div');\n    inspectOverlay.id = 'apn-inspect-overlay';\n    inspectOverlay.setAttribute('aria-hidden', 'true');\n    document.body.appendChild(inspectOverlay);\n    inspectLabel = document.createElement('div');\n    inspectLabel.id = 'apn-inspect-label';\n    inspectLabel.setAttribute('aria-hidden', 'true');\n    document.body.appendChild(inspectLabel);\n  }\n\n  function _hideInspectOverlay() {\n    if (inspectOverlay) inspectOverlay.classList.remove('apn-active');\n    if (inspectLabel)   inspectLabel.classList.remove('apn-active');\n    inspectTarget = null;\n  }\n\n  function _inspectMouseMove(e) {\n    if (!inspectMode) return;\n    var t = document.elementFromPoint(e.clientX, e.clientY);\n    if (!t || _isWidgetElement(t)) { _hideInspectOverlay(); return; }\n    inspectTarget = t;\n    var r = t.getBoundingClientRect();\n    inspectOverlay.style.top    = r.top    + 'px';\n    inspectOverlay.style.left   = r.left   + 'px';\n    inspectOverlay.style.width  = r.width  + 'px';\n    inspectOverlay.style.height = r.height + 'px';\n    inspectOverlay.classList.add('apn-active');\n    var tag = t.tagName.toLowerCase();\n    if (t.id) tag += '#' + t.id;\n    else if (typeof t.className === 'string' && t.className.trim()) {\n      tag += '.' + t.className.trim().split(/\\s+/).slice(0, 2).join('.');\n    }\n    inspectLabel.textContent = tag;\n    inspectLabel.style.top  = Math.max(4, r.top - 22) + 'px';\n    inspectLabel.style.left = Math.max(4, r.left)     + 'px';\n    inspectLabel.classList.add('apn-active');\n  }\n\n  function _appendReference(target) {\n    var ref =\n      '\\n─── REFERENCE ───\\n' +\n      '📄 Page: '    + (window.location.pathname || '/') + '\\n' +\n      '📍 Path: '    + _buildSelectorPath(target)        + '\\n' +\n      '🏷️  HTML: '    + _getOpeningTag(target)            + '\\n' +\n      '─────────────────\\n';\n    var current = textarea.value || '';\n    var sep = (current.length === 0 || /\\n$/.test(current)) ? '' : '\\n';\n    textarea.value = current + sep + ref;\n    updateCharCounter(textarea.value);\n    localStorage.setItem(STORAGE_KEY_NOTES, textarea.value);\n    updateBubbleIndicator(textarea.value);\n    showToast('✓ Reference captured');\n  }\n\n  function _inspectMouseDown(e) {\n    if (!inspectMode || e.button !== 1) return;\n    e.preventDefault(); e.stopPropagation();\n  }\n  function _inspectAuxClick(e) {\n    if (!inspectMode || e.button !== 1) return;\n    var target = inspectTarget || document.elementFromPoint(e.clientX, e.clientY);\n    if (!target || _isWidgetElement(target)) return;\n    e.preventDefault(); e.stopPropagation();\n    _appendReference(target);\n  }\n\n  function _setInspectBtnState(active) {\n    if (!inspectBtn) return;\n    inspectBtn.classList.toggle('apn-inspect-on', !!active);\n    var labelEl = inspectBtn.querySelector('.apn-inspect-label-text');\n    if (labelEl) labelEl.textContent = active ? 'Stop Inspector' : 'Inspect Element';\n  }\n\n  function _startInspect() {\n    inspectMode = true;\n    _ensureInspectUI();\n    document.body.classList.add('apn-inspect-mode');\n    document.addEventListener('mousemove', _inspectMouseMove, true);\n    document.addEventListener('mousedown', _inspectMouseDown, true);\n    document.addEventListener('auxclick',  _inspectAuxClick,  true);\n    _setInspectBtnState(true);\n    showToast('🎯 Inspector ON — middle-click any element');\n    if (panelOpen) closePanel();\n  }\n  function _stopInspect() {\n    inspectMode = false;\n    document.body.classList.remove('apn-inspect-mode');\n    document.removeEventListener('mousemove', _inspectMouseMove, true);\n    document.removeEventListener('mousedown', _inspectMouseDown, true);\n    document.removeEventListener('auxclick',  _inspectAuxClick,  true);\n    _hideInspectOverlay();\n    _setInspectBtnState(false);\n  }\n  function _toggleInspect() {\n    if (inspectMode) _stopInspect(); else _startInspect();\n  }\n\n  document.addEventListener('keydown', function (e) {\n    if (e.key === 'Escape' && inspectMode) _stopInspect();\n  });\n\n  (function buildInspectBtn() {\n    var anchor = panel.querySelector('.apn-save-all-row') || panel.querySelector('.apn-footer');\n    if (!anchor) return;\n    var row = document.createElement('div');\n    row.className = 'apn-inspect-row';\n    row.style.display = 'none';\n    var btn = document.createElement('button');\n    btn.type = 'button';\n    btn.id = 'ai-page-notes-inspect';\n    btn.className = 'apn-btn-inspect';\n    btn.setAttribute('aria-label', 'Toggle element inspector (admin only)');\n    btn.title = 'Toggle inspector — middle-click any element to capture a reference (admin only)';\n    btn.innerHTML =\n      '<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" '\n      + 'stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" width=\"14\" height=\"14\" aria-hidden=\"true\">'\n      + '<path d=\"M13 13l6 6\"/>'\n      + '<path d=\"M7 2l1.5 4.5L13 8l-4.5 1.5L7 14l-1.5-4.5L1 8l4.5-1.5L7 2z\"/>'\n      + '<circle cx=\"11\" cy=\"11\" r=\"8\"/>'\n      + '</svg>'\n      + '<span class=\"apn-inspect-label-text\">Inspect Element</span>'\n      + '<span class=\"apn-inspect-hint\" aria-hidden=\"true\">middle-click</span>';\n    btn.addEventListener('click', _toggleInspect);\n    row.appendChild(btn);\n    anchor.insertAdjacentElement('afterend', row);\n    inspectBtn = btn;\n    inspectRow = row;\n  })();\n\n  function _updateInspectVisibility() {\n    if (!inspectRow) return;\n    var allowed = _isAdminLogged();\n    inspectRow.style.display = allowed ? '' : 'none';\n    if (!allowed && inspectMode) _stopInspect();\n  }\n  _updateInspectVisibility();\n\n  window.addEventListener('storage', function (e) {\n    if (!e || !e.key) { _updateInspectVisibility(); return; }\n    if (e.key === 'gl_admin_auth' || e.key === 'gl_admin_session') {\n      _updateInspectVisibility();\n    }\n  });\n  setInterval(_updateInspectVisibility, 1500);\n\n  /* ── Init ───────────────────────────────────────────────── */\n  loadNotes();\n  updateCharCounter(textarea.value);\n  restoreBubblePos();\n\n})();\n";
+</script>
+<script>
+(function () {
+  'use strict';
+
+  // ─── DOM refs ───
+  var modeRadios = document.querySelectorAll('.mode-radio');
+  var pickers = document.getElementById('pickers');
+  var folderPicker = document.getElementById('folderPicker');
+  var filePicker = document.getElementById('filePicker');
+  var clearChipsBtn = document.getElementById('clearChips');
+  var chipsBox = document.getElementById('chips');
+  var btnGenerate = document.getElementById('btnGenerate');
+  var modal = document.getElementById('modal');
+  var modalClose = document.getElementById('modalClose');
+  var modalToggleBtns = document.querySelectorAll('.modal-toggle-btn');
+  var modalInfoAll = document.getElementById('modalInfoAll');
+  var modalPickers = document.getElementById('modalPickers');
+  var modalChips = document.getElementById('modalChips');
+  var modalFolder = document.getElementById('modalFolder');
+  var modalFiles = document.getElementById('modalFiles');
+  var modalClear = document.getElementById('modalClear');
+  var promptOutput = document.getElementById('promptOutput');
+  var promptChars = document.getElementById('promptChars');
+  var promptTargets = document.getElementById('promptTargets');
+  var btnCopy = document.getElementById('btnCopy');
+  var btnDownload = document.getElementById('btnDownload');
+  var toast = document.getElementById('toast');
+
+  var selectedPaths = [];
+  var WIDGET_CSS = window.__WP_WIDGET_CSS__ || '';
+  var WIDGET_JS  = window.__WP_WIDGET_JS__  || '';
+
+  // ─── Helpers ───
+  function getMode() {
+    for (var i = 0; i < modeRadios.length; i++) {
+      if (modeRadios[i].checked) return modeRadios[i].value;
+    }
+    return 'all';
+  }
+  function syncPickers() { pickers.hidden = (getMode() !== 'specific'); }
+
+  function setMode(mode) {
+    if (mode !== 'all' && mode !== 'specific') mode = 'all';
+    for (var i = 0; i < modeRadios.length; i++) modeRadios[i].checked = (modeRadios[i].value === mode);
+    modalToggleBtns.forEach(function (b) { b.classList.toggle('active', b.dataset.mode === mode); });
+    if (modalInfoAll) modalInfoAll.hidden = (mode !== 'all');
+    if (modalPickers) modalPickers.hidden = (mode !== 'specific');
+    if (modalChips)   modalChips.hidden   = (mode !== 'specific');
+    syncPickers();
+    renderModalChips();
+    if (modal.classList.contains('open')) regenerateInModal();
+  }
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { toast.classList.remove('show'); }, 2200);
+  }
+
+  function pathOf(f) {
+    return f.webkitRelativePath && f.webkitRelativePath.length ? f.webkitRelativePath : f.name;
+  }
+  function isHtml(name) {
+    var l = String(name || '').toLowerCase();
+    return l.indexOf('.html', l.length - 5) !== -1 || l.indexOf('.htm', l.length - 4) !== -1;
+  }
+
+  function addPaths(files) {
+    var added = 0;
+    for (var i = 0; i < files.length; i++) {
+      var p = pathOf(files[i]);
+      if (!isHtml(p)) continue;
+      if (selectedPaths.indexOf(p) === -1) { selectedPaths.push(p); added++; }
+    }
+    selectedPaths.sort();
+    renderChips();
+    renderModalChips();
+    if (modal.classList.contains('open')) regenerateInModal();
+    if (added > 0) showToast('Added ' + added + ' page' + (added !== 1 ? 's' : ''));
+  }
+
+  function removePath(p) {
+    selectedPaths = selectedPaths.filter(function (q) { return q !== p; });
+    renderChips();
+    renderModalChips();
+    if (modal.classList.contains('open')) regenerateInModal();
+  }
+
+  function renderChipInto(container, p) {
+    var chip = document.createElement('span');
+    chip.className = 'chip';
+    var txt = document.createElement('span');
+    txt.className = 'chip-text';
+    txt.title = p;
+    txt.textContent = p;
+    var x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'chip-x';
+    x.setAttribute('aria-label', 'Remove ' + p);
+    x.textContent = '\u00D7';
+    x.addEventListener('click', function () { removePath(p); });
+    chip.appendChild(txt);
+    chip.appendChild(x);
+    container.appendChild(chip);
+  }
+
+  function renderChips() {
+    chipsBox.innerHTML = '';
+    selectedPaths.forEach(function (p) { renderChipInto(chipsBox, p); });
+  }
+
+  function renderModalChips() {
+    if (!modalChips) return;
+    modalChips.innerHTML = '';
+    if (getMode() !== 'specific') return;
+    selectedPaths.forEach(function (p) { renderChipInto(modalChips, p); });
+  }
+
+  function regenerateInModal() {
+    var opts = readOptions();
+    var prompt = buildPrompt(opts);
+    promptOutput.value = prompt;
+    promptChars.textContent = prompt.length.toLocaleString();
+    promptTargets.textContent = (opts.mode === 'all' ? 'all' : opts.targets.length);
+  }
+
+  function readOptions() {
+    return {
+      mode: getMode(),
+      targets: selectedPaths.slice(),
+      useInspector: document.getElementById('optInspector').checked,
+      useSaveAll: document.getElementById('optSaveAll').checked,
+      useFa: document.getElementById('optFa').checked,
+      useReducedMotion: document.getElementById('optReducedMotion').checked,
+      adminLocal: (document.getElementById('optAdminLocal').value || 'gl_admin_auth').trim(),
+      adminSession: (document.getElementById('optAdminSession').value || 'gl_admin_session').trim(),
+      maxChars: parseInt(document.getElementById('optMaxChars').value, 10) || 2000,
+      appName: (document.getElementById('optAppName').value || '').trim()
+    };
+  }
+
+  function customiseJs(src, opts) {
+    var out = src;
+    if (opts.adminLocal && opts.adminLocal !== 'gl_admin_auth') {
+      out = out.split("'gl_admin_auth'").join("'" + opts.adminLocal + "'");
+    }
+    if (opts.adminSession && opts.adminSession !== 'gl_admin_session') {
+      out = out.split("'gl_admin_session'").join("'" + opts.adminSession + "'");
+    }
+    if (opts.maxChars && opts.maxChars !== 2000) {
+      out = out.replace(/var MAX_CHARS\s*=\s*\d+;/, 'var MAX_CHARS          = ' + opts.maxChars + ';');
+    }
+    return out;
+  }
+
+  function buildHtmlBoilerplate(useFa) {
+    var faLine = useFa
+      ? '<!-- Required: Font Awesome (already in your app? skip) -->\n<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">\n\n'
+      : '';
+    var bubbleIcon = useFa
+      ? '<i class="fa-solid fa-pen-nib"></i>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>';
+    var headerIcon = useFa
+      ? '<i class="fa-solid fa-scroll"></i>'
+      : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h12a2 2 0 0 0 2-2v-2H10v2a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v3h4"/></svg>';
+    var closeIcon = useFa ? '<i class="fa-solid fa-xmark"></i>' : '\u00D7';
+    return [
+      faLine + '<!-- AI Page Notes Widget stylesheet -->',
+      '<link rel="stylesheet" href="notepad-widget/notepad-widget.css">',
+      '',
+      '<!-- Floating bubble -->',
+      '<button id="ai-page-notes-bubble" aria-label="Open page notes" title="Page Notes">' + bubbleIcon + '<span class="apn-indicator" aria-hidden="true"></span></button>',
+      '',
+      '<!-- Notes panel -->',
+      '<div id="ai-page-notes-panel" role="dialog" aria-label="Page Notes" aria-modal="false">',
+      '  <div class="apn-header">',
+      '    <span class="apn-title">',
+      '      <span class="apn-title-icon">' + headerIcon + '</span>',
+      '      <span class="apn-title-text">Page Notes</span>',
+      '    </span>',
+      '    <button id="ai-page-notes-close" class="apn-close-btn" aria-label="Close">' + closeIcon + '</button>',
+      '  </div>',
+      '  <div class="apn-counter-row">',
+      '    <span class="apn-counter-label" id="ai-page-notes-charcount">0 chars</span>',
+      '    <div class="apn-counter-bar-wrap"><div class="apn-counter-bar" id="ai-page-notes-charbar"></div></div>',
+      '  </div>',
+      '  <textarea id="ai-page-notes-textarea" class="apn-textarea" placeholder="Type your notes here... auto-saved as you write." aria-label="Page notes" spellcheck="true"></textarea>',
+      '  <div class="apn-footer">',
+      '    <button id="ai-page-notes-save"  class="apn-btn apn-btn-save">Save</button>',
+      '    <button id="ai-page-notes-copy"  class="apn-btn apn-btn-copy">Copy</button>',
+      '    <button id="ai-page-notes-clear" class="apn-btn apn-btn-clear">Clear</button>',
+      '  </div>',
+      '</div>',
+      '',
+      '<div id="ai-page-notes-toast" role="status" aria-live="polite"></div>',
+      '',
+      '<script src="notepad-widget/notepad-widget.js"><\/script>'
+    ].join('\n');
+  }
+
+  function buildPrompt(opts) {
+    var L = [];
+    var isAll = opts.mode === 'all';
+    var targets = opts.targets || [];
+    var appName = opts.appName || 'this application';
+
+    L.push('# \uD83C\uDFAF AI MISSION \u2014 Build the Page Notes + Inspector Widget');
+    L.push('');
+    L.push('You will create a **portable, framework-agnostic, single-folder browser widget** for **' + appName + '** that gives every page a draggable gold "notes" bubble with the following capabilities:');
+    L.push('');
+    L.push('- **Per-page persistent notes** (auto-saved in `localStorage`).');
+    L.push('- **"Save to All Pages"** \u2014 broadcast the current note to every page in the app.');
+    L.push('- **Inspector Mode (admin-only)** \u2014 middle-click any DOM element to capture a compact reference into the notes.');
+    L.push('- **Char counter, drag-to-reposition bubble, mobile-friendly, `prefers-reduced-motion` support.**');
+    L.push('- **Zero external runtime dependencies** (pure HTML / CSS / vanilla JS). Optional: Font Awesome icons.');
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('## \uD83D\uDCC2 FILES TO CREATE');
+    L.push('');
+    L.push('Create these two files in a folder `notepad-widget/` at the application root:');
+    L.push('');
+    L.push('1. `notepad-widget/notepad-widget.css`');
+    L.push('2. `notepad-widget/notepad-widget.js`');
+    L.push('');
+    L.push('Save them **byte-for-byte** as below. Do NOT refactor, rename classes, or reorder rules.');
+    L.push('');
+    L.push('### \uD83C\uDFA8 File 1 \u2014 `notepad-widget/notepad-widget.css`');
+    L.push('');
+    L.push('```css');
+    L.push(WIDGET_CSS.replace(/\s+$/, ''));
+    L.push('```');
+    L.push('');
+    L.push('### \u26A1 File 2 \u2014 `notepad-widget/notepad-widget.js`');
+    L.push('');
+    L.push('```js');
+    L.push(customiseJs(WIDGET_JS, opts).replace(/\s+$/, ''));
+    L.push('```');
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('## \uD83E\uDDE9 HTML BOILERPLATE \u2014 insert just before `</body>` in every target page');
+    L.push('');
+    L.push('```html');
+    L.push(buildHtmlBoilerplate(!!opts.useFa));
+    L.push('```');
+    L.push('');
+    if (opts.useFa) {
+      L.push('> Already loading Font Awesome elsewhere? Skip the `<link>` line.');
+    } else {
+      L.push('> Font Awesome was disabled. Inline SVGs are inside the boilerplate \u2014 no external icon library required.');
+    }
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('## \uD83C\uDFAF TARGET PAGES');
+    L.push('');
+    if (isAll) {
+      L.push('**All pages mode.** Inject the boilerplate into **every `.html` and `.htm` file** at the project root and any subfolder, *except*:');
+      L.push('- The widget files themselves (`notepad-widget/*`).');
+      L.push('- Build/dist/output folders (`node_modules/`, `dist/`, `build/`, `.next/`, `vendor/`).');
+      L.push('- Files starting with `_` if your framework treats them as partials.');
+    } else if (targets.length === 0) {
+      L.push('**Specific pages mode** was selected, but **no pages were chosen**.');
+      L.push('');
+      L.push('> Decide manually which pages to wire, OR re-run the Prompter and pick files.');
+    } else {
+      L.push('**Specific pages mode.** Inject the boilerplate ONLY into these files:');
+      L.push('');
+      targets.forEach(function (p) { L.push('- `' + p + '`'); });
+      L.push('');
+      L.push('> Paths are relative to the project root. Adjust the prefix if your root differs.');
+    }
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('## \uD83D\uDCE1 STORAGE KEYS');
+    L.push('');
+    L.push('| Key | Purpose |');
+    L.push('|---|---|');
+    L.push('| `pageNotes:<pathname>` | Per-page notes (auto-saved every 600 ms). |');
+    L.push('| `pageNotes:__global__` | Broadcast fallback for pages without a per-page key. |');
+    L.push('| `pageNotesBubblePos:<pathname>` | Drag position of the bubble per page. |');
+    L.push('| `' + opts.adminLocal + '` (localStorage) | Admin-logged-in flag, value `"1"`. Unlocks Inspector. |');
+    L.push('| `' + opts.adminSession + '` (sessionStorage) | Same role for session-only login. |');
+    L.push('');
+    L.push('## \uD83D\uDD0D INSPECTOR REFERENCE FORMAT');
+    L.push('');
+    L.push('When Inspector is ON and the user middle-clicks any element, this block is appended:');
+    L.push('');
+    L.push('```');
+    L.push('\u2500\u2500\u2500 REFERENCE \u2500\u2500\u2500');
+    L.push('\uD83D\uDCC4 Page: /current-pathname');
+    L.push('\uD83D\uDCCD Path: section#hero > div.cta > button.primary');
+    L.push('\uD83C\uDFF7\uFE0F  HTML: <button class="primary" type="submit">');
+    L.push('\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500');
+    L.push('```');
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('## \uD83D\uDEE1\uFE0F HARD CONSTRAINTS');
+    L.push('');
+    L.push('1. **Exact filenames and folder.** `notepad-widget/notepad-widget.css` and `notepad-widget/notepad-widget.js`. Do not rename.');
+    L.push('2. **Exact element IDs.** `#ai-page-notes-bubble`, `#ai-page-notes-panel`, `#ai-page-notes-textarea`, `#ai-page-notes-save`, `#ai-page-notes-copy`, `#ai-page-notes-clear`, `#ai-page-notes-close`, `#ai-page-notes-toast`, `#ai-page-notes-charcount`, `#ai-page-notes-charbar`.');
+    L.push('3. **Exact class names.** All widget styles are scoped under `#ai-page-notes-*` and `.apn-*`.');
+    L.push('4. **Zero global pollution.** The JS lives inside an IIFE.');
+    L.push('5. **Self-built dynamic buttons.** `Save to All Pages` and `Inspect Element` are appended at runtime \u2014 do NOT add them to the HTML boilerplate.');
+    L.push('6. **Admin gate.** The Inspect button row defaults to `display: none` and is only revealed when admin storage flags equal `"1"`.');
+    L.push('7. **No frameworks.** No React, Vue, jQuery. No bundler. No CDN runtime.');
+    L.push('8. **Mobile + reduced motion.** Keep the `@media (max-width: 520px)` and `@media (prefers-reduced-motion: reduce)` blocks intact.');
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('## \u2699\uFE0F OPTIONS');
+    L.push('');
+    L.push('| Option | Value |');
+    L.push('|---|---|');
+    L.push('| Inspector Mode | ' + (opts.useInspector ? 'ENABLED' : 'code included but may be stripped') + ' |');
+    L.push('| Save to All Pages | ' + (opts.useSaveAll ? 'ENABLED' : 'code included but may be stripped') + ' |');
+    L.push('| Font Awesome icons | ' + (opts.useFa ? 'ENABLED' : 'DISABLED (inline SVGs)') + ' |');
+    L.push('| prefers-reduced-motion | ' + (opts.useReducedMotion ? 'RESPECTED' : 'IGNORED') + ' |');
+    L.push('| Admin localStorage key | `' + opts.adminLocal + '` |');
+    L.push('| Admin sessionStorage key | `' + opts.adminSession + '` |');
+    L.push('| Max chars | `' + opts.maxChars + '` |');
+    L.push('| Mode | `' + (isAll ? 'all-pages' : 'specific-pages') + '` |');
+    L.push('| Targets | `' + (isAll ? 'every .html in project' : targets.length + ' file(s)') + '` |');
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('## \u2705 DEFINITION OF DONE');
+    L.push('');
+    L.push('- [ ] `notepad-widget/notepad-widget.css` saved exactly as provided.');
+    L.push('- [ ] `notepad-widget/notepad-widget.js` saved exactly as provided.');
+    L.push('- [ ] HTML boilerplate inserted just before `</body>` in every target page.');
+    L.push('- [ ] Gold bubble appears at bottom-right. Click \u2192 glass panel opens.');
+    L.push('- [ ] Save / Copy / Clear / Save to All Pages all work.');
+    L.push('- [ ] Notes auto-save; reload reveals the same text.');
+    L.push('- [ ] Drag the bubble \u2192 position persists per page.');
+    L.push('- [ ] Set `localStorage.setItem("' + opts.adminLocal + '", "1")` \u2192 Inspector appears.');
+    L.push('- [ ] Middle-click any element \u2192 a REFERENCE block appends to the notes.');
+    L.push('- [ ] Mobile (<520px): panel takes full width.');
+    L.push('- [ ] No console errors. No global pollution. No external network at runtime.');
+    L.push('');
+    L.push('\uD83D\uDE80 Implement now.');
+    return L.join('\n');
+  }
+
+  // ─── Wire events ───
+  modeRadios.forEach(function (r) { r.addEventListener('change', function () { setMode(r.value); }); });
+  syncPickers();
+
+  folderPicker.addEventListener('change', function () {
+    if (folderPicker.files && folderPicker.files.length) addPaths(folderPicker.files);
+    folderPicker.value = '';
+  });
+  filePicker.addEventListener('change', function () {
+    if (filePicker.files && filePicker.files.length) addPaths(filePicker.files);
+    filePicker.value = '';
+  });
+  clearChipsBtn.addEventListener('click', function () {
+    selectedPaths = [];
+    renderChips(); renderModalChips();
+    if (modal.classList.contains('open')) regenerateInModal();
+    showToast('Cleared selection');
+  });
+
+  modalToggleBtns.forEach(function (b) {
+    b.addEventListener('click', function () { setMode(b.dataset.mode); });
+  });
+  modalFolder.addEventListener('change', function () {
+    if (modalFolder.files && modalFolder.files.length) { setMode('specific'); addPaths(modalFolder.files); }
+    modalFolder.value = '';
+  });
+  modalFiles.addEventListener('change', function () {
+    if (modalFiles.files && modalFiles.files.length) { setMode('specific'); addPaths(modalFiles.files); }
+    modalFiles.value = '';
+  });
+  modalClear.addEventListener('click', function () {
+    selectedPaths = [];
+    renderChips(); renderModalChips();
+    regenerateInModal();
+    showToast('Cleared selection');
+  });
+
+  btnGenerate.addEventListener('click', function () {
+    var opts = readOptions();
+    if (opts.mode === 'specific' && opts.targets.length === 0) {
+      showToast('Pick at least one page first');
+      return;
+    }
+    setMode(opts.mode);
+    var prompt = buildPrompt(opts);
+    promptOutput.value = prompt;
+    promptChars.textContent = prompt.length.toLocaleString();
+    promptTargets.textContent = opts.mode === 'all' ? 'all' : opts.targets.length;
+    modal.classList.add('open');
+    setTimeout(function () { promptOutput.focus(); promptOutput.scrollTop = 0; }, 50);
+  });
+
+  function closeModal() {
+    modal.classList.remove('open');
+    btnCopy.classList.remove('copied');
+  }
+  modalClose.addEventListener('click', closeModal);
+  modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+  });
+
+  btnCopy.addEventListener('click', function () {
+    var text = promptOutput.value;
+    function ok() {
+      btnCopy.classList.add('copied');
+      var orig = btnCopy.innerHTML;
+      btnCopy.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+      showToast('Copied \u2014 paste into your AI');
+      setTimeout(function () { btnCopy.classList.remove('copied'); btnCopy.innerHTML = orig; }, 1800);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok, function () {
+        promptOutput.select(); document.execCommand('copy'); ok();
+      });
+    } else {
+      promptOutput.select(); document.execCommand('copy'); ok();
+    }
+  });
+
+  btnDownload.addEventListener('click', function () {
+    var blob = new Blob([promptOutput.value], { type: 'text/markdown;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'page-notes-widget-prompt.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    showToast('Markdown downloaded');
+  });
+})();
+</script>
+</body>
+</html>
