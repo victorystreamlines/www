@@ -786,14 +786,30 @@
   }
 
   /* ── Ensure embedded-source <script type="text/plain"> blocks
-        never render as visible text regardless of UA/extension CSS ── */
-  script[type] {
+        never render as visible text regardless of UA/extension CSS.
+        Belt + suspenders: rule targets both the scripts AND their
+        hidden wrapper, so non-standard previews (Live Server, some
+        IDE previews, source-viewer extensions) cannot leak the
+        widget source onto the page. ── */
+  script[type],
+  .wp-embedded-src,
+  .wp-embedded-src * {
     display: none !important;
     visibility: hidden !important;
     position: absolute !important;
+    left: -99999px !important;
+    top: -99999px !important;
     width: 0 !important;
     height: 0 !important;
+    max-width: 0 !important;
+    max-height: 0 !important;
     overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    user-select: none !important;
   }
 </style>
 </head>
@@ -1021,7 +1037,14 @@
      output is fully self-contained (no fetches needed).
      `<script type="text/plain">` is NOT executed by the
      browser; we just read its .textContent.
+
+     The wrapping <div class="wp-embedded-src"> guarantees the
+     source stays hidden even under non-standard renderers
+     (Live Server, some IDE previews, source-viewer extensions)
+     that might otherwise display script[type="text/plain"]
+     content as plain text on the page.
      ───────────────────────────────────────────────────── -->
+<div class="wp-embedded-src" hidden aria-hidden="true" style="display:none !important; visibility:hidden !important; position:absolute !important; left:-99999px !important; top:-99999px !important; width:0 !important; height:0 !important; overflow:hidden !important; opacity:0 !important; pointer-events:none !important;">
 <script type="text/plain" id="wpSrcCss" hidden>/* ============================================================
    AI Page Notes Widget — Premium Redesign
    Scope: #ai-page-notes-* / .apn-*  — zero global overrides
@@ -2240,6 +2263,7 @@ body.apn-inspect-mode *:not(#ai-page-notes-bubble):not(#ai-page-notes-bubble *) 
 
 })();
 </script>
+</div><!-- /.wp-embedded-src -->
 
 <!-- ─────────────────────────────────────────────────────
      Page logic — file picking, prompt assembly, modal
